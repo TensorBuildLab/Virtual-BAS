@@ -33,31 +33,24 @@
             country={USA}}
 
 \begin{abstract}
-Artificial intelligence for buildings---fault detection and diagnosis, supervisory and reinforcement-learning control,
-and emerging \emph{ambient} or large-language-model operators---must eventually work on the data of a real building
-automation system (BAS), where sensors drift, readings go missing, occupants behave randomly and equipment and control
-software fail. Real BAS data, however, are scarce and never come with ground truth, while simulation test beds are
-usually idealised. This paper presents \emph{Virtual BAS}, an open-source emulator that couples a step-wise EnergyPlus
-simulation (the \emph{inner space}, representing the physics) with an explicitly modelled \emph{outer space}
-representing the real world: mathematically defined sensor and actuator models, BAS control sequences that act only on
-observed values, stochastic occupancy, weather and internal-gain events, and a library of \NumFaultTypes{} fault and
-event types on five layers (sensor, actuator, equipment, control, network). Every imperfection is labelled. A
-local-loop emulation by set-point translation lets sensor faults propagate physically even through loops that
-EnergyPlus solves internally. The simulation runs from real time to more than \SpeedMaxK{} times real time with
-interactive control of the clock, and faults can be injected while running by humans (web GUI), scripts, scenario
-files, a REST API, an MCP server for language-model agents and a Gymnasium interface. A generic BAS-ization procedure
-converts EnergyPlus models automatically; the DOE reference large office (\NumPoints{} BAS points on \NumEquip{}
-pieces of equipment) is the case study. Beyond the points of a typical BAS, the point list covers the full indoor
-environment (comfort indices, particles, volatile organic compounds, illuminance, sound, people counts and occupant
-feedback), an extended weather station with forecasts, sub-meters and grid signals, and every point is tagged as
-standard, advanced or next-generation instrumentation. With ideal sensors the emulator reproduces the native annual EnergyPlus results
-within \ValElecDiffAbs\% for electricity and \ValGasDiffAbs\% for natural gas (zone temperature mean absolute
-difference \ValZoneMAE{}~K). Experiments demonstrate equipment-level fault impacts, labelled data generation for fault
-detection (detection macro-F1 \FddDetF{}), AI agents injecting faults through the public API, the robustness gap of a
-supervisory AI controller between ideal and realistic outer spaces, the indoor-air-quality response to a wildfire-smoke
-episode that a standard BAS cannot observe, accurate time acceleration, and the automatic conversion of five reference
-buildings. Eighteen uses are identified, from AI development and benchmarking to university teaching, operator and
-facility-manager training, commissioning practice and the neutral evaluation of commercial analytics products.
+Artificial intelligence for buildings, from fault detection and diagnosis to reinforcement-learning control and
+\emph{ambient} or large-language-model operators, must work on the data of real building automation systems (BAS),
+where sensors drift, readings go missing, occupants behave randomly and equipment fails. Real BAS data are scarce and
+lack ground truth, while simulation test beds are usually idealised. This paper presents \emph{Virtual BAS}, an
+open-source emulator that couples a step-wise EnergyPlus simulation (the \emph{inner space}, the physics) with a
+labelled \emph{outer space} representing the real world: sensor and actuator models, BAS sequences that act only on
+observed values, stochastic occupancy and events, and \NumFaultTypes{} fault and event types on five layers. A
+local-loop emulation by set-point translation propagates sensor faults physically through loops solved inside
+EnergyPlus. The clock runs from real time to more than \SpeedMaxK{} times real time, and humans and AI agents inject
+faults at run time through a web GUI, a REST API, an MCP server and a Gymnasium interface. EnergyPlus models are
+converted automatically; the DOE reference large office (\NumPoints{} points on \NumEquip{} pieces of equipment) is
+the case study. Beyond typical BAS points, the point list covers the full indoor environment, an extended weather
+station with forecasts, sub-meters and grid signals, each tagged as standard, advanced or next-generation
+instrumentation. With ideal sensors, annual results match native EnergyPlus within \ValElecDiffAbs\% for electricity
+and \ValGasDiffAbs\% for natural gas. Experiments demonstrate equipment-level fault impacts, labelled data for fault
+detection (macro-F1 \FddDetF{}), AI agents in the loop, a wildfire-smoke episode that a standard BAS cannot observe,
+and the conversion of five reference buildings. Eighteen uses are identified, spanning AI development, university
+teaching, operator and facility-manager training, and the testing of commercial analytics products.
 \end{abstract}
 
 \begin{keyword}

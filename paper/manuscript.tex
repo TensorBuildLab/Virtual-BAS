@@ -56,7 +56,8 @@ difference \ValZoneMAE{}~K). Experiments demonstrate equipment-level fault impac
 detection (detection macro-F1 \FddDetF{}), AI agents injecting faults through the public API, the robustness gap of a
 supervisory AI controller between ideal and realistic outer spaces, the indoor-air-quality response to a wildfire-smoke
 episode that a standard BAS cannot observe, accurate time acceleration, and the automatic conversion of five reference
-buildings.
+buildings. Eighteen uses are identified, from AI development and benchmarking to university teaching, operator and
+facility-manager training, commissioning practice and the neutral evaluation of commercial analytics products.
 \end{abstract}
 
 \begin{keyword}
@@ -111,7 +112,24 @@ counts and feedback, coil energy meters, actuator feedback and grid signals are 
 therefore (vi) expose both the instrumentation of today's BAS and the next-generation points that AI applications
 need, so that the value of additional sensing can be quantified against ground truth.
 
-This paper introduces \emph{Virtual BAS}, an open-source framework built around a simple separation
+The same gap affects people as much as algorithms. Operational problems are pervasive and costly: commissioning of
+existing buildings, i.e. finding and fixing such problems, yielded a median whole-building energy saving of 16\% in a
+compilation of 643 buildings \cite{mills2011commissioning}, and correctly implemented and tuned controls, accurate
+sensors and fault correction could save about 29\% of the energy of US commercial buildings
+\cite{fernandez2017controls}. Capturing these savings depends on operators, facility managers, technicians and
+commissioning agents who can read a BAS and diagnose what it shows. They learn mostly on live buildings, where faults
+cannot be staged on demand, the true state is unknown, and mistakes affect occupants and equipment. Aviation and
+nuclear power train and examine their operators on full-scope simulators governed by standards \cite{ans35}, and
+autonomous driving develops and validates its AI in open simulators before it reaches the road
+\cite{dosovitskiy2017carla}. Building operation has only a few research prototypes of this kind, such as a hybrid
+simulator connected to a real controller for community-college training \cite{xu2004training} and a video game that
+introduces a university HVAC-control course \cite{johra2020geenie}. Ambient AI and LLM operators
+\cite{zhang2024llmbem,zhang2024llmcontrol}, which are meant to run continuously beside or instead of a human operator,
+need such an environment even more: they must be trained, evaluated and stress-tested on realistic BAS behaviour before
+they are allowed to act on a real building. A realistic, interactive and labelled virtual BAS is therefore a shared
+infrastructure for AI research, education, workforce training and industry practice (Section~\ref{sec:uses}).
+
+This paper introduces \emph{Virtual BAS}, an open-source framework that is built around a simple separation
 (Fig.~\ref{fig:architecture}). The \emph{inner space} is an EnergyPlus model advanced step by step through the
 EnergyPlus Python API \cite{energyplusapi}; it represents the real physics. The \emph{outer space} is the real world
 that surrounds the physics: sensors, actuators, the BAS software, occupants, weather perturbations, faults, operators
@@ -140,11 +158,13 @@ Model Context Protocol \cite{mcp2024}, Gymnasium \cite{towers2024gymnasium}).
 against native EnergyPlus, inner/outer coupling under sensor drift, an equipment-level fault impact matrix, labelled
 data generation and an FDD benchmark, AI agents in the loop, indoor air quality under wildfire smoke, time-acceleration
 accuracy, and generality across five reference buildings.
+\item An analysis of eighteen uses of a virtual BAS across AI research, education and workforce training, industry
+practice and the research community, each mapped to the features that enable it and to the evidence in this paper.
 \end{enumerate}
 
 The remainder is organised as follows. Section~\ref{sec:related} reviews related work. Section~\ref{sec:method}
 presents the methodology. Section~\ref{sec:case} describes the case study and Section~\ref{sec:results} the
-experiments. Section~\ref{sec:discussion} discusses applications and limitations, and Section~\ref{sec:conclusions}
+experiments. Section~\ref{sec:discussion} discusses potential uses and limitations, and Section~\ref{sec:conclusions}
 concludes.
 
 \begin{figure*}[t]
@@ -217,6 +237,14 @@ environments with realistic sensor errors as a barrier to deployment.
 models for BAS points, enabling portable analytics. LLM agents interacting with tools through the Model Context
 Protocol \cite{mcp2024} create a new class of building applications whose evaluation requires an interactive,
 semantically described BAS with ground truth.
+
+\paragraph{Simulators for education and training} Full-scope training simulators are mandatory in nuclear power
+\cite{ans35} and standard in aviation, and open simulators such as CARLA \cite{dosovitskiy2017carla} underpin the
+development of autonomous-driving AI. In buildings, a hybrid simulator that connected a real-time HVAC simulation to a
+real controller supported a community-college curriculum on control configuration and troubleshooting
+\cite{xu2004training}, and a video game based on a building thermal model introduces a university course on HVAC
+control \cite{johra2020geenie}. These tools teach control principles on simplified systems; none reproduces the point
+list, graphics, alarms and failure modes of a commercial BAS on a full building with labelled faults.
 
 \paragraph{Gap} Virtual BAS is complementary to the above: it reuses the physics of EnergyPlus and the standard
 interfaces of RL environments, but its object of emulation is the \emph{BAS as a whole}---point list, controllers,
@@ -315,7 +343,7 @@ into them as in a real BAS. A scenario can restrict the exposed and recorded poi
 a typical BAS of today while keeping the full ground truth.
 
 \begin{table}[!htbp]
-\centering\small
+\centering\footnotesize
 \caption{BAS points generated for each equipment type (abbreviated); S = standard, A = advanced, N = next-generation tier.}
 \label{tab:points}
 \begin{tabularx}{\linewidth}{lX}
@@ -748,16 +776,101 @@ equipment and runs at \HospitalSps{} samples per second.
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{Applications} Virtual BAS is designed as a proving ground for building AI. FDD developers obtain unlimited
-labelled data with controllable fault rates, severities, seasons and sensor quality, and can test algorithms in closed
-loop. Control and RL researchers can evaluate policies under partial observability, sensor errors, missing data and
-equipment faults, and quantify robustness by switching the outer space while keeping the inner space fixed. Ambient-AI
-and LLM agents can be connected through MCP and evaluated on operational tasks (diagnosing complaints, finding faults,
-writing safe overrides) with exact ground truth; they can also act as adversaries that generate challenging fault
-scenarios. Because the GUI behaves like a real BAS, the tool also serves education and operator training. The point
-tiers support sensor-placement and value-of-information studies: the same scenario can be observed through the
-instrumentation of a typical BAS and through next-generation sensing, and the benefit of, e.g., coil energy meters,
-people counters or particle monitors for a given task can be measured against ground truth.
+\subsection{Potential uses and impact}
+\label{sec:uses}
+
+A real BAS is a poor place to learn, experiment or certify: faults cannot be staged on demand, the true state is
+unknown, every mistake affects occupants and equipment, a year of operation takes a year, and access is restricted by
+owners, vendors and cyber-security policies. Virtual BAS removes each of these barriers at once---it is safe to break,
+labelled, repeatable through seeded scenarios, faster than real time, free and open, and it can be generated for any
+EnergyPlus model. Table~\ref{tab:uses} lists eighteen uses that follow from these properties, grouped into four areas,
+together with the users, the enabling features and the evidence available in this paper. The table distinguishes uses
+that the experiments demonstrate from uses for which the interfaces exist but no evaluation is reported here.
+
+\begin{table*}[p]
+\centering
+\caption{Potential uses of Virtual BAS, with primary users in italics. Evidence: Exp.~$n$ = demonstrated in
+Experiment~$n$; \emph{interf.} = all required functions are implemented but not evaluated in this paper;
+\emph{partial} = some functions are missing (see Section~\ref{sec:limitations}).}
+\label{tab:uses}
+\scriptsize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{50mm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{14mm}@{}}
+\toprule
+Use (\emph{users}) & What Virtual BAS provides & Evid. \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Research and development of building AI}}\\
+FDD development and benchmarking (\emph{FDD researchers, analytics developers}) & Unlimited labelled data with controlled fault type, severity, season and sensor quality; closed-loop tests & Exp.~3, 4 \\
+Supervisory, MPC and RL control (\emph{control and RL researchers}) & Gymnasium; sensor errors, missing data and faults; ideal vs.\ realistic outer space on the same physics & Exp.~5 \\
+Ambient-AI and LLM operators (\emph{AI researchers, BAS vendors}) & MCP tools, overrides and alarms at any speed; ground truth for scoring; agents as operators and adversaries & Exp.~5 \\
+Foundation models (\emph{machine-learning researchers}) & Diverse, labelled, multivariate BAS time series for any EnergyPlus model \cite{emami2023buildingsbench} & Exp.~4, 8 \\
+Virtual sensing and sensor recalibration (\emph{researchers}) & Observed and true values side by side; defined bias, drift, lag and data-loss models & Exp.~2 \\
+Metadata inference, portable apps (\emph{researchers, integrators}) & Haystack/Brick point lists with known metadata for converted buildings \cite{gao2015metadata} & Exp.~8 \\
+Value of information, sensor design (\emph{sensor makers, standard writers}) & Standard, advanced and next-generation tiers; one scenario seen through different instrumentation & Exp.~6 \\
+\multicolumn{3}{@{}l}{\textbf{Education and workforce development}}\\
+University courses (\emph{instructors, students}) & BAS-like GUI; equipment that can be broken safely; truth switch; open scenarios; a season in one lab session & interf. \\
+Operator and facility-manager training (\emph{owners, utilities, training programmes}) & Drills with hidden or random faults; alarms, trends and overrides as in a real BAS; labels as answer key & interf. \\
+Commissioning practice (\emph{commissioning agents}) & Functional tests of sequences, staged faults, trend review against known causes & interf. \\
+Emergency and resilience drills (\emph{facility managers}) & Wildfire smoke, heat waves, cold snaps, equipment trips, demand response at run time & Exp.~6 \\
+Alarm management, HMI research (\emph{human-factors researchers}) & Reproducible alarm floods and faults for user studies under identical conditions \cite{isa182} & interf. \\
+\multicolumn{3}{@{}l}{\textbf{Industry practice}}\\
+Testing commercial FDD and analytics (\emph{owners, efficiency programmes}) & Blind test buildings with known faults and severities; scoring against labels & Exp.~4 \\
+Sequence verification, virtual commissioning (\emph{designers, contractors}) & G36-style sequences in closed loop and under sensor faults before site work \cite{wetter2022obc} & Exp.~2, 3 \\
+BAS and analytics software (\emph{vendors, start-ups}) & A mock building behind REST, WebSocket and MCP for integration tests and demonstrations & interf. \\
+Cyber-physical security (\emph{security researchers}) & Spoofed readings, malicious overrides, controller and historian outages, physical impact \cite{granzer2010security} & partial \\
+Grid-interactive buildings (\emph{utilities, aggregators}) & Tariff, carbon intensity, demand-response events, demand meters \cite{neukomm2019geb} & interf. \\
+\multicolumn{3}{@{}l}{\textbf{Research community}}\\
+Benchmarks, competitions, reproducibility (\emph{all}) & Seeded scenarios, open building models, common KPIs, public code & Exp.~1--8 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\paragraph{Research and development of building AI} Virtual BAS is first a proving ground for building AI. FDD
+developers obtain unlimited labelled data with controllable fault rates, severities, seasons and sensor quality and
+can test algorithms in closed loop (Experiments~3 and 4). Control and RL researchers can evaluate policies under partial
+observability, sensor errors, missing data and equipment faults, and quantify robustness by switching the outer space
+while keeping the inner space fixed (Experiment~5). Ambient-AI and LLM agents can be connected through MCP and
+evaluated on operational tasks (diagnosing complaints, finding faults, writing safe overrides) with exact ground
+truth; they can also act as adversaries that generate challenging scenarios. Because any EnergyPlus model can be
+converted, the emulator can also produce the large and diverse corpora of BAS-level, multivariate, labelled time
+series that foundation models for building operation will need; existing synthetic corpora for pre-training cover
+whole-building loads only \cite{emami2023buildingsbench}. The point tiers support sensor-placement and
+value-of-information studies: the same scenario can be observed through the instrumentation of a typical BAS and
+through next-generation sensing, and the benefit of, e.g., coil energy meters, people counters or particle monitors for
+a given task can be measured against ground truth (Experiment~6).
+
+\paragraph{Education and workforce development} Students rarely get write access to a real BAS, and when they do they
+cannot break it. With Virtual BAS a course on HVAC systems, controls or building data science can let every student
+operate the same building, change set points and sequences, inject a stuck damper or a drifting sensor and see both
+what the BAS shows and what really happens; time acceleration fits a season of operation into a laboratory session.
+For operators, facility managers and technicians the same features become troubleshooting drills. The GUI hides the
+ground truth by default, an instructor injects faults from the console or lets the random fault generator choose them,
+the trainee works only with graphics, trends, alarms and overrides, and the label record then serves as the answer key
+for scoring. This brings to building operation the simulator-based training that is standard in aviation and nuclear
+power \cite{ans35} and has so far been limited to prototypes in buildings \cite{xu2004training,johra2020geenie}.
+Commissioning agents can rehearse functional tests, and facility managers can practise responses to wildfire smoke,
+heat waves, equipment trips and demand-response events. Reproducible alarm floods also make it possible to study
+alarm management and operator interfaces with human participants \cite{isa182}.
+
+\paragraph{Industry practice} Owners and efficiency programmes that procure FDD or analytics services currently have no
+neutral way to compare products; a blind Virtual BAS building with known faults gives such a test, scored against the
+labels (Experiment~4). Designers and control contractors can exercise sequences in closed loop, including their
+behaviour under sensor faults, before the site work, complementing formal specification and verification workflows
+\cite{wetter2022obc}. BAS and analytics vendors obtain a mock building for continuous integration, demonstrations and
+training of their own staff. Security researchers can emulate spoofed readings with sensor-layer faults, malicious
+commands with overrides and outages with network-layer faults, and observe the physical impact of an attack
+\cite{granzer2010security}. Utilities and aggregators can test demand-response and carbon-aware strategies with the
+tariff, grid and demand-meter points \cite{neukomm2019geb}. Given the savings at stake in commissioning
+\cite{mills2011commissioning} and controls \cite{fernandez2017controls}, even a modest improvement in how people and
+software operate buildings has a large aggregate effect.
+
+\paragraph{Research community} Seeded scenarios, open building models and common KPIs allow benchmarks and competitions
+in which every participant faces the same faults, sensor errors and occupants, and allow results to be reproduced
+exactly. This addresses a recurrent obstacle of FDD and building-AI research, in which methods are evaluated on
+private data that others cannot access \cite{katipamula2005review1,kim2018fddreview}.
+
+\subsection{Limitations and future work}
+\label{sec:limitations}
 
 \paragraph{Limitations} (i) Local loops inside EnergyPlus are ideal; set-point translation reproduces their steady
 state under sensor error but not their fast dynamics, hunting or valve characteristics. (ii) Duct static and loop
@@ -775,7 +888,12 @@ reflects guideline point lists and field surveys and will differ between buildin
 
 \paragraph{Future work} A BACnet/IP and Modbus gateway so that commercial BAS front ends and analytics can connect
 unchanged; Spawn-of-EnergyPlus or Modelica inner spaces for faster local dynamics; calibrated fault occurrence
-statistics; multi-building portfolios; and standardised benchmark tasks for LLM-based building operators.
+statistics; multi-building portfolios; and standardised benchmark tasks for LLM-based building operators. For
+education and training, an instructor/trainee mode that withholds labels and active injections from the trainee's
+session and scores diagnoses automatically, together with course modules and drill libraries developed and evaluated
+with instructors and building operators. For security studies, a dedicated library of cyber-attacks on BAS
+protocols. The educational and training uses in Table~\ref{tab:uses} have not yet been evaluated with learners; such
+studies are planned.
 
 %==========================================================================================
 \section{Conclusions}
@@ -789,8 +907,11 @@ by humans and AI agents, the clock runs from real time to more than \SpeedMaxK{}
 model can be converted. For the DOE large office, the emulator reproduces native EnergyPlus within \ValElecDiffAbs\%
 in annual electricity with ideal sensors, produces physically consistent equipment-level fault signatures, generates
 labelled datasets for FDD, supports AI agents as operators, controllers and adversaries, and exposes robustness gaps
-that idealised environments hide. The software, building models, scenarios, experiments and tutorials are openly
-available to help the community develop building AI that works in real buildings.
+that idealised environments hide. Beyond AI research, the same properties---safe to break, labelled, repeatable, fast
+and open---make it a training simulator for students, operators, facility managers and commissioning agents, a neutral
+test building for commercial FDD and analytics products, and a shared benchmark for the research community. The
+software, building models, scenarios, experiments and tutorials are openly available to help the community develop
+building AI, and the people who operate buildings, for real buildings.
 
 %==========================================================================================
 \section*{CRediT authorship contribution statement}

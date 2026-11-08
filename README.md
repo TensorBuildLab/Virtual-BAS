@@ -36,6 +36,25 @@ Virtual BAS provides that environment:
 * **Generic methodology** - any EnergyPlus model is converted automatically (`vbas prepare`): topology discovery,
   command binding, physical fault hooks, native control program, point list. Case study: DOE reference large office.
 
+## Who is it for?
+
+A real BAS is a poor place to learn or experiment: you cannot stage faults, you never know the true state, mistakes
+affect occupants, and access is restricted. Virtual BAS is **safe to break, labelled, repeatable, fast and open**, so it
+serves far more than algorithm research:
+
+| Area | Uses |
+|---|---|
+| **Building AI research** | FDD development and benchmarking · supervisory / MPC / RL control under realistic sensors and faults · ambient-AI and LLM operators (and AI adversaries) · synthetic BAS data for foundation models · virtual sensing and sensor recalibration · metadata inference (Brick/Haystack) · value of extra sensors |
+| **Education and workforce** | university courses on HVAC, controls, building energy and building data science · troubleshooting drills for building operators, facility managers and technicians · commissioning practice · emergency drills (wildfire smoke, heat waves, equipment trips, demand response) · alarm-management and HMI research |
+| **Industry practice** | neutral testing of commercial FDD and analytics products · control-sequence verification and virtual commissioning before site work · a mock building for BAS software CI, demos and sales · cyber-physical security studies · demand-response and carbon-aware control |
+| **Research community** | shared benchmarks, competitions and exactly reproducible studies |
+
+Aviation and nuclear power train their operators on simulators, and self-driving AI is developed in open simulators
+before it reaches the road. Virtual BAS aims to be that simulator for buildings, for both their people and their AI.
+See [docs/use_cases.md](docs/use_cases.md) for all 18 uses, how far each is supported today, and recipes (teaching a
+lab, running an operator drill with [`scenarios/training_drill.yaml`](scenarios/training_drill.yaml), testing an
+analytics product, quantifying the value of a sensor).
+
 ## Quick start
 
 ```bash
@@ -111,6 +130,7 @@ flowchart LR
 
 ## Documentation
 
+* [Use cases: research, teaching, operator training, industry](docs/use_cases.md)
 * [Installation](docs/installation.md)
 * [Concepts: inner/outer space, local-loop emulation, BAS-ization, labels](docs/concepts.md)
 * [Point taxonomy: standard vs. advanced vs. next-generation BAS points, environment models, sensor accuracy](docs/point_taxonomy.md)

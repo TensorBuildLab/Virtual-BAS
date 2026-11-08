@@ -1,0 +1,19 @@
+# Troubleshooting drill for students, operators and facility managers.
+# The instructor starts the server with this scenario; the trainee operates the building from the GUI with the
+# ground-truth switch OFF and without opening the "Faults & Events" page, finds the problems from graphics, trends
+# and alarms, and writes down a diagnosis (equipment, fault, onset time). The label record
+# (GET /api/injections, or injections_table.json of a recorded run) is the answer key.
+# Only standard-tier points are shown, as in a typical BAS of today. Change the seed for a new drill.
+#
+#   vbas serve --building buildings/large_office --scenario scenarios/training_drill.yaml --speed 360x
+name: training_drill
+start: 2023-07-10
+end: 2023-07-24
+seed: 7
+realism: 1.0
+point_tiers: [standard]
+occupancy: {stochastic: true}
+random_faults: {rate_per_week: 3}
+injections:
+  # one known fault for the warm-up exercise; remove it for a fully blind drill
+  - {type: vav_damper_stuck, target: VAV-Perimeter_mid_ZN_1, start: 2023-07-11T09:00:00, params: {position: 15}}

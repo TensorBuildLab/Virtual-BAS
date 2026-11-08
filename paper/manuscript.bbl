@@ -145,6 +145,52 @@ W.~J. Fisk, D.~P. Sullivan, D.~Faulkner, E.~Eliseeva, {CO$_2$} monitoring for
 {International WELL Building Institute}, {WELL} building standard, version 2,
   \url{https://v2.wellcertified.com} (2020).
 
+\bibitem{mills2011commissioning}
+E.~Mills, Building commissioning: a golden opportunity for reducing energy
+  costs and greenhouse gas emissions in the {United States}, Energy Efficiency
+  4~(2) (2011) 145--173.
+\newblock \href {https://doi.org/10.1007/s12053-011-9116-8}
+  {\path{doi:10.1007/s12053-011-9116-8}}.
+
+\bibitem{fernandez2017controls}
+N.~Fernandez, S.~Katipamula, W.~Wang, Y.~Xie, M.~Zhao, C.~Corbin, Impacts of
+  commercial building controls on energy savings and peak load reduction, Tech.
+  Rep. PNNL-25985, Pacific Northwest National Laboratory, Richland, WA (2017).
+
+\bibitem{ans35}
+{American Nuclear Society}, {ANSI/ANS-3.5-2018 (R2024)}: Nuclear power plant
+  simulators for use in operator training and examination, American Nuclear
+  Society, La Grange Park, IL (2018).
+
+\bibitem{dosovitskiy2017carla}
+A.~Dosovitskiy, G.~Ros, F.~Codevilla, A.~Lopez, V.~Koltun, {CARLA}: An open
+  urban driving simulator, in: Proceedings of the 1st Annual Conference on
+  Robot Learning (CoRL), Vol.~78 of Proceedings of Machine Learning Research,
+  2017, pp. 1--16.
+
+\bibitem{xu2004training}
+P.~Xu, P.~Haves, J.~J. Deringer, A simulation-based testing and training
+  environment for building controls, in: Proceedings of SimBuild 2004,
+  IBPSA-USA National Conference, Boulder, CO, 2004.
+
+\bibitem{johra2020geenie}
+H.~Johra, L.~Rohde, E.~Petrova, Video game-based learning for teaching building
+  thermodynamics and control of {HVAC} systems, in: Proceedings of
+  BuildSim-Nordic 2020, Oslo, Norway, 2020.
+
+\bibitem{zhang2024llmbem}
+L.~Zhang, Z.~Chen, V.~Ford, Advancing building energy modeling with large
+  language models: Exploration and case studies, Energy and Buildings 323
+  (2024) 114788.
+\newblock \href {https://doi.org/10.1016/j.enbuild.2024.114788}
+  {\path{doi:10.1016/j.enbuild.2024.114788}}.
+
+\bibitem{zhang2024llmcontrol}
+L.~Zhang, Z.~Chen, Large language model-based interpretable machine learning
+  control in building energy systems, Energy and Buildings 313 (2024) 114278.
+\newblock \href {https://doi.org/10.1016/j.enbuild.2024.114278}
+  {\path{doi:10.1016/j.enbuild.2024.114278}}.
+
 \bibitem{energyplusapi}
 {U.S. Department of Energy}, {EnergyPlus} {Python} {API} documentation (version
   23.2), \url{https://energyplus.readthedocs.io/en/latest/api.html}, accessed 8
@@ -239,5 +285,44 @@ F.~Pedregosa, G.~Varoquaux, A.~Gramfort, V.~Michel, B.~Thirion, O.~Grisel,
   D.~Cournapeau, M.~Brucher, M.~Perrot, {\'E}.~Duchesnay, Scikit-learn: Machine
   learning in {Python}, Journal of Machine Learning Research 12 (2011)
   2825--2830.
+
+\bibitem{emami2023buildingsbench}
+P.~Emami, A.~Sahu, P.~Graf, {BuildingsBench}: A large-scale dataset of 900{K}
+  buildings and benchmark for short-term load forecasting, in: Advances in
+  Neural Information Processing Systems 36 (NeurIPS 2023), Datasets and
+  Benchmarks Track, 2023.
+
+\bibitem{gao2015metadata}
+J.~Gao, J.~Ploennigs, M.~Berg{\'e}s, A data-driven meta-data inference
+  framework for building automation systems, in: Proceedings of the 2nd ACM
+  International Conference on Embedded Systems for Energy-Efficient Built
+  Environments (BuildSys), 2015, pp. 23--32.
+\newblock \href {https://doi.org/10.1145/2821650.2821670}
+  {\path{doi:10.1145/2821650.2821670}}.
+
+\bibitem{isa182}
+{International Society of Automation}, {ANSI/ISA-18.2-2016}: Management of
+  alarm systems for the process industries, ISA, Research Triangle Park, NC
+  (2016).
+
+\bibitem{wetter2022obc}
+M.~Wetter, P.~Ehrlich, A.~Gautier, M.~Grahovac, P.~Haves, J.~Hu, A.~Prakash,
+  D.~Robin, K.~Zhang, {OpenBuildingControl}: Digitizing the control delivery
+  from building energy modeling to specification, implementation and formal
+  verification, Energy 238 (2022) 121501.
+\newblock \href {https://doi.org/10.1016/j.energy.2021.121501}
+  {\path{doi:10.1016/j.energy.2021.121501}}.
+
+\bibitem{granzer2010security}
+W.~Granzer, F.~Praus, W.~Kastner, Security in building automation systems, IEEE
+  Transactions on Industrial Electronics 57~(11) (2010) 3622--3630.
+\newblock \href {https://doi.org/10.1109/TIE.2009.2036033}
+  {\path{doi:10.1109/TIE.2009.2036033}}.
+
+\bibitem{neukomm2019geb}
+M.~Neukomm, V.~Nubbe, R.~Fares, Grid-interactive efficient buildings technical
+  report series: Overview of research challenges and gaps, Tech. rep., U.S.
+  Department of Energy, Office of Energy Efficiency and Renewable Energy,
+  Washington, DC (2019).
 
 \end{thebibliography}

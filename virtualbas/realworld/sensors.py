@@ -74,7 +74,7 @@ SENSOR_CLASSES: dict[str, SensorSpec] = {
     "water_flow": SensorSpec(noise_std=0.0005, gain_std=0.02, resolution=0.0001, tau_s=5, lo=0, hi=1e9,
                              p_gb=0.0005, p_bg=0.3),
     "power": SensorSpec(noise_std=0.2, gain_std=0.01, resolution=0.1, lo=0, hi=1e9, p_gb=0.0005, p_bg=0.3),
-    "pressure": SensorSpec(noise_std=3.0, bias_std=5.0, resolution=1.0, tau_s=5, lo=-2000, hi=5000,
+    "pressure": SensorSpec(noise_std=3.0, bias_std=5.0, resolution=1.0, tau_s=5, lo=-50, hi=5000,
                            drift_rate_std=0.05, p_gb=0.0005, p_bg=0.3),
     "position": SensorSpec(noise_std=0.2, resolution=0.1, lo=0, hi=100, p_gb=0.0005, p_bg=0.3),
     "percent": SensorSpec(resolution=0.1, lo=0, hi=100, p_gb=0.0005, p_bg=0.3),
@@ -84,6 +84,43 @@ SENSOR_CLASSES: dict[str, SensorSpec] = {
     "occupancy": SensorSpec(binary=True, p_false_on=0.01, p_false_off=0.05, p_gb=0.0005, p_bg=0.3),
     "energy": SensorSpec(gain_std=0.005, resolution=0.01, lo=0, hi=1e12, p_gb=0.0002, p_bg=0.5),
     "ideal": SensorSpec(),
+    # ---- extended instrumentation (data-sheet values, see docs/point_taxonomy.md for sources)
+    # outdoor T/RH transmitter +/-2-3 %RH, drift ~1 %RH/yr
+    "outdoor_humidity": SensorSpec(noise_std=0.8, bias_std=2.5, resolution=0.1, tau_s=60, lo=0, hi=100,
+                                   drift_rate_std=0.003, p_gb=0.0005, p_bg=0.3),
+    "enthalpy": SensorSpec(noise_std=0.3, bias_std=1.0, resolution=0.1, tau_s=60, lo=-50, hi=200, p_gb=0.0005, p_bg=0.3),
+    "humidity_ratio": SensorSpec(noise_std=0.1, bias_std=0.3, resolution=0.01, tau_s=60, lo=0, hi=50, p_gb=0.0005, p_bg=0.3),
+    # barometer +/-0.5-1 hPa
+    "barometric": SensorSpec(noise_std=0.02, bias_std=0.05, resolution=0.01, lo=50, hi=120, p_gb=0.0005, p_bg=0.3),
+    # wind vane +/-3 deg
+    "wind_direction": SensorSpec(noise_std=3.0, bias_std=3.0, resolution=1.0, lo=0, hi=360, p_gb=0.0005, p_bg=0.3),
+    # photosensor +/-10 % (ceiling sensor-to-work-plane ratio dominates)
+    "illuminance": SensorSpec(noise_std=5.0, gain_std=0.10, resolution=1.0, tau_s=5, lo=0, hi=200000, p_gb=0.0005, p_bg=0.3),
+    # low-cost optical particle counter: +/-(5 ug/m3 + 5-15 %), multiplicative error dominates
+    "pm_sensor": SensorSpec(noise_std=1.0, bias_std=1.5, gain_std=0.15, resolution=0.1, tau_s=60, lo=0, hi=1000,
+                            drift_rate_std=0.005, p_gb=0.001, p_bg=0.3),
+    # metal-oxide TVOC: relative accuracy only, large gain error and baseline drift
+    "tvoc_sensor": SensorSpec(noise_std=5.0, bias_std=10.0, gain_std=0.25, resolution=1.0, tau_s=120, lo=0, hi=20000,
+                              drift_ou_sigma=5.0, drift_ou_theta=0.05, p_gb=0.001, p_bg=0.3),
+    # camera / thermopile people counter: ~+/-1 person or +/-10 %
+    "people_count": SensorSpec(noise_std=0.6, gain_std=0.05, resolution=1.0, lo=0, hi=10000, p_gb=0.0005, p_bg=0.3),
+    # globe thermometer (ISO 7726: 150 mm globe, time constant ~20 min)
+    "radiant_temperature": SensorSpec(noise_std=0.1, bias_std=0.3, resolution=0.1, tau_s=1200, lo=-10, hi=60,
+                                      p_gb=0.0005, p_bg=0.3),
+    "comfort_index": SensorSpec(noise_std=0.05, bias_std=0.1, resolution=0.01, tau_s=300, lo=-3, hi=3, p_gb=0.0005, p_bg=0.3),
+    "comfort_ppd": SensorSpec(noise_std=1.0, bias_std=1.0, resolution=0.1, tau_s=300, lo=5, hi=100, p_gb=0.0005, p_bg=0.3),
+    # IEC 61672 class-2 sound level meter +/-1.4 dB
+    "sound": SensorSpec(noise_std=1.0, bias_std=0.7, resolution=0.1, lo=0, hi=140, p_gb=0.0005, p_bg=0.3),
+    # BTU meter, EN 1434 class 2-3 (+/-3-5 %)
+    "thermal_power": SensorSpec(noise_std=0.5, gain_std=0.03, resolution=0.1, tau_s=20, lo=0, hi=1e9, p_gb=0.0005, p_bg=0.3),
+    "frequency": SensorSpec(noise_std=0.05, resolution=0.1, lo=0, hi=120, p_gb=0.0005, p_bg=0.3),
+    "current": SensorSpec(noise_std=0.2, gain_std=0.02, resolution=0.1, lo=0, hi=1e6, p_gb=0.0005, p_bg=0.3),
+    # ISO 10816 velocity transducer
+    "vibration": SensorSpec(noise_std=0.1, gain_std=0.05, resolution=0.01, tau_s=10, lo=0, hi=100, p_gb=0.0005, p_bg=0.3),
+    # water-side differential pressure transmitter [kPa], +/-1 % of a 250 kPa span
+    "water_dp": SensorSpec(noise_std=0.3, bias_std=1.0, resolution=0.1, tau_s=5, lo=-5, hi=1000, p_gb=0.0005, p_bg=0.3),
+    "refrigerant_pressure": SensorSpec(noise_std=2.0, bias_std=5.0, gain_std=0.005, resolution=1.0, tau_s=5, lo=0, hi=5000,
+                                       p_gb=0.0005, p_bg=0.3),
 }
 
 
@@ -111,6 +148,9 @@ class FaultOverlay:
     override: float | None = None     # spoofed / overwritten value (cyber or wiring fault)
 
 
+_NO_OVERLAY = FaultOverlay()
+
+
 class Sensor:
     """A single installed sensor: data-sheet class + installation draw + run-time state."""
 
@@ -130,12 +170,12 @@ class Sensor:
 
     def deterministic_error(self, x: float, overlay: FaultOverlay | None = None) -> float:
         """Bias + gain + drift (+ fault bias/gain) - used by local-loop emulation."""
-        ov = overlay or FaultOverlay()
+        ov = overlay or _NO_OVERLAY
         return (self.gain + ov.gain) * x + self.bias + ov.bias + self.state.drift
 
     def measure(self, x: float, dt_s: float, overlay: FaultOverlay | None = None) -> tuple[float, dict[str, Any]]:
         """Return the observed value and a label dictionary describing this sample."""
-        sp, st, ov = self.spec, self.state, overlay or FaultOverlay()
+        sp, st, ov = self.spec, self.state, overlay or _NO_OVERLAY
         r = self.realism
         lab: dict[str, Any] = {}
         if x is None or not math.isfinite(x):

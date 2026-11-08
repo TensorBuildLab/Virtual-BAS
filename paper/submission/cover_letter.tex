@@ -17,10 +17,13 @@ systems, where sensors drift, data go missing, occupants behave randomly and equ
 with ground truth, while existing simulation test beds are mostly idealised. The manuscript presents an open-source
 framework that couples a step-wise EnergyPlus simulation (the physics) with an explicitly modelled and fully labelled
 real-world layer, in which BAS controllers act on imperfect observations so that the physical consequences of
-imperfection are simulated. Faults and events from a library of 39 mathematically defined types can be injected at run
+imperfection are simulated. Faults and events from a library of 44 mathematically defined types can be injected at run
 time by people and by AI agents, the clock runs from real time to tens of thousands of times faster, and any EnergyPlus
-model is converted automatically. Using the DOE reference large office, we verify the emulator against native
-EnergyPlus and demonstrate equipment-level fault impacts, labelled data generation for FDD, AI agents in the loop,
+model is converted automatically. Beyond the points of a typical BAS, the emulator exposes the complete indoor and
+outdoor environment---comfort indices, particles, VOC, light, sound, occupant counts and feedback, an extended weather
+station with forecasts, sub-meters and grid signals---with every point tagged as standard, advanced or
+next-generation instrumentation. Using the DOE reference large office, we verify the emulator against native
+EnergyPlus and demonstrate equipment-level fault impacts, labelled data generation for FDD, AI agents in the loop, indoor air quality under wildfire smoke,
 time-acceleration accuracy and generality across five reference buildings.
 
 We believe the work fits the scope of \emph{Energy and Buildings} on building energy systems, controls, automation and

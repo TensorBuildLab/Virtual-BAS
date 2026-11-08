@@ -1,0 +1,14 @@
+# Indoor environment under a wildfire-smoke episode (paper, experiment 6). Outdoor PM2.5 rises by 120 ug/m3 for 30 h;
+# the economizers bring the smoke in, MERV 8 filters remove only a quarter of it. A demand-response event and an
+# indoor cleaning event (TVOC) follow. Compare with environment: {filter_merv: 13}.
+name: wildfire_smoke
+start: 2023-07-10
+end: 2023-07-14
+seed: 11
+realism: 1.0
+occupancy: {stochastic: true}
+environment: {filter_merv: 8}
+injections:
+  - {type: wildfire_smoke, start: 2023-07-12T06:00:00, duration: 30h, params: {pm25_add: 120}}
+  - {type: indoor_pollutant_source, target: Core_mid, start: 2023-07-10T18:00:00, duration: 2h, params: {tvoc_mg_h: 400}, note: evening cleaning}
+  - {type: demand_response, start: 2023-07-13T14:00:00, duration: 3h, params: {shed_kw: 300}}

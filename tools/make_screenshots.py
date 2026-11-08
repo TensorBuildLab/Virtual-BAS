@@ -20,7 +20,8 @@ BROWSERS = [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
             r"C:\Program Files\Google\Chrome\Application\chrome.exe", "/usr/bin/google-chrome", "/usr/bin/chromium"]
 SHOTS = {"gui_overview": "#overview?truth=1", "gui_ahu": "#ahu/AHU-2?truth=1", "gui_vav": "#vav/VAV-Core_mid?truth=1",
          "gui_plant": "#plant?truth=1", "gui_faults": "#faults?type=sensor_drift&target=ZN-Core_mid/ZN-T&truth=1",
-         "gui_trends": "#trends?p=ZN-Core_mid/ZN-T,VAV-Core_mid/DA-F,VAV-Core_mid/DA-F-SP&w=3d&truth=1"}
+         "gui_trends": "#trends?p=ZN-Core_mid/ZN-T,VAV-Core_mid/DA-F,VAV-Core_mid/DA-F-SP&w=3d&truth=1",
+         "gui_zone": "#zone/ZN-Perimeter_mid_ZN_1?truth=1", "gui_weather": "#weather?truth=1"}
 
 
 def main():

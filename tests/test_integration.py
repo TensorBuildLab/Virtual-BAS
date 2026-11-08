@@ -86,3 +86,44 @@ def test_rest_api(building):
     assert "AHU-1/SA-T" in snap["points"] and "truth" in snap
     c.post("/api/control", json={"action": "stop"})
     v.engine.finished.wait(60)
+
+
+def test_extended_points_physics(building):
+    """Equipment-level, IEQ, weather and grid points are populated with physically consistent values."""
+    from virtualbas.core import VirtualBAS
+    sc = {"start": "2023-07-10", "end": "2023-07-11", "seed": 3,
+          "injections": [{"type": "wildfire_smoke", "start": "2023-07-11T06:00:00", "duration": "8h",
+                          "params": {"pm25_add": 150}},
+                         {"type": "demand_response", "start": "2023-07-11T13:00:00", "duration": "3h"}]}
+    v = VirtualBAS(building, scenario=sc)
+    seen = {}
+
+    def hook(b, t):
+        if t.hour == 11 and t.minute == 0:
+            seen[t.day] = dict(b.truth), dict(b.cmd)
+        if t.hour == 14 and t.minute == 0 and t.day == 11:
+            seen["dr"] = dict(b.truth)
+    v.step_hooks.append(hook)
+    r = v.run()
+    assert r["error"] is None
+    cat = v.cat
+    tiers = {p.tier for p in cat.points.values()}
+    assert {"standard", "advanced", "next_gen", "truth"} <= tiers
+    tr10, cmd10 = seen[10]
+    tr11, _ = seen[11]
+    for z in [e.id for e in cat.equipment_of_type("Zone")]:
+        assert tr10[f"{z}/ZN-PM10"] >= tr10[f"{z}/ZN-PM25"] >= 0
+        assert tr10[f"{z}/ZN-TVOC"] > 0
+        assert 20 < tr10[f"{z}/ZN-DBA"] < 80
+        assert tr11[f"{z}/ZN-PM25"] > 3 * tr10[f"{z}/ZN-PM25"]       # smoke enters the building
+    per = "ZN-Perimeter_mid_ZN_1"
+    assert tr10[f"{per}/DAYLIGHT-LUX"] > 50 and tr10[f"{per}/ZN-LUX"] > tr10[f"{per}/DAYLIGHT-LUX"]
+    assert 0 <= tr10["WX/SOLAR"] < 1200 and tr10["WX/OA-LUX"] > 1000
+    assert 200 < tr10["CH-1/EVAP-P"] < tr10["CH-1/COND-P"] < 1500
+    assert tr10["CH-1/EVAP-SAT-T"] < tr10["CH-1/CHW-LWT"] + 1e-6
+    assert seen["dr"]["GRID/DR-EVENT"] == 1.0 and tr10["GRID/DR-EVENT"] == 0.0
+    assert 0.05 < tr10["GRID/PRICE"] < 1.0
+    # BAS analytics from present values
+    assert 0.2 < cmd10["CH-1/KW-TON"] < 1.5
+    assert cmd10["AHU-1/SF-RUNHRS"] > 0 and cmd10["MTR/BLDG-DMD-15"] > 100
+    assert r["kpi"]["pm25_over_15_h"] > 0 and r["kpi"]["cost_usd"] > 0

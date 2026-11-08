@@ -131,6 +131,20 @@ Y.~Chen, G.~Lin, E.~Crowe, J.~Granderson, Development of a unified taxonomy for
 \newblock \href {https://doi.org/10.3390/en14175581}
   {\path{doi:10.3390/en14175581}}.
 
+\bibitem{fierro2019mortar}
+G.~Fierro, M.~Pritoni, M.~AbdelBaky, P.~Raftery, T.~Peffer, G.~Thomson, D.~E.
+  Culler, Mortar: An open testbed for portable building analytics, ACM
+  Transactions on Sensor Networks 16~(1) (2019).
+
+\bibitem{fisk2010co2}
+W.~J. Fisk, D.~P. Sullivan, D.~Faulkner, E.~Eliseeva, {CO$_2$} monitoring for
+  demand controlled ventilation in commercial buildings, Tech. Rep. LBNL-3279E,
+  Lawrence Berkeley National Laboratory (2010).
+
+\bibitem{wellv2}
+{International WELL Building Institute}, {WELL} building standard, version 2,
+  \url{https://v2.wellcertified.com} (2020).
+
 \bibitem{energyplusapi}
 {U.S. Department of Energy}, {EnergyPlus} {Python} {API} documentation (version
   23.2), \url{https://energyplus.readthedocs.io/en/latest/api.html}, accessed 8
@@ -172,6 +186,10 @@ M.~Deru, K.~Field, D.~Studer, K.~Benne, B.~Griffith, P.~Torcellini, B.~Liu,
 G.~Brockman, V.~Cheung, L.~Pettersson, J.~Schneider, J.~Schulman, J.~Tang,
   W.~Zaremba, {OpenAI Gym}, arXiv:1606.01540 (2016).
 
+\bibitem{ashrae2021g36}
+{ASHRAE}, {ASHRAE} {Guideline} 36-2021: High-Performance Sequences of Operation
+  for {HVAC} Systems, ASHRAE, Atlanta, GA, 2021.
+
 \bibitem{uhlenbeck1930brownian}
 G.~E. Uhlenbeck, L.~S. Ornstein, On the theory of the {Brownian} motion,
   Physical Review 36~(5) (1930) 823--841.
@@ -195,9 +213,16 @@ J.~Page, D.~Robinson, N.~Morel, J.-L. Scartezzini, A generalised stochastic
   model for the simulation of occupant presence, Energy and Buildings 40~(2)
   (2008) 83--98.
 
-\bibitem{ashrae2021g36}
-{ASHRAE}, {ASHRAE} {Guideline} 36-2021: High-Performance Sequences of Operation
-  for {HVAC} Systems, ASHRAE, Atlanta, GA, 2021.
+\bibitem{ashrae522}
+{ASHRAE}, {ANSI/ASHRAE} standard 52.2-2017: Method of testing general
+  ventilation air-cleaning devices for removal efficiency by particle size,
+  ASHRAE, Atlanta (2017).
+
+\bibitem{iso7730}
+{ISO}, {ISO} 7730:2005 ergonomics of the thermal environment -- analytical
+  determination and interpretation of thermal comfort using calculation of the
+  {PMV} and {PPD} indices and local thermal comfort criteria, International
+  Organization for Standardization, Geneva (2005).
 
 \bibitem{ashrae2014g14}
 {ASHRAE}, {ASHRAE} {Guideline} 14-2014: Measurement of Energy, Demand, and

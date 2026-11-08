@@ -2,8 +2,9 @@
  * Central plant page - condenser water loop with cooling tower, two
  * water-cooled chillers, chilled-water distribution and the hot-water plant.
  * ========================================================================== */
-import { S, $, pv, pmap, svgBox, val } from '../core.js';
+import { S, $, esc, pv, pmap, svgBox, val, has, equipOfType } from '../core.js';
 import { TrendChart, loadSeries } from '../chart.js';
+import { lamp, pbar, kvRows, scale } from '../widgets.js';
 
 let chart = null, timer = null;
 
@@ -97,6 +98,75 @@ function schematic() {
   </svg>`;
 }
 
+// ---------------------------------------------------------------- equipment detail panels
+const kv = (rows) => { const h = kvRows(rows); return h ? `<dl class="kvlist kv2">${h}</dl>` : ''; };
+/** Calculated difference / ratio shown in a detail panel, refreshed in update(). */
+const calc = (a, b, op = 'sub', unit = 'K', dec = 1) => (has(a) && has(b) ? `<span class="calc" data-a="${esc(a)}" data-b="${esc(b)}" data-op="${op}" data-u="${unit}" data-d="${dec}">---</span>` : null);
+const crow = (label, html) => (html ? [label, null, html] : [label, undefined]);
+function panel(e, head, body) {
+  return `<section class="card eqd"><div class="card-h"><b>${esc(e.id)}</b><small>${esc(e.description)}</small></div>${head ? `<div class="lamps">${head}</div>` : ''}${body}</section>`;
+}
+const big = (label, pid, max, cls = '') => (has(pid) ? `<div class="eqd-big"><span class="k">${label}</span>${pv(pid, { cls: 'pv-mid' })}${pbar(pid, max, cls)}</div>` : '');
+
+function chillerPanel(e) {
+  const m = pmap(e.id);
+  return panel(e, lamp(m.STS, 'Run', 'run') + lamp(m.ALM, 'Alarm', 'alarm'),
+    `<div class="eqd-bigs">${big('% RLA', m['PCT-RLA'], 100)}${big('Power', m.KW, (S.equipById[e.id]?.meta?.capacity_kw || 1000) / 5)}${has(m['KW-TON']) ? `<div class="eqd-big"><span class="k">Efficiency</span>${pv(m['KW-TON'], { cls: 'pv-mid' })}</div>` : ''}</div>`
+    + kv([['Load (tons)', m['LOAD-TONS']], ['Evaporator load', m.LOAD], ['Enable command', m['EN-CMD']], ['PLR (truth)', m.PLR], ['COP (truth)', m.COP],
+      ['Evap. entering', m['CHW-EWT']], ['Evap. leaving', m['CHW-LWT']], ['Evap. water flow', m['CHW-F']], ['Cond. water flow', m['CDW-F']],
+      ['Cond. entering', m['CDW-EWT']], ['Cond. leaving', m['CDW-LWT']], ['Evap. sat. temp', m['EVAP-SAT-T']], ['Cond. sat. temp', m['COND-SAT-T']],
+      ['Evap. pressure', m['EVAP-P']], ['Cond. pressure', m['COND-P']],
+      crow('Lift (sat.)', calc(m['COND-SAT-T'], m['EVAP-SAT-T'])), crow('Evap. approach', calc(m['CHW-LWT'], m['EVAP-SAT-T'])),
+      crow('Cond. approach', calc(m['COND-SAT-T'], m['CDW-LWT'])), crow('Evap. ΔT', calc(m['CHW-EWT'], m['CHW-LWT'])),
+      ['Run hours', m.RUNHRS], ['Starts', m.STARTS]]));
+}
+function boilerPanel(e) {
+  const m = pmap(e.id);
+  return panel(e, lamp(m.STS, 'Firing', 'run') + lamp(m.ALM, 'Alarm', 'alarm'),
+    `<div class="eqd-bigs">${big('Firing rate', m['FIRE-RATE'], 100, 'pb-hot')}${big('Flue gas', m['FLUE-T'], 250, 'pb-hot')}</div>`
+    + kv([['Heat output', m.LOAD], ['Gas input', m['GAS-KW']], crow('Efficiency (calc.)', calc(m.LOAD, m['GAS-KW'], 'div', '%', 0)), ['Efficiency (truth)', m.EFF],
+      ['HW leaving', m['HW-LWT']], ['HW entering', m['HW-EWT']], ['HW flow', m['HW-F']], ['Enable command', m['EN-CMD']], ['PLR (truth)', m.PLR],
+      ['Run hours', m.RUNHRS], ['Starts', m.STARTS]]));
+}
+function towerPanel(e) {
+  const m = pmap(e.id);
+  return panel(e, lamp(m['FAN-STS'], 'Fan', 'run') + lamp(m.ALM, 'Alarm', 'alarm'),
+    `<div class="eqd-bigs">${big('Fan speed', m['FAN-SPD'], 100)}${has(m.APPROACH) ? `<div class="eqd-big"><span class="k">Approach</span>${pv(m.APPROACH, { cls: 'pv-mid' })}</div>` : ''}${has(m.RANGE) ? `<div class="eqd-big"><span class="k">Range</span>${pv(m.RANGE, { cls: 'pv-mid' })}</div>` : ''}</div>`
+    + kv([['Fan power', m['FAN-KW']], ['Entering water', m.EWT], ['Leaving water', m.LWT], ['OA wet bulb', has('WX/OA-WB') ? 'WX/OA-WB' : undefined],
+      ['Make-up water', m['MAKEUP-F']], ['Evaporation (truth)', m['EVAP-F']], ['Heat rejected (truth)', m['Q-REJ']], ['Fan run hours', m['FAN-RUNHRS']], ['Fan starts', m['FAN-STARTS']]]));
+}
+function loopPanel(e) {
+  const m = pmap(e.id);
+  const st = Object.keys(m).find((n) => /-ST$/.test(n));
+  const pre = st ? st.slice(0, -3) : '';
+  const tons = m['CHW-TONS'], kwt = m['PLANT-KW-TON'];
+  return panel(e, '',
+    `<div class="eqd-bigs">${has(tons) ? `<div class="eqd-big"><span class="k">Plant load</span>${pv(tons, { cls: 'pv-mid' })}</div>` : ''}${has(kwt) ? `<div class="eqd-big"><span class="k">Plant efficiency</span>${pv(kwt, { cls: 'pv-mid' })}</div>` : ''}${has(m[pre + '-DT']) ? `<div class="eqd-big"><span class="k">Loop ΔT</span>${pv(m[pre + '-DT'], { cls: 'pv-mid' })}</div>` : ''}</div>`
+    + kv([['Supply temp', m[pre + '-ST']], ['Return temp', m[pre + '-RT']], ['Supply set point', m[pre + '-ST-SP']], ['Flow', m[pre + '-F']], ['Differential pressure', m[pre + '-DP']]]));
+}
+function dhwPanel(e) {
+  const m = pmap(e.id);
+  return panel(e, lamp(m.STS, 'Burner', 'run'), kv([['Tank temperature', m['TANK-T']], ['Gas input', m['GAS-KW']], ['Hot-water use', m['USE-F']]]));
+}
+function pumpTable(pumps) {
+  if (!pumps.length) return '';
+  const td = (pid) => `<td>${has(pid) ? pv(pid) : '<span class="muted">-</span>'}</td>`;
+  return `<section class="card eqd eqd-wide"><div class="card-h"><b>Pumps</b><small>${pumps.length} · VFD frequency, vibration (ISO 10816) and run statistics</small></div>
+    <table class="tbl"><thead><tr><th>Pump</th><th>Status</th><th>Speed</th><th>VFD Hz</th><th>Power</th><th>Vibration</th><th>Run hours</th><th>Starts</th></tr></thead>
+    <tbody>${pumps.map((e) => { const m = pmap(e.id); return `<tr><td><b>${esc(e.id)}</b><small class="sub">${esc(e.parent || '')}</small></td><td>${lamp(m.STS, '', 'run')}</td>${td(m.SPD)}${td(m.HZ)}${td(m.KW)}
+      <td class="vibcell">${has(m.VIB) ? `${pv(m.VIB)}${scale('vib', m.VIB)}` : '-'}</td>${td(m.RUNHRS)}${td(m.STARTS)}</tr>`; }).join('')}</tbody></table></section>`;
+}
+function details() {
+  const html = [
+    ...equipOfType('PlantLoop').map(loopPanel),
+    ...equipOfType('Chiller').map(chillerPanel),
+    ...equipOfType('CoolingTower').map(towerPanel),
+    ...equipOfType('Boiler').map(boilerPanel),
+    ...equipOfType('WaterHeater').map(dhwPanel),
+  ].join('');
+  return `<div class="plant-details">${html}${pumpTable(equipOfType('Pump'))}</div>`;
+}
+
 export function render(main) {
   const c1 = pmap('CH-1'), c2 = pmap('CH-2');
   main.innerHTML = `
@@ -111,6 +181,7 @@ export function render(main) {
         <dt>Heat rejection (meter)</dt><dd>${pv('MTR/HREJ-ELEC-KW')}</dd>
         <dt>Heating gas (meter)</dt><dd>${pv('MTR/HTG-GAS-KW')}</dd>
         <dt>Plant kW/ton (calc.)</dt><dd><span id="kwton">-</span></dd>
+        ${kvRows([['Plant kW/ton (BAS)', 'CHW-SYS/PLANT-KW-TON'], ['CHW plant load', 'CHW-SYS/CHW-TONS'], ['CHW loop ΔT', 'CHW-SYS/CHW-DT']])}
         <dt>CH-1 enable cmd</dt><dd>${pv(c1['EN-CMD'])}</dd>
         <dt>CH-2 enable cmd</dt><dd>${pv(c2['EN-CMD'])}</dd>
         <dt>Boiler enable cmd</dt><dd>${pv(pmap('BLR-1')['EN-CMD'])}</dd>
@@ -127,7 +198,9 @@ export function render(main) {
     </aside>
   </div>
   <section class="card chart-card"><div class="card-h"><b>Last 24 h</b><small>loop temperatures and chiller power</small></div>
-    <div id="plant-chart" class="chart-box" style="height:260px"></div></section>`;
+    <div id="plant-chart" class="chart-box" style="height:260px"></div></section>
+  <div class="page-sub"><h2>Equipment details</h2><span class="crumb">chiller panels, boiler, tower, loops, pumps${equipOfType('WaterHeater').length ? ', service hot water' : ''}</span></div>
+  ${details()}`;
   chart = new TrendChart($('#plant-chart', main));
   loadChart();
   timer = setInterval(loadChart, 30000);
@@ -156,6 +229,15 @@ export function update() {
   svg.querySelector('#loop-hw')?.classList.toggle('running', st['pmp-hw'] && (val('HW-SYS/HW-F') ?? 0) > 0.05);
   const kw = (val('CH-1/KW') ?? 0) + (val('CH-2/KW') ?? 0) + (val('CHWP-1/KW') ?? 0) + (val('CWP-1/KW') ?? 0) + (val('CT-1/FAN-KW') ?? 0);
   const q = (val('CH-1/LOAD') ?? 0) + (val('CH-2/LOAD') ?? 0);
+  for (const c of document.querySelectorAll('.calc[data-a]')) {
+    const a = val(c.dataset.a), b = val(c.dataset.b);
+    let t = '---';
+    if (a !== null && b !== null) {
+      if (c.dataset.op === 'div') t = b > 1 ? `${(100 * a / b).toFixed(+c.dataset.d)} ${c.dataset.u}` : 'n/a';
+      else t = `${(a - b).toFixed(+c.dataset.d)} ${c.dataset.u}`;
+    }
+    if (c.textContent !== t) c.textContent = t;
+  }
   const el = document.getElementById('kwton');
   if (el) el.textContent = q > 50 ? `${(kw / (q / 3.517)).toFixed(2)} kW/ton` : 'n/a (no load)';
 }

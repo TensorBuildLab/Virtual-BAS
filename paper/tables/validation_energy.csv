@@ -6,5 +6,5 @@ Fans:Electricity,178.01,178.43,0.24,0.24,5.82
 Pumps:Electricity,258.41,294.77,14.07,14.07,44.42
 HeatRejection:Electricity,139.1,135.91,-2.3,-2.3,20.73
 Heating:NaturalGas,1511.17,1594.06,5.48,5.48,15.68
-InteriorLights:Electricity,1565.65,1565.65,0.0,0.0,0.0
+InteriorLights:Electricity,1565.65,1565.65,-0.0,0.0,0.0
 InteriorEquipment:Electricity,2328.93,2328.93,0.0,0.0,0.0

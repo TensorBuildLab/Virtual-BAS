@@ -18,7 +18,7 @@ const p2 = (n) => String(n).padStart(2, '0');
 /** Fixed categorical order (validated dark-mode steps); colour follows the series, never its rank. */
 export const SERIES_COLORS = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#2fae2f', '#9085e9', '#e66767'];
 
-const UNIT_LABEL = { degC: '°C', 'm3/s': 'm³/s', 'W/m2': 'W/m²', '-': '' };
+const UNIT_LABEL = { degC: '°C', 'm3/s': 'm³/s', 'W/m2': 'W/m²', '-': '', 'ug/m3': 'µg/m³', 'kgCO2/kWh': 'kg CO₂/kWh', m3: 'm³', deg: '°' };
 
 /** "Nice" tick step for a numeric range. */
 function niceStep(range, target) {
@@ -50,6 +50,7 @@ export class TrendChart {
     this.times = [];
     this.series = [];
     this.hidden = new Set();
+    this.markers = [];       // [{t: epoch ms, label}] vertical reference lines (e.g. "now")
     this.hoverX = null;
     this.canvas.addEventListener('mousemove', (e) => {
       const r = this.canvas.getBoundingClientRect();
@@ -70,6 +71,9 @@ export class TrendChart {
     this.renderLegend();
     this.draw();
   }
+
+  /** Vertical reference lines, e.g. [{t: Date.now(), label: 'now'}]. */
+  setMarkers(markers) { this.markers = markers || []; this.draw(); }
 
   renderLegend() {
     if (!this.legendEl) return;
@@ -153,6 +157,17 @@ export class TrendChart {
       g.fillText(lbl, x, H - B + 6);
     }
     g.font = font;
+    // ---- reference markers (e.g. forecast issue time)
+    for (const mk of this.markers) {
+      if (mk.t < t0 || mk.t > t1) continue;
+      const x = Math.round(xOf(mk.t)) + 0.5;
+      g.save();
+      g.strokeStyle = CSSV('--warn', '#fab219'); g.setLineDash([4, 3]); g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(x, T); g.lineTo(x, H - B); g.stroke();
+      g.fillStyle = CSSV('--warn', '#fab219'); g.textAlign = 'left'; g.textBaseline = 'top'; g.font = 'bold ' + font;
+      g.fillText(mk.label || '', x + 4, T + 2);
+      g.restore();
+    }
 
     // ---- panes
     this.layout = [];
@@ -311,4 +326,36 @@ export async function loadSeries(pids, n, { truth = false, pointById = {}, color
     if (tr && tr[pid]) series.push({ id: pid + '#truth', label: `${label} (truth)`, color, unit: p?.unit ?? '', values: tr[pid], dashed: true });
   });
   return { times, series, raw: { obs: o, truth: tr } };
+}
+
+/**
+ * Draw a sparkline into an <svg viewBox="0 0 100 24"><path/></svg>.
+ * Null values break the line. Returns nothing; silently ignores empty data.
+ */
+export function sparkline(svg, values, { lo = null, hi = null } = {}) {
+  const path = svg?.querySelector('path');
+  if (!path) return;
+  const vs = (values || []).filter((v) => v !== null && v !== undefined);
+  if (vs.length < 2) { path.setAttribute('d', ''); return; }
+  let a = lo ?? Math.min(...vs), b = hi ?? Math.max(...vs);
+  if (b - a < 1e-9) { a -= 0.5; b += 0.5; }
+  const n = values.length;
+  let d = '', pen = false;
+  values.forEach((v, i) => {
+    if (v === null || v === undefined) { pen = false; return; }
+    const x = (100 * i) / (n - 1), y = 22 - (20 * (v - a)) / (b - a);
+    d += `${pen ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`;
+    pen = true;
+  });
+  path.setAttribute('d', d);
+}
+
+/** Fetch observed trends for many points in one request: {times, data: {pid: values}}. */
+export async function fetchTrend(pids, n, source = 'observed') {
+  if (!pids.length) return { times: [], data: {} };
+  const r = await fetch(`/api/trend?points=${encodeURIComponent(pids.join(','))}&n=${n}&source=${source}`).then((x) => x.json());
+  const times = (r.time || []).map((s) => new Date(String(s).replace(' ', 'T')).getTime());
+  const data = {};
+  for (const p of pids) if (r[p]) data[p] = r[p];
+  return { times, data };
 }

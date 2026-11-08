@@ -20,13 +20,23 @@ All abnormal or random conditions are *injections* of a registered type (see the
 * **actuator** - `vav_damper_stuck`, `reheat_valve_stuck_closed/open`, `oa_damper_stuck`,
   `cooling_coil_valve_stuck_closed`, `heating_coil_valve_stuck_closed`, `supply_fan_failure`
 * **equipment** (physics inside EnergyPlus) - `chiller_fouling`, `boiler_fouling`, `tower_fouling`,
-  `filter_fouling`, `fan_degradation`, `equipment_trip`
+  `filter_fouling`, `fan_degradation` (also raises fan vibration), `equipment_trip` (raises the equipment alarm),
+  `filter_bypass` (particle removal drops without a pressure-drop symptom)
 * **control** - `schedule_error_always_on/off`, `pid_mistuning`, `economizer_disabled/always_on`,
   `sat_reset_disabled`, `controller_frozen`, `setpoint_override`
 * **network** - `comm_loss` (controller off-line), `historian_outage`
 
 and **events** (non-fault randomness): `occupancy_surge`, `meeting`, `holiday`, `weather_change`, `window_open`,
-`plug_load_change`, `lighting_change`, `outdoor_co2_change`.
+`plug_load_change`, `lighting_change`, `outdoor_co2_change`, `wildfire_smoke` (outdoor PM2.5/PM10),
+`indoor_pollutant_source` (cleaning, painting, printing: TVOC and particles in a zone), `demand_response` (OpenADR-style
+shed request on `GRID/DR-EVENT`) and `price_spike` (tariff and carbon intensity).
+
+```yaml
+injections:
+  - {type: wildfire_smoke, start: 2023-07-12T06:00:00, duration: 30h, params: {pm25_add: 120}}
+  - {type: filter_bypass, target: AHU-2, params: {bypass: 0.6}}
+  - {type: demand_response, start: 2023-07-13T14:00:00, duration: 3h, params: {shed_kw: 300}}
+```
 
 ## Three ways to inject
 

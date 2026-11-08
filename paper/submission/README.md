@@ -10,4 +10,5 @@
 | `declaration_of_competing_interests.txt` | declaration of interests (also generate the official .docx with Elsevier's declaration tool) |
 
 All numbers in the manuscript are produced by `python paper/make_figures.py` from the outputs of `experiments/*.py`
-(`results_macros.tex`). Rebuild: `pdflatex manuscript && bibtex manuscript && pdflatex manuscript && pdflatex manuscript`.
+(`results_macros.tex`). Rebuild: `pdflatex manuscript && bibtex manuscript && pdflatex manuscript && pdflatex manuscript`; then
+`python tools/make_graphical_abstract.py` and `python tools/make_submission_zip.py`.

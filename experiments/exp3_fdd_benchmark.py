@@ -17,10 +17,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 AHUS = ["AHU-1", "AHU-2", "AHU-3", "AHU-4"]
+# AHU temperature sensors used by the AHU sequences and the FDD features
+AHU_T = "sensor:AHU:degC:SA-T|MA-T|RA-T|CC-LAT"
 AHU_MENU = {
-    "sensor_bias": {"targets": "sensor:AHU:degC", "params": {"bias": ("choice", [-2.5, -1.5, 1.5, 2.5])}, "hours": (24, 96)},
-    "sensor_drift": {"targets": "sensor:AHU:degC", "params": {"rate_per_day": ("choice", [-0.8, -0.5, 0.5, 0.8])}, "hours": (48, 120)},
-    "sensor_stuck": {"targets": "sensor:AHU:degC", "params": {}, "hours": (24, 72)},
+    "sensor_bias": {"targets": AHU_T, "params": {"bias": ("choice", [-2.5, -1.5, 1.5, 2.5])}, "hours": (24, 96)},
+    "sensor_drift": {"targets": AHU_T, "params": {"rate_per_day": ("choice", [-0.8, -0.5, 0.5, 0.8])}, "hours": (48, 120)},
+    "sensor_stuck": {"targets": AHU_T, "params": {}, "hours": (24, 72)},
     "oa_damper_stuck": {"targets": "equip:AHU", "params": {"position": ("choice", [0, 100])}, "hours": (24, 96)},
     "cooling_coil_valve_stuck_closed": {"targets": "equip:AHU", "params": {}, "hours": (12, 48)},
     "filter_fouling": {"targets": "equip:AHU", "params": {"dp_add": ("uniform", 150, 350)}, "hours": (48, 120)},

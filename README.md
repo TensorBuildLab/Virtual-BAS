@@ -18,12 +18,19 @@ Virtual BAS provides that environment:
   EnergyPlus Python API and suspended while the BAS computes.
 * **Outer space** - the real world on top: sensor models (bias, gain, drift, noise, lag, quantisation, spikes, stuck,
   bursty missing data), actuator models (stuck dampers/valves, failures), BAS controllers that only see *observed*
-  values, stochastic occupancy, weather and internal-gain events, and a library of 39 faults/events on five layers
+  values, stochastic occupancy, weather and internal-gain events, and a library of 44 faults/events on five layers
   (sensor, actuator, equipment, control, network). Every imperfection is defined by an equation and **labelled**.
-* **Equipment level** - VAV boxes, AHUs (economizer, coils, fan, filter, static pressure), chillers, boiler, cooling
-  tower and pumps are all exposed as BAS points (518 for the large office), with Haystack tags and Brick classes.
+* **Equipment level** - VAV boxes, AHUs (economizer, coils, fan, filter, static pressure, freeze-stat), chillers
+  (incl. refrigerant side), boiler, cooling tower, pumps and DHW are all exposed as BAS points, with Haystack tags and
+  Brick classes - 1,207 points for the large office.
+* **Full environment** - every zone reports temperature, humidity, CO2, PM2.5/PM10, TVOC, illuminance, sound, mean
+  radiant/operative temperature, PMV/PPD, people counts and occupant feedback; the weather station reports 20+ variables
+  plus forecasts; utility meters, sub-meters, tariffs, grid carbon intensity and demand-response signals are included.
+* **Today's BAS vs. next-generation BAS** - each point is tagged *standard* (typical BAS today), *advanced* or
+  *next_gen* (rarely installed but valuable for AI), so the value of extra sensors can be quantified
+  ([point taxonomy](docs/point_taxonomy.md)).
 * **Time control** - real time (1x), 2x, 10x, 60x, 360x, ... or as fast as possible (one simulated year of the large
-  office in ~3 minutes, up to 144,000x real time), changeable while running; pause and single-step.
+  office in ~5 minutes, about 90,000x real time), changeable while running; pause and single-step.
 * **Injection by humans and AI** - GUI, scenario files, REST API, Python client, MCP server (LLM agents), Gymnasium
   environment, and a random fault generator.
 * **Generic methodology** - any EnergyPlus model is converted automatically (`vbas prepare`): topology discovery,
@@ -66,6 +73,10 @@ injections:
 
 ![trends: observed vs. truth](paper/figures/gui_trends.png)
 
+| Zones & indoor environment | Weather, forecast, grid & energy |
+|---|---|
+| ![zone page](paper/figures/gui_zone.png) | ![weather page](paper/figures/gui_weather.png) |
+
 ## Architecture
 
 ```mermaid
@@ -102,6 +113,7 @@ flowchart LR
 
 * [Installation](docs/installation.md)
 * [Concepts: inner/outer space, local-loop emulation, BAS-ization, labels](docs/concepts.md)
+* [Point taxonomy: standard vs. advanced vs. next-generation BAS points, environment models, sensor accuracy](docs/point_taxonomy.md)
 * [Tutorial 1 - run your first virtual BAS](docs/tutorial_1_run_your_first_virtual_bas.md)
 * [Tutorial 2 - faults, events and scenarios](docs/tutorial_2_faults_events_scenarios.md)
 * [Tutorial 3 - AI agents (REST, MCP, Gymnasium)](docs/tutorial_3_ai_agents.md)

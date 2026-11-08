@@ -1,0 +1,9 @@
+# Emulate the instrumentation of a typical BAS of today: only standard-tier points are exposed and recorded as
+# observations (the full ground truth is still recorded). Run the same scenario without point_tiers to compare.
+name: standard_bas
+start: 2023-07-10
+end: 2023-07-16
+seed: 1
+realism: 1.0
+point_tiers: [standard]
+random_faults: {rate_per_week: 3}

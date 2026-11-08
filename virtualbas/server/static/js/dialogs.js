@@ -1,7 +1,7 @@
 /* =============================================================================
  * dialogs.js - point detail / priority-override dialog and session dialog.
  * ========================================================================== */
-import { S, $, esc, post, toast, evalPoint, fmtFull, unitLabel, devText, SOFT_KINDS, refreshBindings, pv } from './core.js';
+import { S, $, esc, post, toast, evalPoint, fmtFull, unitLabel, devText, SOFT_KINDS, refreshBindings, pv, tierBadge, TIERS, SOURCES } from './core.js';
 import { TrendChart, loadSeries } from './chart.js';
 
 let ptChart = null;
@@ -23,6 +23,8 @@ export function openPoint(pid) {
           <div class="pt-big">${pv(pid, { cls: 'pv-big' })}</div>
           <dl class="kvlist">
             <dt>Kind</dt><dd><span class="kind kind-${esc(p.kind)}">${esc(p.kind)}</span>${p.kind === 'truth' ? ' <small class="truth-ink">ground truth only, not visible to the BAS</small>' : ''}</dd>
+            <dt>Tier</dt><dd>${tierBadge(p, true)} <small>${esc(TIERS[p.tier]?.[2] || '')}</small></dd>
+            <dt>Source</dt><dd>${esc(SOURCES[p.source] || p.source || '-')}</dd>
             <dt>Unit</dt><dd>${esc(unitLabel(p.unit) || '-')}</dd>
             <dt>Equipment</dt><dd>${esc(p.equip)} <small>(${esc(p.equip_type)})</small></dd>
             <dt>Brick class</dt><dd>${p.brick ? `<code>brick:${esc(p.brick)}</code>` : '-'}</dd>

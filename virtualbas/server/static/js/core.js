@@ -61,14 +61,33 @@ export function toast(msg, kind = 'info') {
 }
 
 // --------------------------------------------------------------------- units & formatting
-const UNIT_LABEL = { degC: '°C', 'm3/s': 'm³/s', 'W/m2': 'W/m²', '-': '', people: 'people' };
+const UNIT_LABEL = {
+  degC: '°C', 'm3/s': 'm³/s', 'W/m2': 'W/m²', '-': '', people: 'people', 'ug/m3': 'µg/m³', m3: 'm³', deg: '°',
+  tenths: '/10', 'K.d': 'K·d', kgCO2: 'kg CO₂', 'kgCO2/kWh': 'kg CO₂/kWh', 'W/(m3/s)': 'W/(m³/s)', '1/h': 'ACH', count: '',
+};
 export const unitLabel = (u) => (u in UNIT_LABEL ? UNIT_LABEL[u] : (u || ''));
 
-const DECIMALS = { degC: 1, '%RH': 0, '%': 0, ppm: 0, 'm3/s': 2, 'L/s': 1, kW: 1, Pa: 0, kPa: 1, 'W/m2': 0, 'm/s': 1, people: 0, '-': 2 };
+const DECIMALS = {
+  degC: 1, '%RH': 0, '%': 0, ppm: 0, 'm3/s': 2, 'L/s': 1, kW: 1, Pa: 0, kPa: 1, 'W/m2': 0, 'm/s': 1, people: 0, '-': 2,
+  'ug/m3': 0, lux: 0, dBA: 0, count: 0, Hz: 1, 'mm/s': 1, A: 1, h: 0, ton: 0, 'kW/ton': 2, '$/kWh': 3, 'kgCO2/kWh': 3,
+  $: 2, kgCO2: 0, K: 1, 'K.d': 1, deg: 0, tenths: 1, 'mm/h': 1, m3: 1, kWh: 0, 'kJ/kg': 1, 'g/kg': 1, '1/h': 2, 'W/(m3/s)': 0,
+};
 
 /** Enumerated / binary points get text states, as in a commercial BAS. */
 function enumText(p, v) {
   const n = p.name;
+  const on = v >= 0.5;
+  switch (n) {
+    case 'FRZ-STAT': return on ? 'TRIP' : 'NORMAL';
+    case 'SMK-DET': return on ? 'SMOKE' : 'NORMAL';
+    case 'ALM': case 'LOW-FLOW-ALM': return on ? 'ALARM' : 'NORMAL';
+    case 'WIN-STS': return on ? 'OPEN' : 'CLOSED';
+    case 'RAIN': return on ? 'RAIN' : 'DRY';
+    case 'DR-EVENT': return on ? 'ACTIVE' : 'NONE';
+    case 'TOU-PERIOD': return ({ 0: 'OFF-PEAK', 1: 'MID-PEAK', 2: 'ON-PEAK' })[Math.round(v)] ?? String(v);
+    case 'ZN-MODE': if (p.equip_type === 'VAV') return ({ 0: 'DEADBAND', 1: 'COOLING', 2: 'HEATING' })[Math.round(v)] ?? String(v); break;
+    default: break;
+  }
   if (n === 'OCC-MODE') {
     if (p.equip_type === 'AHU') return ({ 0: 'OFF', 1: 'NIGHT CYCLE', 2: 'OCCUPIED' })[Math.round(v)] ?? String(v);
     return v >= 0.5 ? 'OCC' : 'UNOCC';
@@ -114,7 +133,11 @@ export function fmtFull(pid, v) {
 const TOL = {
   degC: [1.0, 0], '%RH': [6, 0], ppm: [100, 0], '%': [5, 0], 'm3/s': [0.05, 0.08], 'L/s': [0.5, 0.08],
   kW: [1, 0.08], Pa: [20, 0.15], kPa: [6, 0.12], 'W/m2': [40, 0.12], 'm/s': [1.0, 0], '-': [0.5, 0],
+  'ug/m3': [5, 0.2], lux: [50, 0.2], dBA: [3, 0], count: [0.5, 0], people: [1.5, 0.15], Hz: [2, 0.05], 'mm/s': [0.6, 0.2],
+  A: [2, 0.08], deg: [35, 0], tenths: [1, 0], 'kJ/kg': [3, 0], 'g/kg': [1, 0], 'mm/h': [0.5, 0.2], kWh: [2, 0.03], m3: [0.2, 0.05],
 };
+/** Points that are legitimately empty most of the time (event-driven) - no MISSING badge. */
+const SPARSE = new Set(['TS-VOTE']);
 export function tolerance(p, truth) {
   const [a, r] = TOL[p.unit] ?? [0, 0.1];
   return Math.max(a, r * Math.abs(truth ?? 0));
@@ -149,9 +172,11 @@ export function evalPoint(pid) {
   if (o) { res.v = o[0]; res.stale = !!o[1]; }
   res.ovr = !!(S.snap?.overrides?.[pid] && Object.keys(S.snap.overrides[pid]).length);
   const measured = p.kind === 'sensor' || p.kind === 'meter';
-  if (measured && (res.v === null || res.stale)) res.level = 'missing';
+  if (measured && SPARSE.has(p.name) && (res.v === null || res.stale)) { res.v = null; res.stale = false; res.level = 'none'; }
+  else if (measured && (res.v === null || res.stale)) res.level = 'missing';
   else if (measured && res.hasTruth && t !== null && res.v !== null) {
     res.dev = res.v - t;
+    if (p.unit === 'deg') res.dev = ((res.dev + 540) % 360) - 180;   // wind direction wraps around
     const tol = tolerance(p, t);
     const ad = Math.abs(res.dev);
     res.level = ad > 2.5 * tol ? 'alarm' : ad > tol ? 'warn' : 'ok';
@@ -226,7 +251,7 @@ export function refreshBindings(root = document) {
 
     // truth text; binary/enum truth is only worth showing when it disagrees
     let tt = '';
-    if (truthOn && r.hasTruth && !r.truthOnly && !(isEnum(p) && r.level === 'ok' && el.tagName !== 'TR')) {
+    if (truthOn && r.hasTruth && r.truth !== null && !r.truthOnly && !(isEnum(p) && r.level === 'ok' && el.tagName !== 'TR')) {
       tt = (isSvg ? 'E+ ' : '') + fmtVal(p, r.truth);
       if (isSvg && r.dev !== null) tt += '  ' + devText(r);
     }
@@ -288,6 +313,24 @@ export function zoneLabel(zone) {
   if (zone.startsWith('Core')) return 'Core';
   return zone;
 }
+/** True if the point exists in this building's catalog. */
+export const has = (pid) => !!(pid && S.pointById[pid]);
+
+// --------------------------------------------------------------------- availability tiers
+export const TIERS = {
+  standard: ['STD', 'Standard', 'found in a typical commercial BAS today'],
+  advanced: ['ADV', 'Advanced', 'found in a well-instrumented BAS'],
+  next_gen: ['NEXT', 'Next-gen', 'rarely installed today, valuable for AI / IEQ'],
+  truth: ['TRUTH', 'Truth', 'EnergyPlus ground truth only - not a BAS point'],
+};
+export const SOURCES = { energyplus: 'EnergyPlus', model: 'outer-space model', surrogate: 'surrogate', bas: 'BAS calculated' };
+/** Small tier badge for a point object. */
+export function tierBadge(p, long = false) {
+  if (!p || !p.tier) return '';
+  const t = TIERS[p.tier] || [p.tier, p.tier, ''];
+  return `<span class="tier tier-${esc(p.tier)}" title="${esc(t[1])}: ${esc(t[2])}">${esc(long ? t[1] : t[0])}</span>`;
+}
+
 /** Points of an equipment as {NAME: pid}. */
 export function pmap(eid) {
   const out = {};

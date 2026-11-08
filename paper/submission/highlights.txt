@@ -1,5 +1,5 @@
 Open-source BAS emulator couples step-wise EnergyPlus with a labelled real world
-Sensor drift, noise, data loss and 39 fault/event types defined by equations
-Set-point translation propagates sensor faults through internal control loops
+Labelled sensor errors and 44 fault types propagate physically through control loops
+1,207 points cover equipment, indoor environment, weather and grid, tiered by rarity
 Humans and AI agents inject faults at run time via GUI, REST, MCP and Gymnasium
 Matches native EnergyPlus annual electricity within 0.5% with ideal sensors

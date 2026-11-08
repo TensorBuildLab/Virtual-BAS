@@ -71,6 +71,13 @@ class Overlays:
     weather_mult: dict[str, float] = field(default_factory=dict)        # solar
     outdoor_co2: float | None = None
     holiday: bool = False
+    # extended environment (realworld/environment.py)
+    outdoor_pm_add: float = 0.0                                         # ug/m3 (smoke)
+    indoor_src: dict[str, dict[str, float]] = field(default_factory=dict)  # zone -> {pm25, pm10, tvoc} mg/h
+    filter_bypass: dict[str, float] = field(default_factory=dict)       # AHU -> bypass fraction
+    price_mult: float = 1.0
+    grid_ci_add: float = 0.0
+    dr_shed_kw: float | None = None
 
     def sensor_overlay(self, pid: str) -> FaultOverlay:
         if pid not in self.sensor:
@@ -483,6 +490,51 @@ def _holiday(inj, s, ov, ctx):
     if s > 0:
         ov.holiday = True
         ov.occ_mult["*"] = 0.0
+
+
+@register("wildfire_smoke", "event", "weather", "building",
+          "Wildfire smoke episode: outdoor fine particles rise and enter through outdoor air and infiltration.",
+          r"C^{PM2.5}_{o}{}' = C^{PM2.5}_o + s(t)\,\Delta C,\ C^{PM10}_o{}' = C^{PM10}_o + 1.1\,s(t)\,\Delta C",
+          {"pm25_add": Param(120.0, "ug/m3", "additional outdoor PM2.5")})
+def _smoke(inj, s, ov, ctx):
+    ov.outdoor_pm_add += s * float(inj.p("pm25_add"))
+
+
+@register("indoor_pollutant_source", "event", "iaq", "zone",
+          "Indoor emission event (cleaning products, painting, printing, cooking).",
+          r"S_z' = S_z + s(t)\,E", {"tvoc_mg_h": Param(200.0, "mg/h", "TVOC emission E"),
+                                    "pm25_mg_h": Param(2.0, "mg/h", "PM2.5 emission"),
+                                    "pm10_mg_h": Param(3.0, "mg/h", "PM10 emission")})
+def _src(inj, s, ov, ctx):
+    d = ov.indoor_src.setdefault(inj.target, {"pm25": 0.0, "pm10": 0.0, "tvoc": 0.0})
+    d["tvoc"] += s * float(inj.p("tvoc_mg_h"))
+    d["pm25"] += s * float(inj.p("pm25_mg_h"))
+    d["pm10"] += s * float(inj.p("pm10_mg_h"))
+
+
+@register("filter_bypass", "fault", "equipment", "equip:AHU",
+          "Filter rack gaps / missing filter: air bypasses the media, particle removal drops (no pressure-drop symptom).",
+          r"\eta' = (1 - s(t)\,\beta)\,\eta", {"bypass": Param(0.6, "-", "bypass fraction beta", 0.0, 1.0)})
+def _fbyp(inj, s, ov, ctx):
+    ov.filter_bypass[inj.target] = max(ov.filter_bypass.get(inj.target, 0.0), s * float(inj.p("bypass")))
+
+
+@register("demand_response", "event", "grid", "building",
+          "Utility demand-response event (OpenADR signal): the BAS receives a load-shed request; the response is left "
+          "to the control program / AI agent.", r"\text{DR}=1,\ P_{shed}=s(t)\,P",
+          {"shed_kw": Param(300.0, "kW", "requested shed P")})
+def _dr(inj, s, ov, ctx):
+    if s > 0:
+        ov.dr_shed_kw = (ov.dr_shed_kw or 0.0) + s * float(inj.p("shed_kw"))
+
+
+@register("price_spike", "event", "grid", "building",
+          "Real-time price / carbon spike (grid emergency, scarcity pricing).",
+          r"\pi' = (1 + s(m-1))\,\pi,\ CI' = CI + s\,\Delta CI",
+          {"multiplier": Param(5.0, "-", "price multiplier m"), "carbon_add": Param(0.2, "kgCO2/kWh", "carbon offset")})
+def _price(inj, s, ov, ctx):
+    ov.price_mult *= 1 + s * (float(inj.p("multiplier")) - 1)
+    ov.grid_ci_add += s * float(inj.p("carbon_add"))
 
 
 # ----------------------------------------------------------------------------- manager

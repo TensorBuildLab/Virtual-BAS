@@ -71,6 +71,20 @@ def default_rules(catalog) -> AlarmEngine:
             if f"{z}/ZN-CO2" in catalog.points:
                 eng.rules.append(AlarmRule(f"{z}:HIGH-CO2", z, "Zone CO2 above 1100 ppm", "low",
                                            lambda pv, c, z=z: _g(pv, f"{z}/ZN-CO2") > 1100, 900))
+            if f"{z}/ZN-PM25" in catalog.points:
+                eng.rules.append(AlarmRule(f"{z}:HIGH-PM25", z, "Zone PM2.5 above 35 ug/m3 (24-h NAAQS level)", "medium",
+                                           lambda pv, c, z=z: _g(pv, f"{z}/ZN-PM25") > 35, 1800))
+            if f"{z}/ZN-TVOC" in catalog.points:
+                eng.rules.append(AlarmRule(f"{z}:HIGH-TVOC", z, "Zone TVOC above 1000 ug/m3", "low",
+                                           lambda pv, c, z=z: _g(pv, f"{z}/ZN-TVOC") > 1000, 1800))
+        elif e.type == "VAV" and f"{e.id}/LOW-FLOW-ALM" in catalog.points:
+            v = e.id
+            eng.rules.append(AlarmRule(f"{v}:LOW-FLOW", v, "Airflow below 70 % of set point (G36)", "medium",
+                                       lambda pv, c, v=v: c.get(f"{v}/LOW-FLOW-ALM", 0) > 0.5, 0))
+        elif e.type in ("Chiller", "Boiler", "CoolingTower") and f"{e.id}/ALM" in catalog.points:
+            q = e.id
+            eng.rules.append(AlarmRule(f"{q}:ALARM", q, f"{e.type} common alarm / lock-out", "critical",
+                                       lambda pv, c, q=q: _g(pv, f"{q}/ALM") > 0.5, 0))
         elif e.type == "AHU":
             a = e.id
             eng.rules.append(AlarmRule(f"{a}:SAT-DEV", a, "Supply air temperature deviates > 2 K from set point", "high",
@@ -80,6 +94,12 @@ def default_rules(catalog) -> AlarmEngine:
                                        lambda pv, c, a=a: c.get(f"{a}/SF-CMD", 0) > 0.5 and _g(pv, f"{a}/SF-STS") < 0.5, 600))
             eng.rules.append(AlarmRule(f"{a}:FILTER", a, "Filter differential pressure high", "low",
                                        lambda pv, c, a=a: _g(pv, f"{a}/FLT-DP") > 250, 3600))
+            if f"{a}/FRZ-STAT" in catalog.points:
+                eng.rules.append(AlarmRule(f"{a}:FREEZE", a, "Freeze-stat tripped (coil leaving air < 3.3 C)", "critical",
+                                           lambda pv, c, a=a: _g(pv, f"{a}/FRZ-STAT") > 0.5, 0))
+            if f"{a}/SF-VIB" in catalog.points:
+                eng.rules.append(AlarmRule(f"{a}:VIBRATION", a, "Supply fan vibration above 4.5 mm/s (ISO 10816 zone C)",
+                                           "medium", lambda pv, c, a=a: _g(pv, f"{a}/SF-VIB") > 4.5, 1800))
         elif e.type == "PlantLoop" and e.id == "CHW-SYS":
             eng.rules.append(AlarmRule("CHW-SYS:ST-DEV", e.id, "Chilled water supply temperature > SP + 1.5 K", "high",
                                        lambda pv, c: _g(pv, "CHW-SYS/CHW-ST") > _g(c, "CHW-SYS/CHW-ST-SP") + 1.5
@@ -88,4 +108,10 @@ def default_rules(catalog) -> AlarmEngine:
             eng.rules.append(AlarmRule("HW-SYS:ST-DEV", e.id, "Hot water supply temperature < SP - 5 K", "high",
                                        lambda pv, c: _g(pv, "HW-SYS/HW-ST") < _g(c, "HW-SYS/HW-ST-SP") - 5.0
                                        and _g(pv, "HW-SYS/HW-F") > 0.5, 1800))
+    if "WX/OA-PM25" in catalog.points:
+        eng.rules.append(AlarmRule("WX:OA-PM25", "WX", "Outdoor PM2.5 above 35 ug/m3 (smoke / poor air quality)", "medium",
+                                   lambda pv, c: _g(pv, "WX/OA-PM25") > 35, 900))
+    if "GRID/DR-EVENT" in catalog.points:
+        eng.rules.append(AlarmRule("GRID:DR", "GRID", "Demand-response event active (utility load-shed request)", "low",
+                                   lambda pv, c: _g(pv, "GRID/DR-EVENT") > 0.5, 0))
     return eng

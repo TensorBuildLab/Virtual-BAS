@@ -28,6 +28,7 @@ from typing import Any, Callable
 import numpy as np
 
 from .bas.alarms import default_rules
+from .bas.analytics import Analytics
 from .bas.catalog import RHO_AIR, RHO_WATER, Catalog, build_catalog
 from .bas.historian import LABEL_BITS, Historian
 from .control.sequences import AHUController, ControlConfig, PlantController, VAVController, occupied
@@ -36,11 +37,13 @@ from .model.epjson import load_model, save_model
 from .model.prepare import Manifest
 from .realworld.faults import REGISTRY, Injection, InjectionContext, InjectionManager, Overlays, catalog as fault_catalog
 from .realworld.occupancy import ZoneOccupancy
+from .realworld.environment import OuterEnvironment
 from .realworld.random_faults import RandomInjector
 from .realworld.sensors import SENSOR_CLASSES, FaultOverlay, Sensor, SensorSpec
 
 SPEEDS = {"realtime": 1.0, "1x": 1.0, "2x": 2.0, "10x": 10.0, "60x": 60.0, "360x": 360.0, "max": math.inf}
 SOFT_KINDS = ("setpoint", "command", "virtual", "status")
+ALL_TIERS = ("standard", "advanced", "next_gen")
 
 
 def parse_speed(s: Any) -> float:
@@ -151,8 +154,19 @@ class VirtualBAS:
             self.random = RandomInjector(rate_per_week=float(rf.get("rate_per_week", 2.0)), seed=int(rf.get("seed", self.seed + 7)))
             if rf.get("types"):
                 self.random.menu = {k: v for k, v in self.random.menu.items() if k in rf["types"]}
+        # exposed / recorded point tiers (standard = typical BAS today, advanced, next_gen); truth is always kept
+        self.tiers = tuple(sc.get("point_tiers") or self.b.config.get("point_tiers") or ALL_TIERS)
         self._build_sensors(sc.get("sensors", {}))
+        self._sensor_list = []
+        for pid, sensor in self.sensors.items():
+            eq = self.cat.points[pid].equip
+            e = self.cat.equipment[eq]
+            self._sensor_list.append((pid, sensor, eq, e.parent if e.type == "Zone" else None))
         self._build_controllers()
+        env_cfg = dict(self.b.config.get("environment", {}) or {})
+        env_cfg.update(sc.get("environment", {}) or {})
+        self.env = OuterEnvironment(self, env_cfg)
+        self.analytics = Analytics(self.cat)
         occ = sc.get("occupancy", {"stochastic": True})
         self.occ_stochastic = bool(occ.get("stochastic", True))
         self.occ_models: dict[str, ZoneOccupancy] = {}
@@ -182,7 +196,8 @@ class VirtualBAS:
         self.finished = False
         self.warmup = True
         self.kpi = {"elec_kwh": 0.0, "gas_kwh": 0.0, "hvac_elec_kwh": 0.0, "unmet_occ_hours": 0.0,
-                    "comfort_kh": 0.0, "co2_over_1000_h": 0.0, "steps": 0}
+                    "comfort_kh": 0.0, "co2_over_1000_h": 0.0, "steps": 0,
+                    "cost_usd": 0.0, "co2_kg": 0.0, "pm25_over_15_h": 0.0, "tvoc_over_500_h": 0.0}
         self._infil_base: dict[str, float] = {}
         self._last_frac: dict[str, float] = {}
         self._last_eplus_htg: dict[str, float] = {}
@@ -191,9 +206,10 @@ class VirtualBAS:
         self.wall_start = None
 
         # ---------- historian
-        sensor_ids = [p.id for p in self.cat.points.values() if p.kind in ("sensor", "meter")]
+        exposed = [p for p in self.cat.points.values() if p.tier in self.tiers or p.kind == "truth"]
+        sensor_ids = [p.id for p in exposed if p.kind in ("sensor", "meter")]
         truth_ids = [p.id for p in self.cat.points.values() if p.kind in ("sensor", "meter", "truth")]
-        soft_ids = [p.id for p in self.cat.points.values() if p.kind in SOFT_KINDS]
+        soft_ids = [p.id for p in exposed if p.kind in SOFT_KINDS]
         self.sensor_ids, self.truth_ids, self.soft_ids = sensor_ids, truth_ids, soft_ids
         self.hist = Historian(self.out_dir if self.record else None, sensor_ids, truth_ids, soft_ids)
 
@@ -223,6 +239,7 @@ class VirtualBAS:
             self.sensors[p.id] = Sensor(p.id, spec, srng, self.realism)
 
     def _build_controllers(self) -> None:
+        self._ahu_points = {e.id: self.cat.points_of(e.id) for e in self.cat.equipment_of_type("AHU")}
         self.vav: dict[str, VAVController] = {}
         self.ahu: dict[str, AHUController] = {}
         for e in self.cat.equipment.values():
@@ -258,6 +275,7 @@ class VirtualBAS:
                     spec.variables[f"SCHED|{sched}".upper()] = ("Schedule Value", sched)
         for z in self.b.manifest.topo.zones.values():
             spec.internal[f"ZVOL|{z.name}".upper()] = ("Zone Air Volume", z.name)
+            spec.internal[f"ZAREA|{z.name}".upper()] = ("Zone Floor Area", z.name)
             if z.infiltration:
                 spec.variables[f"INFIL|{z.name}".upper()] = ("Zone Infiltration Current Density Volume Flow Rate", z.name)
         for a in self.cat.equipment_of_type("AHU"):
@@ -495,48 +513,56 @@ class VirtualBAS:
             except Exception:  # noqa: BLE001
                 truth[pid] = math.nan
         self._surrogate_truth(truth, ov)
+        self.env.step(t, dts, raw, truth, ov, warm, s.day_of_week)
 
         # ---------------- 2. sensors -> observations -> present values
         obs, labels = {}, {}
         lost_equips = ov.comm_loss
-        for pid, sensor in self.sensors.items():
+        LB = LABEL_BITS
+        b_missing, b_stuck, b_spike, b_ovr, b_fb, b_fault, b_comm = (LB["missing"], LB["stuck"], LB["spike"], LB["override"],
+                                                                    LB["false_binary"], LB["fault"], LB["comm_loss"])
+        ideal = warm or self.realism <= 0
+        osens = ov.sensor
+        pv, pv_time, isfin = self.pv, self.pv_time, math.isfinite
+        for pid, sensor, eq, zparent in self._sensor_list:
             x = truth.get(pid, math.nan)
-            if warm or self.realism <= 0 and pid not in ov.sensor:
-                y, lab = x, {}
+            o = osens.get(pid)
+            if ideal and (warm or o is None):
+                y, lab = x, None
             else:
-                y, lab = sensor.measure(x, dts, ov.sensor.get(pid))
+                y, lab = sensor.measure(x, dts, o)
             bits = 0
-            if lab.get("missing"):
-                bits |= LABEL_BITS["missing"]
-            if lab.get("stuck"):
-                bits |= LABEL_BITS["stuck"]
-            if lab.get("spike"):
-                bits |= LABEL_BITS["spike"]
-            if lab.get("override"):
-                bits |= LABEL_BITS["override"]
-            if lab.get("false_on") or lab.get("false_off"):
-                bits |= LABEL_BITS["false_binary"]
-            if pid in ov.sensor:
-                o = ov.sensor[pid]
-                if o.bias or o.gain or o.noise_std or o.p_gb or o.spike_prob:
-                    bits |= LABEL_BITS["fault"]
-            eq = self.cat.points[pid].equip
-            if eq in lost_equips or self.cat.equipment[eq].parent in lost_equips and self.cat.equipment[eq].type == "Zone":
+            if lab:
+                if lab.get("missing"):
+                    bits |= b_missing
+                if lab.get("stuck"):
+                    bits |= b_stuck
+                if lab.get("spike"):
+                    bits |= b_spike
+                if lab.get("override"):
+                    bits |= b_ovr
+                if lab.get("false_on") or lab.get("false_off"):
+                    bits |= b_fb
+            if o is not None and (o.bias or o.gain or o.noise_std or o.p_gb or o.spike_prob):
+                bits |= b_fault
+            if lost_equips and (eq in lost_equips or (zparent is not None and zparent in lost_equips)):
                 y = math.nan
-                bits |= LABEL_BITS["comm_loss"]
+                bits |= b_comm
             obs[pid] = y
             labels[pid] = bits
-            if _ok(y):
-                self.pv[pid] = y
-                self.pv_time[pid] = t
-            elif pid not in self.pv:
-                self.pv[pid] = x if _ok(x) else math.nan
+            if y == y and isfin(y):
+                pv[pid] = y
+                pv_time[pid] = t
+            elif pid not in pv:
+                pv[pid] = x if (x == x and isfin(x)) else math.nan
 
         # ---------------- 3. controllers (observed values only)
         cmd = self._control(t, s.day_of_week, dts, ov, raw)
         for hook in list(self.step_hooks):
             hook(self, t)
         cmd = self._apply_overrides(cmd, t)
+        if not warm:
+            self.analytics.step(t, dts, self.pv, cmd)
 
         # ---------------- 4. actuation (local loops, actuator faults, physics faults, occupancy)
         eplus = self._actuate(t, dts, raw, truth, cmd, ov, warm)
@@ -569,6 +595,40 @@ class VirtualBAS:
                 dsp = dsp_sp / frac ** 2
             truth[f"{a.id}/DSP"] = dsp
             truth[f"{a.id}/FLT-DP"] = (100.0 + ov.filter_dp_add.get(a.id, 0.0)) * frac ** 2
+            # fan vibration: imbalance grows with speed^2, bearing wear (efficiency loss) adds a broadband term
+            if f"{a.id}/SF-VIB" in self.cat.points:
+                wear = 1.0 - ov.fan_eff_mult.get(a.id, 1.0)
+                truth[f"{a.id}/SF-VIB"] = (0.8 + 1.5 * min(1.2, frac) ** 2 + 12.0 * wear) if frac >= 0.02 else 0.05
+        for p in self.cat.equipment_of_type("Pump"):
+            if f"{p.id}/VIB" in self.cat.points:
+                spd = truth.get(f"{p.id}/SPD", 0.0)
+                spd = spd / 100.0 if _ok(spd) else 0.0
+                truth[f"{p.id}/VIB"] = 0.6 + 1.2 * spd ** 2 if spd > 0.01 else 0.05
+        for e in self.cat.equipment.values():
+            if e.type in ("Chiller", "Boiler", "CoolingTower") and f"{e.id}/ALM" in self.cat.points:
+                truth[f"{e.id}/ALM"] = 1.0 if e.id in ov.trips else 0.0
+            if e.type == "Chiller" and f"{e.id}/EVAP-SAT-T" in self.cat.points:
+                r = ov.fouling.get(e.id, 1.0)
+                plr = truth.get(f"{e.id}/PLR", 0.0)
+                plr = plr if _ok(plr) else 0.0
+                lwt, cdl = truth.get(f"{e.id}/CHW-LWT", 7.0), truth.get(f"{e.id}/CDW-LWT", 30.0)
+                if plr > 0.01 and _ok(lwt) and _ok(cdl):
+                    te = lwt - (0.5 + 1.5 * plr) * (1.0 + 2.0 * (1.0 - r))
+                    tc = cdl + (0.5 + 2.0 * plr) * (1.0 + 3.0 * (1.0 - r))
+                else:
+                    te = lwt if _ok(lwt) else 15.0
+                    tc = cdl if _ok(cdl) else 20.0
+                truth[f"{e.id}/EVAP-SAT-T"], truth[f"{e.id}/COND-SAT-T"] = te, tc
+                truth[f"{e.id}/EVAP-P"] = math.exp(15.422 - 2661.0 / (te + 273.15))
+                truth[f"{e.id}/COND-P"] = math.exp(15.422 - 2661.0 / (tc + 273.15))
+            if e.type == "Boiler" and f"{e.id}/FLUE-T" in self.cat.points:
+                r = ov.fouling.get(e.id, 1.0)
+                plr = truth.get(f"{e.id}/FIRE-RATE", 0.0)
+                plr = plr / 100.0 if _ok(plr) else 0.0
+                lwt = truth.get(f"{e.id}/HW-LWT", 60.0)
+                lwt = lwt if _ok(lwt) else 60.0
+                truth[f"{e.id}/FLUE-T"] = (lwt + (20.0 + 60.0 * plr) * (1.0 + 1.5 * (1.0 / max(r, 0.05) - 1.0))
+                                           if plr > 0.01 else 0.5 * (lwt + 25.0))
         for e in self.cat.equipment_of_type("PlantLoop"):
             pre = e.id.split("-")[0]
             f = truth.get(f"{e.id}/{pre}-F", 0.0)
@@ -610,7 +670,9 @@ class VirtualBAS:
             aid = self.cat.equipment[zid].meta.get("ahu")
             occ = ahu_occ.get(aid, occupied(cfg, t, dow, holiday))
             h_occ, c_occ = self.zone_sp[zid]
-            off = ov.setpoint_offset.get(zid, 0.0)
+            adj = max(-3.0, min(3.0, self._override_value(f"{zid}/ZN-T-ADJ", 0.0)))
+            off = ov.setpoint_offset.get(zid, 0.0) + adj
+            cmd[f"{zid}/ZN-T-ADJ"] = adj
             zn = nat.get("zones", {}).get(self.cat.zone_of_equip[zid], {})
             nh, nc = self._native(raw, zn.get("htg_schedule")), self._native(raw, zn.get("clg_schedule"))
             if nh is not None and not (occ and self.overrides.get(f"{zid}/OCC-HTG-SP")):
@@ -647,7 +709,7 @@ class VirtualBAS:
                 vav_out_by_ahu[aid].append(out)
         # AHUs
         for aid, ac in self.ahu.items():
-            apv = {k.split("/", 1)[1]: v for k, v in pv.items() if k.startswith(aid + "/")}
+            apv = {p.name: pv[p.id] for p in self._ahu_points[aid] if p.id in pv}
             apv["OA-T"] = pv.get("WX/OA-T", math.nan)
             out = ac.step(t, dow, apv, ztemps_by_ahu[aid], vav_out_by_ahu[aid], dts, holiday=holiday,
                           force_occ=aid in ov.force_occupied, force_unocc=aid in ov.force_unoccupied,
@@ -666,6 +728,15 @@ class VirtualBAS:
             if e.type in ("Chiller", "Boiler"):
                 cmd[f"{e.id}/EN-CMD"] = 1.0
         return cmd
+
+    def _override_value(self, pid: str, default: float) -> float:
+        slots = self.overrides.get(pid)
+        if not slots:
+            return default
+        o = slots[min(slots)]
+        if o.expires and self.t and self.t >= o.expires:
+            return default
+        return o.value
 
     def _apply_overrides(self, cmd: dict[str, float], t: dt.datetime) -> dict[str, float]:
         for pid, slots in list(self.overrides.items()):
@@ -905,6 +976,12 @@ class VirtualBAS:
         k["gas_kwh"] += max(0.0, truth.get("MTR/BLDG-GAS-KW", 0.0) or 0.0) * h
         k["hvac_elec_kwh"] += max(0.0, truth.get("MTR/HVAC-ELEC-KW", 0.0) or 0.0) * h
         k["steps"] += 1
+        price, ci = truth.get("GRID/PRICE", 0.0), truth.get("GRID/CO2-INT", 0.0)
+        e_kw = max(0.0, truth.get("MTR/BLDG-ELEC-KW", 0.0) or 0.0)
+        g_kw = max(0.0, truth.get("MTR/BLDG-GAS-KW", 0.0) or 0.0)
+        if _ok(price) and _ok(ci):
+            k["cost_usd"] += (e_kw * price + g_kw * self.env.cfg.gas_price_per_kwh) * h
+            k["co2_kg"] += (e_kw * ci + g_kw * self.env.cfg.gas_carbon) * h
         unmet = 0
         for zid in self.cat.zone_of_equip:
             if cmd.get(f"{zid}/OCC-MODE", 0.0) < 0.5:
@@ -920,6 +997,12 @@ class VirtualBAS:
             c = truth.get(f"{zid}/ZN-CO2", math.nan)
             if _ok(c) and c > 1000:
                 k["co2_over_1000_h"] += h
+            pm = truth.get(f"{zid}/ZN-PM25", math.nan)
+            if _ok(pm) and pm > 15.0:
+                k["pm25_over_15_h"] += h
+            tv = truth.get(f"{zid}/ZN-TVOC", math.nan)
+            if _ok(tv) and tv > 500.0:
+                k["tvoc_over_500_h"] += h
         k["unmet_occ_hours"] += unmet * h
 
 

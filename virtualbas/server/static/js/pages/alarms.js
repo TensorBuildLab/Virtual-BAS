@@ -39,7 +39,8 @@ function drawHistory() {
 function equipLink(eq) {
   const e = S.equipById[eq];
   if (!e) return esc(eq);
-  const href = e.type === 'AHU' ? `#ahu/${eq}` : e.type === 'VAV' ? `#vav/${eq}` : e.type === 'Zone' ? `#vav/${e.parent}` : ['Chiller', 'Boiler', 'CoolingTower', 'Pump', 'PlantLoop'].includes(e.type) ? '#plant' : `#points?equip=${eq}`;
+  const href = e.type === 'AHU' ? `#ahu/${eq}` : e.type === 'VAV' ? `#vav/${eq}` : e.type === 'Zone' ? `#zone/${eq}` : ['Chiller', 'Boiler', 'CoolingTower', 'Pump', 'PlantLoop', 'WaterHeater'].includes(e.type) ? '#plant'
+    : ['WeatherStation', 'Grid', 'Meter', 'Building'].includes(e.type) ? '#weather' : `#points?equip=${eq}`;
   return `<a href="${href}">${esc(eq)}</a>`;
 }
 

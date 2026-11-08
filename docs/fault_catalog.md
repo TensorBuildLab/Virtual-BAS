@@ -19,6 +19,19 @@ model parameter as theta(t) = theta_0 + s(t) * delta_theta. All injections are r
 | `plug_load_change` | `zone / building` | Plug/process load change (server room, new equipment, after-hours use). | $P_{plug}' = (1 + s(m-1)) P_{plug}$ | `multiplier`=1.5 - - multiplier m |
 | `lighting_change` | `zone / building` | Lighting left on / turned off. | $P_{light}' = (1 + s(m-1)) P_{light}$ | `multiplier`=1.5 - - multiplier m |
 
+## Events - grid layer
+
+| Type | Target | Description | Equation | Parameters |
+|---|---|---|---|---|
+| `demand_response` | `building` | Utility demand-response event (OpenADR signal): the BAS receives a load-shed request; the response is left to the control program / AI agent. | $\text{DR}=1,\ P_{shed}=s(t)\,P$ | `shed_kw`=300.0 kW - requested shed P |
+| `price_spike` | `building` | Real-time price / carbon spike (grid emergency, scarcity pricing). | $\pi' = (1 + s(m-1))\,\pi,\ CI' = CI + s\,\Delta CI$ | `multiplier`=5.0 - - price multiplier m<br>`carbon_add`=0.2 kgCO2/kWh - carbon offset |
+
+## Events - iaq layer
+
+| Type | Target | Description | Equation | Parameters |
+|---|---|---|---|---|
+| `indoor_pollutant_source` | `zone` | Indoor emission event (cleaning products, painting, printing, cooking). | $S_z' = S_z + s(t)\,E$ | `tvoc_mg_h`=200.0 mg/h - TVOC emission E<br>`pm25_mg_h`=2.0 mg/h - PM2.5 emission<br>`pm10_mg_h`=3.0 mg/h - PM10 emission |
+
 ## Events - occupancy layer
 
 | Type | Target | Description | Equation | Parameters |
@@ -33,6 +46,7 @@ model parameter as theta(t) = theta_0 + s(t) * delta_theta. All injections are r
 |---|---|---|---|---|
 | `weather_change` | `building` | Weather perturbation added to the weather file (heat wave, cold snap, cloud cover). | $T_{db}' = T_{db} + s\,\Delta T,\ \phi' = \phi + s\,\Delta\phi,\ I' = (1 - s(1-m_I)) I$ | `delta_t`=5.0 K - dry-bulb offset<br>`delta_rh`=0.0 % - RH offset<br>`solar_mult`=1.0 - - solar multiplier m_I |
 | `outdoor_co2_change` | `building` | Change of ambient CO2 concentration (traffic, wildfire). | $C_{out}' = C_{out}+s\,\Delta C$ | `delta_ppm`=150.0 ppm - offset |
+| `wildfire_smoke` | `building` | Wildfire smoke episode: outdoor fine particles rise and enter through outdoor air and infiltration. | $C^{PM2.5}_{o}{}' = C^{PM2.5}_o + s(t)\,\Delta C,\ C^{PM10}_o{}' = C^{PM10}_o + 1.1\,s(t)\,\Delta C$ | `pm25_add`=120.0 ug/m3 - additional outdoor PM2.5 |
 
 ## Faults - actuator layer
 
@@ -68,6 +82,7 @@ model parameter as theta(t) = theta_0 + s(t) * delta_theta. All injections are r
 | `filter_fouling` | `equip:AHU` | Air filter loading: additional pressure drop raises fan pressure rise and power. | $\Delta p_{fan} = \Delta p_{fan,0} + s(t)\,\Delta p_{add};\ \Delta p_{flt} = (\Delta p_{clean}+s\Delta p_{add})(\dot V/\dot V_d)^2$ | `dp_add`=250.0 Pa - additional filter pressure drop at design flow |
 | `fan_degradation` | `equip:AHU` | Fan/motor efficiency degradation (bearing wear, belt slip). | $\eta_{fan} = \eta_{fan,0}\,(1 - s(t)\,\ell)$ | `loss`=0.25 - - relative efficiency loss l |
 | `equipment_trip` | `equip:Chiller / Boiler / CoolingTower / Pump` | Primary plant equipment trip (safety lock-out). | $\text{available}=0$ | - |
+| `filter_bypass` | `equip:AHU` | Filter rack gaps / missing filter: air bypasses the media, particle removal drops (no pressure-drop symptom). | $\eta' = (1 - s(t)\,\beta)\,\eta$ | `bypass`=0.6 - - bypass fraction beta |
 
 ## Faults - network layer
 

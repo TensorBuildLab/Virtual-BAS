@@ -37,15 +37,24 @@ def fault_md() -> str:
 def points_md() -> str:
     from virtualbas.core import Building
     b = Building(ROOT / "buildings/large_office")
+    from collections import Counter
+    tiers = Counter(p.tier for p in b.catalog.points.values())
     lines = ["# BAS point list - DOE large office", "",
              f"{len(b.catalog.points)} points on {len(b.catalog.equipment)} pieces of equipment "
-             "(generated automatically from the EnergyPlus model).", ""]
+             "(generated automatically from the EnergyPlus model): "
+             + ", ".join(f"{n} {t}" for t, n in tiers.most_common()) + ".", "",
+             "Tier: **standard** = found in typical commercial BAS today, **advanced** = well-instrumented BAS, "
+             "**next_gen** = rarely installed today but valuable for analytics/AI, **truth** = ground truth only. "
+             "Source: energyplus (inner-space physics), model (outer-space physical model), surrogate (engineering "
+             "correlation), bas (calculated by the BAS). See [point_taxonomy.md](point_taxonomy.md).", ""]
     for e in b.catalog.equipment.values():
         lines += [f"## {e.id} - {e.type}", "", e.description, "",
-                  "| Point | Kind | Unit | Description | Brick class |", "|---|---|---|---|---|"]
+                  "| Point | Kind | Tier | Source | Unit | Sensor class | Description | Brick class |",
+                  "|---|---|---|---|---|---|---|---|"]
         for pid in e.points:
             p = b.catalog.points[pid]
-            lines.append(f"| `{p.id}` | {p.kind} | {p.unit} | {p.description} | {p.brick} |")
+            sc = p.sensor_class if p.kind in ("sensor", "meter") else ""
+            lines.append(f"| `{p.id}` | {p.kind} | {p.tier} | {p.source} | {p.unit} | {sc} | {p.description} | {p.brick} |")
         lines.append("")
     return "\n".join(lines)
 

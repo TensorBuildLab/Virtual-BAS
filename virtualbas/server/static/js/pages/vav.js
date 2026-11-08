@@ -2,8 +2,9 @@
  * VAV page - single-duct VAV terminal with hot-water reheat and the zone it
  * serves; controller loop outputs and a 24 h trend.
  * ========================================================================== */
-import { S, $, esc, pv, pmap, svgBox, val, zoneLabel } from '../core.js';
+import { S, $, esc, pv, pmap, svgBox, val, has, zoneLabel } from '../core.js';
 import { TrendChart, loadSeries } from '../chart.js';
+import { lamp, pbar, kvRows } from '../widgets.js';
 
 let eid = null, chart = null, timer = null;
 
@@ -17,7 +18,7 @@ function schematic(v) {
   <g class="duct-edge"><rect x="30" y="92" width="180" height="56"/><rect x="200" y="70" width="220" height="100"/><rect x="420" y="92" width="340" height="56"/><rect x="700" y="92" width="60" height="150"/></g>
   <g class="duct-fill"><rect x="30" y="92" width="180" height="56"/><rect x="200" y="70" width="220" height="100"/><rect x="420" y="92" width="340" height="56"/><rect x="700" y="92" width="60" height="150"/></g>
   <path class="flow flow-oa" d="M34 120H730V236"/>
-  <a href="#ahu/${esc(v.parent)}"><text class="io-lbl link" x="30" y="178">PRIMARY AIR ← ${esc(v.parent)}</text></a>
+  <a href="#ahu/${esc(v.parent)}"><text class="io-lbl link" x="30" y="${has(vm['DA-VP']) ? 166 : 178}">PRIMARY AIR ← ${esc(v.parent)}</text></a>
   <!-- flow cross (velocity pressure pickup) -->
   <g class="afms"><path d="M150 94V146M162 94V146"/><path d="M140 120H172"/></g><text class="comp-lbl" x="156" y="86" text-anchor="middle">FLOW SENSOR</text>
   <!-- damper + actuator -->
@@ -41,7 +42,7 @@ function schematic(v) {
   <!-- controller -->
   <rect class="ctrl-box" x="30" y="222" width="400" height="238" rx="4"/>
   <text class="room-lbl" x="44" y="242">VAV CONTROLLER (DDC)</text>
-  <path class="signal" d="M430 330H520"/><path class="signal" d="M300 222V170"/><path class="signal" d="M200 300H156V148"/>
+  <path class="signal" d="M430 330H520"/><path class="signal" d="M300 222V170"/><path class="signal" d="M156 222V148"/>
   <!-- loop bars -->
   <g id="bar-clg" class="loopbar clg"><text class="lbl" x="44" y="352">Cooling loop</text><rect class="bar-bg" x="140" y="342" width="160" height="12" rx="2"/><rect class="bar" x="140" y="342" width="0" height="12" rx="2"/></g>
   <g id="bar-htg" class="loopbar htg"><text class="lbl" x="44" y="376">Heating loop</text><rect class="bar-bg" x="140" y="366" width="160" height="12" rx="2"/><rect class="bar" x="140" y="366" width="0" height="12" rx="2"/></g>
@@ -51,8 +52,13 @@ function schematic(v) {
   ${V('RHV-POS', 478, 172, { label: 'Reheat valve' })}
   ${V('DA-T', 560, 6, { label: 'Discharge air temp' })}${sensor(608, 120, 608, 40)}
   ${V('RH-Q', 664, 6, { label: 'Reheat (truth)' })}
-  ${V('CLG-LOOP', 44, 262, { label: 'Cooling loop' })}${V('HTG-LOOP', 146, 262, { label: 'Heating loop' })}
-  ${Z('OCC-MODE', 248, 262, { label: 'Occupancy mode' })}
+  ${V('CLG-LOOP', 44, 262, { label: 'Cooling loop', w: 92 })}${V('HTG-LOOP', 140, 262, { label: 'Heating loop', w: 92 })}
+  ${Z('OCC-MODE', 236, 262, { label: 'Occupancy mode', w: 92 })}
+  ${has(vm['ZN-MODE']) ? V('ZN-MODE', 332, 262, { label: 'Terminal mode', w: 94 }) : ''}
+  ${has(vm['CLG-REQ']) ? `${V('CLG-REQ', 44, 300, { label: 'Cooling requests', w: 92 })}${V('PRS-REQ', 140, 300, { label: 'Pressure requests', w: 92 })}${V('HW-REQ', 236, 300, { label: 'HW requests', w: 92 })}` : ''}
+  ${has(vm['LOW-FLOW-ALM']) ? V('LOW-FLOW-ALM', 332, 300, { label: 'Low-flow alarm', w: 94 }) : ''}
+  ${has(vm['DA-VP']) ? V('DA-VP', 40, 176, { label: 'Velocity pressure' }) : ''}
+  ${has(vm['RH-BTU']) ? V('RH-BTU', 582, 172, { label: 'Reheat BTU meter' }) : ''}
   <text class="comp-lbl" x="44" y="426">sequence: ${esc(S.info.control_profile)} · served by ${esc(v.parent)}</text>
   <text class="comp-lbl" x="44" y="410">min flow ${(v.meta.vmin_frac * 100).toFixed(0)} % of ${(+v.meta.vmax_m3s).toFixed(2)} m³/s · reheat ${(v.meta.reheat_max_water_m3s * 1000).toFixed(2)} L/s max</text>
   <!-- value boxes: zone -->
@@ -86,9 +92,15 @@ export function render(main, { arg }) {
         <dt>Damper cmd → pos</dt><dd>${pv(vm['DMPR-CMD'])} → ${pv(vm['DMPR-POS'])}</dd>
         <dt>Reheat valve</dt><dd>${pv(vm['RHV-POS'])}</dd>
         <dt>Zone mode</dt><dd>${pv(zm['OCC-MODE'])}</dd>
+        ${kvRows([['Terminal mode', vm['ZN-MODE']]])}
         <dt class="truth-only">True occupants</dt><dd class="truth-only">${pv(zm['OCCUPANTS'])}</dd>
         <dt class="truth-only">PMV</dt><dd class="truth-only">${pv(zm['PMV'])}</dd>
       </dl>
+      ${has(vm['LOW-FLOW-ALM']) ? `<div class="lamps">${lamp(vm['LOW-FLOW-ALM'], 'Low-flow alarm', 'alarm')}</div>` : ''}
+      ${['DA-VP', 'RH-WF', 'RH-BTU'].some((n) => has(vm[n])) ? `<div class="card-h"><b>Measurement &amp; reheat</b></div><dl class="kvlist">${kvRows([['Velocity pressure', vm['DA-VP']], ['Discharge air temp', vm['DA-T']], ['Reheat water flow', vm['RH-WF']], ['Reheat BTU meter', vm['RH-BTU']], ['Reheat (truth)', vm['RH-Q']]])}</dl>` : ''}
+      ${has(vm['CLG-REQ']) ? `<div class="card-h"><b>G36 requests</b><small>to AHU / plant reset logic</small></div>
+        <div class="reqs">${[['Cooling (SAT)', 'CLG-REQ'], ['Pressure (static)', 'PRS-REQ'], ['Hot water', 'HW-REQ']].filter(([, n]) => has(vm[n])).map(([l, n]) => `<div class="req"><span class="k">${l}</span>${pbar(vm[n], 3, 'pb-req')}${pv(vm[n])}</div>`).join('')}</div>` : ''}
+      <div class="form-row"><a class="btn" href="#zone/${esc(v.meta.zone_equip)}">Zone IEQ dashboard →</a></div>
       <div class="card-h"><b>Design data</b></div>
       <dl class="kvlist">
         <dt>Max airflow</dt><dd>${(+v.meta.vmax_m3s).toFixed(2)} m³/s</dd>

@@ -1,6 +1,7 @@
 \documentclass[preprint,12pt,authoryear=false]{elsarticle}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -46,12 +47,16 @@ EnergyPlus solves internally. The simulation runs from real time to more than \S
 interactive control of the clock, and faults can be injected while running by humans (web GUI), scripts, scenario
 files, a REST API, an MCP server for language-model agents and a Gymnasium interface. A generic BAS-ization procedure
 converts EnergyPlus models automatically; the DOE reference large office (\NumPoints{} BAS points on \NumEquip{}
-pieces of equipment) is the case study. With ideal sensors the emulator reproduces the native annual EnergyPlus results
+pieces of equipment) is the case study. Beyond the points of a typical BAS, the point list covers the full indoor
+environment (comfort indices, particles, volatile organic compounds, illuminance, sound, people counts and occupant
+feedback), an extended weather station with forecasts, sub-meters and grid signals, and every point is tagged as
+standard, advanced or next-generation instrumentation. With ideal sensors the emulator reproduces the native annual EnergyPlus results
 within \ValElecDiffAbs\% for electricity and \ValGasDiffAbs\% for natural gas (zone temperature mean absolute
 difference \ValZoneMAE{}~K). Experiments demonstrate equipment-level fault impacts, labelled data generation for fault
 detection (detection macro-F1 \FddDetF{}), AI agents injecting faults through the public API, the robustness gap of a
-supervisory AI controller between ideal and realistic outer spaces, accurate time acceleration, and the automatic
-conversion of five reference buildings.
+supervisory AI controller between ideal and realistic outer spaces, the indoor-air-quality response to a wildfire-smoke
+episode that a standard BAS cannot observe, accurate time acceleration, and the automatic conversion of five reference
+buildings.
 \end{abstract}
 
 \begin{keyword}
@@ -97,7 +102,14 @@ wrong values so that the physical consequences of imperfection are simulated rat
 allows anyone---a person, a script, or an AI agent---to inject abnormal conditions \emph{while the building runs}, at
 a controllable pace from real time to as fast as possible, and (v) labels everything with mathematically defined
 ground truth. The datasets cited above are static, and the control test beds are designed to benchmark controllers in
-idealised, fixed scenarios; to the author's knowledge none combines these five properties.
+idealised, fixed scenarios; to the author's knowledge none combines these five properties. A sixth requirement follows
+from field evidence on what BAS actually measure. In 90 buildings with semantic metadata, temperature streams
+outnumbered power meters by two orders of magnitude, and only 8\% of the buildings had the points needed to compute an
+energy-use intensity \cite{fierro2019mortar}; installed CO$_2$ sensors had mean absolute errors of 118--138~ppm
+\cite{fisk2010co2}. Indoor environmental quality beyond temperature, humidity and CO$_2$ \cite{wellv2}, occupant
+counts and feedback, coil energy meters, actuator feedback and grid signals are rarely available. An emulator should
+therefore (vi) expose both the instrumentation of today's BAS and the next-generation points that AI applications
+need, so that the value of additional sensing can be quantified against ground truth.
 
 This paper introduces \emph{Virtual BAS}, an open-source framework built around a simple separation
 (Fig.~\ref{fig:architecture}). The \emph{inner space} is an EnergyPlus model advanced step by step through the
@@ -116,14 +128,18 @@ actuator, occupancy and fault models (\NumFaultTypes{} types on five layers) and
 loops that are solved inside EnergyPlus by ideal local controllers.
 \item A generic \emph{BAS-ization} procedure that converts EnergyPlus models into BAS-ready emulators: topology
 discovery, command binding, physical fault hooks, native control program extraction and semantic point list
-generation (Project Haystack \cite{haystack} and Brick \cite{balaji2016brick}).
+generation (Project Haystack \cite{haystack} and Brick \cite{balaji2016brick}) with an availability tier for every
+point (standard, advanced, next-generation).
+\item An extended environment layer driven by EnergyPlus air flows and occupants---particle and VOC mass balances,
+illuminance, sound, occupant feedback, weather forecasts and grid signals---that completes the indoor and outdoor
+environment a BAS can observe.
 \item An open-source implementation with a BAS-like web GUI, interactive time control (1$\times$ to as fast as
 possible), BACnet-like priority overrides and five interfaces for humans and AI agents (GUI, scenario files, REST,
 Model Context Protocol \cite{mcp2024}, Gymnasium \cite{towers2024gymnasium}).
-\item A case study on the DOE reference large office \cite{deru2011reference} with seven experiments: verification
+\item A case study on the DOE reference large office \cite{deru2011reference} with eight experiments: verification
 against native EnergyPlus, inner/outer coupling under sensor drift, an equipment-level fault impact matrix, labelled
-data generation and an FDD benchmark, AI agents in the loop, time-acceleration accuracy, and generality across five
-reference buildings.
+data generation and an FDD benchmark, AI agents in the loop, indoor air quality under wildfire smoke, time-acceleration
+accuracy, and generality across five reference buildings.
 \end{enumerate}
 
 The remainder is organised as follows. Section~\ref{sec:related} reviews related work. Section~\ref{sec:method}
@@ -281,23 +297,37 @@ From the topology a BAS point list is generated: for every piece of equipment th
 expose (Table~\ref{tab:points}), each with a stable identifier (\texttt{AHU-2/SA-T}), unit, kind (sensor, setpoint,
 command, status, meter, virtual), sensor class, Project-Haystack style tags and a Brick class. Each sensor point is
 bound to an EnergyPlus output variable, meter or derived expression (e.g. valve position as water flow over design
-flow). Points that a BAS cannot measure but that are useful as labels (occupant count, PMV, coil loads, COP) are
-recorded as \emph{ground-truth-only} points. Duct static pressure, filter and loop differential pressures, which
-EnergyPlus' fan and pump models do not resolve, are provided by documented surrogate models.
+flow). Points that a BAS cannot measure but that are useful as labels (true occupant count, coil loads, COP, true
+outdoor-air fraction, infiltration) are recorded as \emph{ground-truth-only} points. Duct static pressure, filter and
+loop differential pressures, which EnergyPlus' fan and pump models do not resolve, are provided by documented
+surrogate models, as are chiller refrigerant pressures (saturation temperatures from load- and fouling-dependent
+approach temperatures and an R-134a vapour-pressure fit), boiler flue temperature and fan and pump vibration.
+
+Every point carries an \emph{availability tier}. \emph{Standard} points are those of the ASHRAE Guideline~36 point
+lists \cite{ashrae2021g36}, vendor chiller integrations and utility meters; \emph{advanced} points are found in
+well-instrumented BAS (actuator position feedback, airflow and water-flow meters, sub-meters, refrigerant-side chiller
+data, humidity and CO$_2$ in the return air); \emph{next-generation} points are rarely installed today but valuable for
+analytics and AI (people counters, particle and VOC monitors, comfort stations, coil energy meters, vibration, weather
+forecasts, tariff, grid carbon intensity and demand-response signals, occupant votes and complaints). BAS-calculated
+points (run-hours, start counts, kW/ton, tower approach, 15-min demand, degree-days, outdoor-air fraction from the
+mixing temperatures, Guideline~36 reset requests) are computed from \emph{observed} values, so sensor errors propagate
+into them as in a real BAS. A scenario can restrict the exposed and recorded points to a set of tiers, e.g. to emulate
+a typical BAS of today while keeping the full ground truth.
 
 \begin{table}[!htbp]
 \centering\small
-\caption{Equipment-level BAS points generated for each equipment type (abbreviated).}
+\caption{BAS points generated for each equipment type (abbreviated); S = standard, A = advanced, N = next-generation tier.}
 \label{tab:points}
 \begin{tabularx}{\linewidth}{lX}
 \toprule
-Zone & ZN-T, ZN-RH, ZN-CO2, ZN-OCC (PIR), HTG-SP, CLG-SP, OCC-HTG-SP, OCC-CLG-SP, OCC-MODE, LIGHT-KW, PLUG-KW; truth: OCCUPANTS, PMV \\
-VAV box & DA-F, DA-F-SP, DA-T, DMPR-CMD, DMPR-POS, RHV-POS, CLG-LOOP, HTG-LOOP; truth: RH-Q \\
-AHU & SA-T, SA-T-SP, SA-RH, SA-F, MA-T, MA-T-SP, RA-T, RA-RH, OA-F, OAD-CMD, OAD-POS, ECON-EN, CC-LAT, CCV-POS, HCV-POS, SF-CMD, SF-STS, SF-SPD, SF-KW, DSP, DSP-SP, FLT-DP, OCC-MODE; truth: CC-Q \\
-Chiller & KW, LOAD, STS, CHW-LWT, CHW-EWT, CDW-EWT, CDW-LWT, EN-CMD; truth: PLR, COP \\
-Boiler / tower / pump & LOAD, GAS-KW, STS, HW-LWT, HW-EWT / FAN-KW, FAN-STS, LWT, EWT / KW, SPD, STS \\
-Plant loops & CHW-, HW-, CW-: ST, RT, F, DP, ST-SP \\
-Weather, meters & OA-T, OA-RH, OA-WB, WIND, SOLAR; building, HVAC, end-use electric and gas demand \\
+Zone & \textbf{S}: ZN-T, ZN-CO2, ZN-OCC (PIR), heating/cooling set points, occupant set-point adjust; \textbf{A}: ZN-RH, ZN-DP, illuminance, lighting level, window contact, lighting power; \textbf{N}: people count, mean radiant and operative temperature, PMV, PPD, PM2.5, PM10, TVOC, sound level, occupant votes and hot/cold complaints, plug power; truth: occupants, daylight, infiltration, solar and internal gains \\
+VAV box & \textbf{S}: DA-F, DA-F-SP, DA-T, DMPR-CMD, loop outputs, terminal mode, G36 requests, low-flow alarm; \textbf{A}: DMPR-POS, RHV-POS, velocity pressure; \textbf{N}: reheat-coil water flow and energy meter; truth: RH-Q \\
+AHU & \textbf{S}: SA-T, SA-F, MA-T, RA-T, OA-T, OA-F, set points, OAD-CMD, ECON-EN, fan command/status/speed/Hz/power, DSP, FLT-DP, freeze-stat, smoke detector, run-hours, starts, calculated OA fraction; \textbf{A}: SA-RH, SA-DP, RA-RH, RA-CO2, OA-RH, coil leaving-air temperatures, valve/damper feedback, fan current; \textbf{N}: coil water temperatures, flows and energy meters, coil pressure drop, fan vibration; truth: CC-Q, OA fraction \\
+Chiller & \textbf{S}: KW, STS, CHW/CDW entering and leaving temperatures, \%RLA, alarm, kW/ton, run-hours, starts; \textbf{A}: load, evaporator/condenser flows, refrigerant saturation temperatures and pressures; truth: PLR, COP \\
+Boiler / tower / pump & \textbf{S}: STS, HW-LWT, HW-EWT, firing rate, alarm / fan power, status, speed, LWT, EWT, approach, range / KW, SPD, Hz, STS; \textbf{A}: load, gas, flow, flue temperature / make-up water; \textbf{N}: pump vibration \\
+Plant loops & CHW-, HW-, CW-: ST, RT, F, DP, ST-SP, $\Delta T$; chilled-water tons and plant kW/ton \\
+Weather & \textbf{S}: OA-T, OA-RH, degree-days; \textbf{A}: wet bulb, dew point, enthalpy, humidity ratio, pressure, wind speed and direction, global irradiance, outdoor illuminance, rain; \textbf{N}: direct and diffuse irradiance, sky cover and temperature, precipitation, outdoor PM2.5/PM10, 1/6/24-h forecasts \\
+Meters, grid & \textbf{S}: building electricity and gas demand, water, totalisers, 15-min and peak demand; \textbf{A}: end-use sub-meters (HVAC, lighting, cooling, fans, pumps, heat rejection, heating, exterior lighting, DHW), tower make-up water; \textbf{N}: plug and elevator sub-meters, tariff, carbon intensity, demand-response event, cost and carbon today \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -318,7 +348,7 @@ output: a stuck sensor returns the value at the stuck instant, and a missing sam
 follow a two-state Gilbert--Elliott chain \cite{gilbert1960burst,elliott1963burst} with transition probabilities
 $p_{gb}$ and $p_{bg}$, producing realistic bursts with stationary loss rate $p_{gb}/(p_{gb}+p_{bg})$. Binary sensors
 (occupancy, status) use false-on/false-off probabilities. Installation parameters $(b,g,r)$ are drawn once per sensor
-from data-sheet distributions of 17 sensor classes and scaled by a global \emph{realism} factor ($0$ = ideal sensors,
+from data-sheet distributions of \NumSensorClasses{} sensor classes and scaled by a global \emph{realism} factor ($0$ = ideal sensors,
 $1$ = typical commercial hardware). Each sensor uses an independent random stream, so that scenarios with different
 faults share common random numbers. Fig.~\ref{fig:sensor} illustrates the model.
 
@@ -369,6 +399,48 @@ CO$_2$; the BAS observes them only through PIR sensors with false-on/false-off r
 \paragraph{Events} Weather perturbations (heat waves, cold snaps, cloud cover) are applied to the EnergyPlus weather
 actuators as offsets/multipliers of the weather file; plug and lighting load changes, window opening (additional
 infiltration), meetings, holidays and outdoor CO$_2$ changes complete the event library.
+
+\subsection{Extended indoor and outdoor environment}
+\label{sec:environment}
+
+EnergyPlus solves the heat, moisture and CO$_2$ balances. Quantities that it does not model, but that occupants
+experience and next-generation BAS measure, are computed in the outer space at every step from the EnergyPlus state,
+so they remain consistent with the simulated air flows, occupants, lighting power and solar gains.
+
+\paragraph{Particles and VOC} Each zone is a well-mixed volume $V$ supplied with $Q_s$ by its terminal and $Q_i$ by
+infiltration:
+\begin{align}
+V\frac{dC}{dt} &= Q_s C_s + P\,Q_i C_o + S - (Q_s + Q_i + kV)\,C, \label{eq:iaq}\\
+C_s &= (1-\eta)\left(x_{OA} C_o + (1-x_{OA})\,\bar C_{ret}\right), \nonumber
+\end{align}
+with outdoor concentration $C_o$, penetration factor $P$, deposition or sink rate $k$, indoor source $S$ (occupants,
+materials, events), the AHU outdoor-air fraction $x_{OA}$ taken from EnergyPlus, filter efficiency $\eta$ by MERV class
+\cite{ashrae522} and the flow-weighted return concentration $\bar C_{ret}$ of the zones served by the AHU.
+Eq.~\eqref{eq:iaq} is integrated exactly over each step for PM2.5, the coarse fraction PM2.5--10 and TVOC (without
+filtration). Outdoor PM2.5 follows a log-normal Ornstein--Uhlenbeck process with a diurnal traffic cycle;
+\texttt{wildfire\_smoke}, \texttt{indoor\_pollutant\_source} and \texttt{filter\_bypass} injections act on $C_o$, $S$
+and $\eta$.
+
+\paragraph{Light and sound} Work-plane illuminance combines the lumen method for electric light and the daylight-flux
+method, $E = E_d P_{light}/P_{light,d} + K_v U \Phi_{sol}/A$, with design illuminance $E_d$, luminous efficacy of
+daylight $K_v$, utilisation factor $U$ and the solar flux $\Phi_{sol}$ transmitted by the zone's windows (EnergyPlus).
+The background sound level is the energetic sum of terminal noise following the fan law
+($L_{d} + 50\log_{10}(\dot V/\dot V_{max})$), speech scaled by the density of talking occupants, and a background floor.
+
+\paragraph{Comfort and occupant feedback} Mean radiant and operative temperatures and the Fanger PMV and PPD
+\cite{iso7730} come from EnergyPlus and are exposed as comfort-station points. Occupants submit thermal-sensation
+votes $\mathrm{round}(\mathrm{PMV} + \sigma_i\varepsilon)$ through a feedback application at a Poisson rate, and file
+hot or cold complaints at a rate proportional to $N\,\mathrm{PPD}$, split by a logistic function of PMV; votes and
+complaint counts are BAS points.
+
+\paragraph{Forecasts and grid} An hourly-issued 48-h weather forecast equals the weather file plus errors whose standard
+deviation grows with lead time, $\sigma(h)=\sigma_0+\sigma_\infty(1-e^{-h/\tau})$, and that are AR(1)-correlated
+between issues. The grid interface provides a time-of-use tariff, a synthetic marginal carbon intensity (diurnal
+profile, solar dip and AR noise) and demand-response events with a requested shed; cost and carbon are accumulated as
+KPIs. The forecast is also available as an API call and an MCP tool.
+
+These models are deliberately simple, well documented and parameterised in the building configuration; they make the
+corresponding points behave plausibly and causally, not reproduce a particular building.
 
 \subsection{Faults and injections}
 
@@ -432,7 +504,7 @@ sensor error of every sample is $y_k-x_k$.
 \subsection{Interfaces for humans and AI}
 
 The web GUI (Fig.~\ref{fig:gui}) mimics a commercial BAS front end with building overview, AHU, VAV and plant graphics,
-trends, alarms, a point explorer with priority overrides and an injection console generated from the fault catalog. A
+zone indoor-environment pages with a heat-map, a weather/forecast/grid/energy page, trends, alarms, a point explorer with priority overrides and an injection console generated from the fault catalog. A
 global switch reveals the inner space (EnergyPlus truth) next to every observed value and highlights discrepancies.
 The same functions are available through a REST/WebSocket API with OpenAPI documentation, a dependency-free Python
 client, an MCP server exposing BAS tools (read points and trends, write set points, inspect the fault catalog, inject
@@ -445,10 +517,13 @@ from the truth.
 \includegraphics[width=0.49\textwidth]{gui_overview.png}\hfill
 \includegraphics[width=0.49\textwidth]{gui_ahu.png}\\[2mm]
 \includegraphics[width=0.49\textwidth]{gui_vav.png}\hfill
-\includegraphics[width=0.49\textwidth]{gui_faults.png}
+\includegraphics[width=0.49\textwidth]{gui_faults.png}\\[2mm]
+\includegraphics[width=0.49\textwidth]{gui_zone.png}\hfill
+\includegraphics[width=0.49\textwidth]{gui_weather.png}
 \caption{Web GUI of Virtual BAS with the ground-truth layer switched on: building overview (top left), AHU graphic
-(top right), VAV box with a drifting zone sensor (observed vs. EnergyPlus truth badge, bottom left) and the fault and
-event injection console (bottom right).}
+(top right), VAV box with a drifting zone sensor (observed vs. EnergyPlus truth badge, middle left), fault and event
+injection console (middle right), zone indoor-environment page with a building heat-map (bottom left) and weather,
+forecast, grid and energy page (bottom right).}
 \label{fig:gui}
 \end{figure*}
 
@@ -463,7 +538,9 @@ perimeter and one core zone, plus plenums), four VAV air handling units with eco
 and variable-speed fans, 16 VAV boxes with hot-water reheat, two water-cooled chillers, a cooling tower, a gas boiler
 and three pumps. BAS-ization with a 5-min sampling interval yields \NumPoints{} points on \NumEquip{} pieces of
 equipment (\NumSensorPts{} sensor and meter points, \NumSoftPts{} software points and \NumTruthPts{} ground-truth-only
-points), 28 command schedules and 4 physical fault hooks. The Chicago TMY3 weather file is used and all runs use the
+points); \NumStdPts{} points are in the standard tier, \NumAdvPts{} advanced and \NumNextPts{} next-generation, and
+\NumModelPts{} take their truth from outer-space or surrogate models. The model has 28 command schedules and 4
+physical fault hooks. The Chicago TMY3 weather file is used and all runs use the
 calendar year 2023. Experiments were run on a Windows 11 laptop with EnergyPlus 23.2 and Python 3.12.
 
 %==========================================================================================
@@ -610,7 +687,31 @@ outdoor-air sensor bias).}
 \label{fig:ai}
 \end{figure}
 
-\subsection{Experiment 6: time acceleration}
+\subsection{Experiment 6: indoor environment under wildfire smoke}
+
+A summer week with a 30-h wildfire-smoke episode (outdoor PM2.5 up to \EnvPeakOut~$\mu$g/m$^3$) was simulated with
+the reference MERV~8 filters, with MERV~13 filters, with a filter-bypass fault (60\% bypass, no pressure-drop symptom)
+and with an IEQ-aware sequence that locks the economizers out while the outdoor PM2.5 exceeds 35~$\mu$g/m$^3$
+(Fig.~\ref{fig:environment}a). Because the economizers bring up to 100\% outdoor air in this season, the mean indoor
+concentration peaks at \EnvPeakEight~$\mu$g/m$^3$ with MERV~8, \EnvPeakBypass~$\mu$g/m$^3$ with the bypass fault,
+\EnvPeakLock~$\mu$g/m$^3$ with the economizer lock-out and \EnvPeakThirteen~$\mu$g/m$^3$ with MERV~13; occupied
+zone-hours above 35~$\mu$g/m$^3$ are \EnvHrsEight, \EnvHrsBypass, \EnvHrsLock{} and \EnvHrsThirteen. None of this is
+visible in the standard tier: a typical BAS of today has no particle sensor, the bypass fault has no pressure-drop
+symptom, and the lock-out decision requires the next-generation outdoor PM2.5 point. Figs.~\ref{fig:environment}b--d
+show one day of the other environment points of a perimeter zone: illuminance with its daylight share and the
+photosensor reading, TVOC flushed by the morning ventilation and its noisy metal-oxide reading, sound level, and PMV
+with the sparse mean votes of the zone's occupants.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{fig_environment.pdf}
+\caption{Experiment 6: (a) outdoor and mean indoor PM2.5 during a wildfire-smoke episode for four filter/control
+situations; (b)--(d) one summer day of illuminance, TVOC, sound and comfort points of a perimeter zone (truth and
+sensor readings).}
+\label{fig:environment}
+\end{figure}
+
+\subsection{Experiment 7: time acceleration}
 
 The pacing accuracy was measured by setting target speed factors while running (Fig.~\ref{fig:speed}). The achieved
 speed matches the target within \SpeedErr\% for factors from 10 to 3600; at maximum speed one BAS sample takes
@@ -622,23 +723,23 @@ fast training of learning agents.
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.75\linewidth]{fig_speed.pdf}
-\caption{Experiment 6: target versus achieved speed factor and maximum throughput.}
+\caption{Experiment 7: target versus achieved speed factor and maximum throughput.}
 \label{fig:speed}
 \end{figure}
 
-\subsection{Experiment 7: generality}
+\subsection{Experiment 8: generality}
 
 The BAS-ization procedure was applied without any building-specific code to five DOE reference buildings
 (Table~\ref{tab:generality}). All models were converted and simulated for one week. Multi-zone VAV systems with
 water-based plants (large office, hospital, secondary school) are fully BAS-controlled; the medium office (packaged VAV
 with DX cooling and electric reheat) and the small office (packaged single-zone units) are monitored completely and
 their terminals and thermostats are BAS-controlled while unsupported components keep their native local control. The
-hospital, with 55 zones and four 100\%-outdoor-air and mixed-air AHUs, yields \NumHospitalPts{} points on 125 pieces of
+hospital, with 55 zones and four 100\%-outdoor-air and mixed-air AHUs, yields \NumHospitalPts{} points on 128 pieces of
 equipment and runs at \HospitalSps{} samples per second.
 
 \begin{table}[!htbp]
 \centering\small
-\caption{Experiment 7: automatic BAS-ization of five DOE reference buildings (one-week runs).}
+\caption{Experiment 8: automatic BAS-ization of five DOE reference buildings (one-week runs).}
 \label{tab:generality}
 \resizebox{\linewidth}{!}{\input{tables/generality.tex}}
 \end{table}
@@ -653,7 +754,10 @@ loop. Control and RL researchers can evaluate policies under partial observabili
 equipment faults, and quantify robustness by switching the outer space while keeping the inner space fixed. Ambient-AI
 and LLM agents can be connected through MCP and evaluated on operational tasks (diagnosing complaints, finding faults,
 writing safe overrides) with exact ground truth; they can also act as adversaries that generate challenging fault
-scenarios. Because the GUI behaves like a real BAS, the tool also serves education and operator training.
+scenarios. Because the GUI behaves like a real BAS, the tool also serves education and operator training. The point
+tiers support sensor-placement and value-of-information studies: the same scenario can be observed through the
+instrumentation of a typical BAS and through next-generation sensing, and the benefit of, e.g., coil energy meters,
+people counters or particle monitors for a given task can be measured against ground truth.
 
 \paragraph{Limitations} (i) Local loops inside EnergyPlus are ideal; set-point translation reproduces their steady
 state under sensor error but not their fast dynamics, hunting or valve characteristics. (ii) Duct static and loop
@@ -663,7 +767,11 @@ sampling interval limits the dynamics of BAS loops; finer intervals are possible
 monitored and keep native control. (v) Fault parameters follow data-sheet-type distributions rather than calibrated
 field statistics; the framework accepts any distribution. (vi) The verification shows residual differences of a few
 percent in gas and pump energy caused by sampled-data versus ideal control. (vii) The environment does not yet speak
-building network protocols.
+building network protocols. (viii) The extended environment models (well-mixed zones, lumen and daylight-flux
+methods, fan-law acoustics, stochastic feedback, synthetic grid signals) and the refrigerant, flue and vibration
+surrogates are simplified and not calibrated against measurements; the filter pressure drop does not yet depend on
+the MERV class, and ozone, NO$_2$, formaldehyde, glare and envelope heat flux are not modelled. The tier assignment
+reflects guideline point lists and field surveys and will differ between buildings.
 
 \paragraph{Future work} A BACnet/IP and Modbus gateway so that commercial BAS front ends and analytics can connect
 unchanged; Spawn-of-EnergyPlus or Modelica inner spaces for faster local dynamics; calibrated fault occurrence

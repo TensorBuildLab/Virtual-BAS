@@ -37,8 +37,12 @@ class VBASClient:
     def status(self) -> dict:
         return self._req("GET", "/api/status")
 
-    def points(self, equip: str | None = None, kind: str | None = None) -> list[dict]:
-        return self._req("GET", "/api/points", params={"equip": equip, "kind": kind})
+    def points(self, equip: str | None = None, kind: str | None = None, tier: str | None = None) -> list[dict]:
+        return self._req("GET", "/api/points", params={"equip": equip, "kind": kind, "tier": tier})
+
+    def forecast(self, hours: int = 48) -> dict:
+        """Hourly weather forecast for the next ``hours`` hours (as issued by the weather service)."""
+        return self._req("GET", "/api/forecast", params={"hours": hours})
 
     def equipment(self) -> list[dict]:
         return self._req("GET", "/api/equipment")

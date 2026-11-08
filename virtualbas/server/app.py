@@ -129,14 +129,31 @@ def create_app(building_dir: str, scenario: dict[str, Any] | None = None, speed:
         return _clean({"building": v.b.name, "energyplus": man.energyplus_version, "start": v.start_date,
                        "end": v.end_date, "timestep_s": 3600 / man.options.get("timesteps_per_hour", 12),
                        "control_profile": v.ccfg.profile, "realism": v.realism, "seed": v.seed,
-                       "n_points": len(v.cat.points), "n_equipment": len(v.cat.equipment)})
+                       "n_points": len(v.cat.points), "n_equipment": len(v.cat.equipment),
+                       "point_tiers": list(v.tiers)})
 
     @app.get("/api/points", summary="BAS point list with semantic tags (Haystack) and Brick classes")
-    def points(equip: Optional[str] = None, kind: Optional[str] = None):
+    def points(equip: Optional[str] = None, kind: Optional[str] = None,
+               tier: Optional[str] = Query(None, description="standard | advanced | next_gen | truth (comma separated)"),
+               exposed: bool = Query(False, description="Only points exposed by this session's point_tiers")):
         v = V()
+        tiers = set(tier.split(",")) if tier else None
         out = [p.to_dict() for p in v.cat.points.values()
-               if (equip is None or p.equip == equip) and (kind is None or p.kind == kind)]
+               if (equip is None or p.equip == equip) and (kind is None or p.kind == kind)
+               and (tiers is None or p.tier in tiers) and (not exposed or p.tier in v.tiers or p.kind == "truth")]
         return out
+
+    @app.get("/api/forecast", summary="Current 48 h weather forecast (hourly-issued, with lead-time dependent error)")
+    def forecast(hours: int = 48, truth: bool = Query(False, description="Also return the realised weather (ground truth)")):
+        v = V()
+        with v.lock:
+            rows = v.env.forecast_table(hours)
+            if truth and v.env.forecast is not None and rows:
+                fc = v.env.forecast
+                for i, r in enumerate(rows):
+                    r["truth_oa_t"] = round(float(fc.truth["tdb"][i]), 2)
+                    r["truth_ghi"] = round(float(fc.truth["ghi"][i]), 1)
+        return _clean({"issued": v.env.forecast.issued if v.env.forecast else None, "rows": rows})
 
     @app.get("/api/equipment", summary="Equipment hierarchy")
     def equipment():

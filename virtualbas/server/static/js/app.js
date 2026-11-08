@@ -2,11 +2,13 @@
  * app.js - boot, live data connection, header, sidebar tree and hash router.
  *
  * Pages are modules exporting { render(main, ctx), update?(), destroy?() }.
- * Hash routes: #overview  #ahu/AHU-1  #vav/VAV-Core_mid  #plant  #trends?p=a,b
- *              #alarms  #faults  #points     (append ?truth=1 to enable truth)
+ * Hash routes: #overview  #ahu/AHU-1  #vav/VAV-Core_mid  #plant  #zone/ZN-Core_mid
+ *              #weather  #trends?p=a,b  #alarms  #faults  #points
+ *              (append ?truth=1 to enable truth)
  * ========================================================================== */
 import { S, $, $$, api, post, toast, esc, refreshBindings, parseHash, parseT, fmtHM, fmtDate, equipOfType } from './core.js';
 import { openPoint, closePoint, updatePointDialog, openSession } from './dialogs.js';
+import { refreshWidgets } from './widgets.js';
 import * as overview from './pages/overview.js';
 import * as ahu from './pages/ahu.js';
 import * as vav from './pages/vav.js';
@@ -15,8 +17,10 @@ import * as trends from './pages/trends.js';
 import * as alarms from './pages/alarms.js';
 import * as faults from './pages/faults.js';
 import * as points from './pages/points.js';
+import * as zone from './pages/zone.js';
+import * as weather from './pages/weather.js';
 
-const PAGES = { overview, ahu, vav, plant, trends, alarms, faults, points };
+const PAGES = { overview, ahu, vav, plant, zone, weather, trends, alarms, faults, points };
 let current = null;      // active page module
 let currentKey = '';     // route key used to avoid needless rebuilds
 
@@ -93,6 +97,7 @@ function onSnapshot(s) {
   S.snap = s;
   updateHeader();
   refreshBindings(document);
+  refreshWidgets(document);
   try { current?.update?.(); } catch (e) { console.error(e); }
   updatePointDialog();
 }
@@ -129,6 +134,7 @@ function setTruth(on, remember) {
   document.body.classList.toggle('truth-on', S.truth);
   if (remember) { try { localStorage.setItem('vbas.truth', S.truth ? '1' : '0'); } catch { /* ignore */ } }
   refreshBindings(document);
+  refreshWidgets(document);
   try { current?.onTruth?.(); current?.update?.(); } catch (e) { console.error(e); }
   updatePointDialog();
 }
@@ -182,10 +188,22 @@ function buildTree() {
     html += '</details>';
   }
   html += `<details><summary><a href="#plant">Central plant</a></summary>`;
-  for (const t of ['Chiller', 'CoolingTower', 'Boiler', 'Pump']) {
+  for (const t of ['Chiller', 'CoolingTower', 'Boiler', 'Pump', 'WaterHeater']) {
     for (const e of equipOfType(t)) html += `<a class="leaf" href="#plant">${esc(e.id)}<small>${esc(t)}</small></a>`;
   }
   html += '</details>';
+  const zones = equipOfType('Zone');
+  if (zones.length) {
+    html += `<details><summary><a href="#zone">Zones</a><small>${zones.length}</small></summary>`;
+    for (const z of zones) html += `<a class="leaf" href="#zone/${esc(z.id)}">${esc(z.id.replace('ZN-', ''))}</a>`;
+    html += '</details>';
+  }
+  const site = ['WeatherStation', 'Grid', 'Meter'].flatMap(equipOfType);
+  if (site.length) {
+    html += `<details><summary><a href="#weather">Site &amp; utility</a></summary>`;
+    for (const e of site) html += `<a class="leaf" href="#weather">${esc(e.id)}<small>${esc(e.type)}</small></a>`;
+    html += '</details>';
+  }
   $('#side-tree').innerHTML = html;
 }
 
@@ -213,6 +231,7 @@ function route() {
     main.innerHTML = `<div class="loading err">Page error: ${esc(e.message)}</div>`;
   }
   refreshBindings(main);
+  refreshWidgets(main);
   try { mod.update?.(); } catch (e) { console.error(e); }
 }
 

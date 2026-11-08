@@ -56,15 +56,26 @@ class RandomInjector:
         return spec
 
     def _targets(self, sel: str, catalog) -> list[str]:
+        """Target selectors.
+
+        ``sensor:temp`` / ``sensor:any``: physical sensors of the standard and advanced tiers;
+        ``sensor:<EquipType>:<unit>[:<NAME1|NAME2|...>]``, e.g. ``sensor:AHU:degC`` or ``sensor:AHU:degC:SA-T|MA-T``;
+        ``equip:<Type>``; ``zone``.
+        """
+        def physical(p):
+            return p.kind == "sensor" and not p.meta.get("surrogate") and getattr(p, "source", "energyplus") != "surrogate"
         if sel == "sensor:temp":
-            return [p.id for p in catalog.points.values() if p.kind == "sensor" and p.unit == "degC" and not p.meta.get("surrogate")]
+            return [p.id for p in catalog.points.values() if physical(p) and p.unit == "degC"
+                    and getattr(p, "tier", "standard") in ("standard", "advanced")]
         if sel == "sensor:any":
-            return [p.id for p in catalog.points.values() if p.kind == "sensor" and not p.meta.get("surrogate")]
-        if sel.startswith("sensor:") and sel.count(":") == 2:
-            # sensor:<EquipType>:<unit>  e.g. sensor:AHU:degC
-            _, et, unit = sel.split(":")
-            return [p.id for p in catalog.points.values() if p.kind == "sensor" and p.equip_type == et
-                    and unit in ("*", p.unit) and not p.meta.get("surrogate")]
+            return [p.id for p in catalog.points.values() if physical(p)
+                    and getattr(p, "tier", "standard") in ("standard", "advanced")]
+        if sel.startswith("sensor:") and sel.count(":") in (2, 3):
+            parts = sel.split(":")
+            et, unit = parts[1], parts[2]
+            names = set(parts[3].split("|")) if len(parts) == 4 else None
+            return [p.id for p in catalog.points.values() if physical(p) and p.equip_type == et
+                    and unit in ("*", p.unit) and (names is None or p.name in names)]
         if sel.startswith("equip:"):
             return [e.id for e in catalog.equipment.values() if e.type == sel.split(":", 1)[1]]
         if sel == "zone":

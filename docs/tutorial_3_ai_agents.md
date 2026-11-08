@@ -17,6 +17,8 @@ Interactive OpenAPI documentation: <http://127.0.0.1:8000/docs>. Main endpoints:
 | GET | `/api/alarms` | active alarms + history |
 | POST | `/api/write` | priority-array override of set points / commands |
 | POST | `/api/control` | pause / resume / step / speed / stop |
+| GET | `/api/points?tier=next_gen` | point list filtered by tier (standard / advanced / next_gen / truth) |
+| GET | `/api/forecast?hours=48` | hourly weather forecast as issued (add `truth=1` for the realised weather) |
 | GET | `/api/faults/catalog` | injectable types with parameters and equations |
 | GET/POST/DELETE | `/api/injections` | list / inject / clear faults & events |
 | POST | `/api/random` | random fault generator rate |
@@ -32,6 +34,9 @@ bas.read(["AHU-1/SA-T", "AHU-1/SA-T-SP"])
 bas.write("AHU-1/SA-T-SP", 14.0, priority=10, duration_s=3600)        # supervisory control
 bas.inject("sensor_bias", "AHU-1/SA-T", params={"bias": 2}, duration="1d", source="ai")   # adversarial agent
 bas.pause(); bas.step(12); bas.resume()                                 # lock-step operation
+bas.points(tier="next_gen")                                             # IEQ, people counts, BTU meters, grid signals
+bas.forecast(24)                                                        # weather forecast for MPC-style agents
+bas.read(["GRID/PRICE", "GRID/CO2-INT", "GRID/DR-EVENT", "MTR/BLDG-DMD-15"])
 ```
 
 ## 3. MCP server for LLM agents
@@ -48,8 +53,12 @@ Register it in an MCP client (e.g. Claude Desktop / Claude Code):
   "args": ["-m", "virtualbas.ai.mcp_server", "--url", "http://127.0.0.1:8000"]}}}
 ```
 
-Tools: `building_info`, `list_equipment`, `list_points`, `read_points`, `get_trend`, `get_alarms`, `write_point`,
+Tools: `building_info`, `list_equipment`, `list_points` (with tier filter), `weather_forecast`, `read_points`, `get_trend`, `get_alarms`, `write_point`,
 `release_point`, `fault_catalog`, `inject`, `clear_injection`, `list_injections`, `simulation_control`.
+To emulate the instrumentation of a typical BAS of today, start the session with `point_tiers: [standard]` in the
+scenario; the agent then sees only standard points while the full ground truth is still recorded. Comparing an agent
+with `[standard]` and with all tiers quantifies the value of next-generation sensing for its task.
+
 An LLM can now act as an ambient operator ("why is zone Core_mid cold?") or as a red team ("inject a realistic
 fault that the FDD system will miss").
 

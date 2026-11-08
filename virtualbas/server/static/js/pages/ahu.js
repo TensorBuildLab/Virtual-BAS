@@ -3,8 +3,9 @@
  * filter, HW preheat coil, CHW cooling coil and VFD supply fan, plus the
  * served VAV boxes and a 24 h trend.
  * ========================================================================== */
-import { S, $, esc, pv, pmap, svgBox, val, zoneLabel } from '../core.js';
+import { S, $, esc, pv, pmap, svgBox, val, has, zoneLabel } from '../core.js';
 import { TrendChart, loadSeries } from '../chart.js';
+import { lamp, pbar, kvRows, gaugeRow } from '../widgets.js';
 
 let eid = null, chart = null, timer = null;
 
@@ -30,6 +31,13 @@ function coil(id, x, cls, label) {
 /** Two-way control valve (bow-tie) on a vertical pipe. */
 function valve(id, x, y) {
   return `<g class="valve" id="${id}"><path class="valve-body" d="M${x - 9} ${y - 7}L${x + 9} ${y + 7}V${y - 7}L${x - 9} ${y + 7}Z"/><path class="valve-stem" d="M${x} ${y}H${x + 14}M${x + 14} ${y - 6}V${y + 6}"/></g>`;
+}
+/** Safety device lamp drawn inside the duct (freeze-stat, smoke detector). */
+function safety(pid, x, y, label) {
+  if (!has(pid)) return '';
+  return `<g class="slamp" id="sl-${esc(pid.split('/')[1])}" data-pid="${esc(pid)}"><title>${esc(pid)} - ${esc(S.pointById[pid].description)}</title>`
+    + `<rect class="sl-bg" x="${x - 20}" y="${y - 10}" width="40" height="30" rx="3"/><circle class="sl-dot" cx="${x}" cy="${y + 10}" r="5"/>`
+    + `<text class="sl-lbl" x="${x}" y="${y + 1}" text-anchor="middle">${label}</text></g>`;
 }
 /** Sensor bulb on the duct with a leader line to its value box. */
 const sensor = (x, y, x2, y2) => `<path class="leader" d="M${x} ${y}L${x2} ${y2}"/><circle class="sensor" cx="${x}" cy="${y}" r="5"/>`;
@@ -102,7 +110,33 @@ function schematic(a) {
   ${sensor(993, 352, 838, 405)}${B('SA-F', 790, 405, { label: 'Supply air flow' })}
   ${sensor(1070, 348, 943, 405)}${B('DSP', 895, 405, { label: 'Duct static' })}${B('DSP-SP', 1000, 405, { label: 'Static set point' })}
   ${B('CC-Q', 560, 230, { label: 'Coil load (truth)' })}
+  ${has(m['OA-T']) ? `${sensor(92, 306, 54, 214)}${B('OA-T', 6, 180, { label: 'OA temp (intake)' })}` : ''}
+  ${has(m['OA-RH']) ? B('OA-RH', 106, 180, { label: 'OA RH (intake)' }) : ''}
+  ${has(m['RA-CO2']) ? `${sensor(704, 110, 704, 42)}${B('RA-CO2', 656, 8, { label: 'Return air CO₂' })}` : ''}
+  ${has(m['SA-DP']) ? B('SA-DP', 1000, 460, { label: 'Supply dew point' }) : ''}
+  ${safety(m['FRZ-STAT'], 545, 318, 'FRZ')}${safety(m['SMK-DET'], 1035, 302, 'SMOKE')}
   </svg>`;
+}
+
+// ---------------------------------------------------------------- details panel
+function details(a) {
+  const m = pmap(a.id);
+  const col = (title, body) => (body.trim() ? `<div class="dcol"><h5>${title}</h5>${body}</div>` : '');
+  const kv = (rows) => { const h = kvRows(rows); return h ? `<dl class="kvlist">${h}</dl>` : ''; };
+  const frac = (label, pid) => (has(pid) ? `<div class="frac${S.pointById[pid].kind === 'truth' ? ' truth-only' : ''}"><span class="k">${label}</span>${pv(pid)}${pbar(pid, 100)}</div>` : '');
+  const cols = [
+    col('Air quality &amp; psychrometrics', kv([['OA temp (intake)', m['OA-T']], ['OA temp (weather stn)', 'WX/OA-T'],
+      ['OA RH (intake)', m['OA-RH']], ['Return air RH', m['RA-RH']], ['Return air CO₂', m['RA-CO2']], ['Supply air RH', m['SA-RH']], ['Supply dew point', m['SA-DP']], ['Supply PM2.5', m['SA-PM25']]])),
+    col('Outdoor-air fraction', frac('Temperature-based (BAS)', m['OA-FRAC-CALC']) + frac('Airflow-based (AFMS)', m['OA-FRAC-AFMS']) + frac('True OA fraction', m['OA-FRAC'])
+      + kv([['OA flow', m['OA-F']], ['Supply flow', m['SA-F']]]) + `<p class="hint">Design minimum OA ${(+a.meta.min_oa_m3s || 0).toFixed(2)} m³/s (${a.meta.design_flow_m3s ? Math.round((100 * a.meta.min_oa_m3s) / a.meta.design_flow_m3s) : '-'} % of design flow).</p>`),
+    col('Cooling coil (CHW)', kv([['Entering water', m['CC-EWT']], ['Leaving water', m['CC-LWT']], ['Water ΔT', null, '<span id="cc-dt">-</span>'], ['Water flow', m['CC-WF']],
+      ['Load (BTU meter)', m['CC-BTU']], ['Load (truth)', m['CC-Q']], ['Air-side ΔP', m['CC-DP']], ['Leaving air temp', m['CC-LAT']], ['Valve position', m['CCV-POS']]])),
+    col('Preheat coil (HW) &amp; safeties', kv([['Leaving air temp', m['HC-LAT']], ['Load (BTU meter)', m['HC-BTU']], ['Valve position', m['HCV-POS']], ['Mixed air temp', m['MA-T']], ['Filter ΔP', m['FLT-DP']]])
+      + `<div class="lamps col">${lamp(m['FRZ-STAT'], 'Freeze stat', 'alarm')}${lamp(m['SMK-DET'], 'Smoke detector', 'alarm')}</div>`),
+    col('Supply fan &amp; VFD', kv([['Speed', m['SF-SPD']], ['VFD frequency', m['SF-HZ']], ['Motor current', m['SF-AMPS']], ['Power', m['SF-KW']], ['Specific fan power', m['SF-W-PER-CMS']],
+      ['Run hours', m['SF-RUNHRS']], ['Starts', m['SF-STARTS']]]) + gaugeRow('vib', m['SF-VIB'], 'Vibration')),
+  ].join('');
+  return cols ? `<section class="card details-card"><div class="card-h"><b>Unit details</b><small>coil hydronics, fan drive, safeties and outdoor-air verification</small></div><div class="dgrid">${cols}</div></section>` : '';
 }
 
 // ---------------------------------------------------------------- page
@@ -120,6 +154,7 @@ export function render(main, { arg }) {
     <section class="card schem-card">${schematic(a)}</section>
     <aside class="card status-card">
       <div class="card-h"><b>Unit status</b></div>
+      <div class="lamps">${lamp(m['FRZ-STAT'], 'Freeze stat', 'alarm')}${lamp(m['SMK-DET'], 'Smoke detector', 'alarm')}</div>
       <dl class="kvlist big">
         <dt>Operating mode</dt><dd>${pv(m['OCC-MODE'], { cls: 'mode' })}</dd>
         <dt>Fan start/stop cmd</dt><dd>${pv(m['SF-CMD'])}</dd>
@@ -127,8 +162,8 @@ export function render(main, { arg }) {
         <dt>Mixed air set point</dt><dd>${pv(m['MA-T-SP'])}</dd>
         <dt>SAT set point</dt><dd>${pv(m['SA-T-SP'])}</dd>
         <dt>Static set point</dt><dd>${pv(m['DSP-SP'])}</dd>
-        <dt>Outdoor air temp</dt><dd>${pv('WX/OA-T')}</dd>
-        <dt>OA fraction (calc.)</dt><dd><span id="oa-frac">-</span></dd>
+        <dt>Outdoor air temp</dt><dd>${pv(has(m['OA-T']) ? m['OA-T'] : 'WX/OA-T')}</dd>
+        <dt>OA fraction (calc.)</dt><dd>${has(m['OA-FRAC-CALC']) ? pv(m['OA-FRAC-CALC']) : '<span id="oa-frac">-</span>'}</dd>
         <dt class="truth-only">Cooling coil load</dt><dd class="truth-only">${pv(m['CC-Q'])}</dd>
       </dl>
       <div class="card-h"><b>Design data</b></div>
@@ -141,6 +176,7 @@ export function render(main, { arg }) {
       <p class="hint">Click any value to see its trend, Brick class and – for set points and commands – to write a priority override.</p>
     </aside>
   </div>
+  ${details(a)}
   <div class="eq-grid2">
     <section class="card">
       <div class="card-h"><b>Served VAV terminals</b><small>${vavs.length}</small></div>
@@ -193,8 +229,12 @@ export function update() {
   document.querySelector('#c-cc .coil-fill')?.setAttribute('fill-opacity', (0.12 + 0.8 * cc / 100).toFixed(2));
   document.getElementById('v-hc')?.classList.toggle('open', hc > 1);
   document.getElementById('v-cc')?.classList.toggle('open', cc > 1);
-  // OA fraction from temperatures (what a commissioning agent would compute)
-  const oat = val('WX/OA-T'), mat = val(m['MA-T']), rat = val(m['RA-T']);
+  // safety lamps in the duct
+  for (const n of ['FRZ-STAT', 'SMK-DET']) document.getElementById('sl-' + n)?.classList.toggle('on', (val(m[n]) ?? 0) >= 0.5);
+  const ewt = val(m['CC-EWT']), lwt = val(m['CC-LWT']), dt = document.getElementById('cc-dt');
+  if (dt) dt.textContent = ewt === null || lwt === null ? '---' : `${(lwt - ewt).toFixed(1)} K`;
+  // OA fraction from temperatures (what a commissioning agent would compute) - only if the BAS has no such point
+  const oat = val(has(m['OA-T']) ? m['OA-T'] : 'WX/OA-T'), mat = val(m['MA-T']), rat = val(m['RA-T']);
   const el = document.getElementById('oa-frac');
   if (el) {
     const f = oat !== null && mat !== null && rat !== null && Math.abs(rat - oat) > 1.5 ? (rat - mat) / (rat - oat) : null;

@@ -2,8 +2,9 @@
  * Overview - building section (floor groups x zones), AHU and plant summary,
  * KPIs, building demand trend and the list of active injections.
  * ========================================================================== */
-import { S, $, $$, esc, pv, pmap, val, zoneLabel, fmtDT } from '../core.js';
+import { S, $, $$, esc, pv, pmap, val, has, zoneLabel, fmtDT } from '../core.js';
 import { TrendChart, loadSeries } from '../chart.js';
+import { lamp, classify } from '../widgets.js';
 
 /** Floor groups of the DOE large office (top to bottom). */
 const FLOORS = [
@@ -14,6 +15,21 @@ const FLOORS = [
 ];
 
 let chart = null, chartTimer = null;
+
+/** Compact site strip: outdoor conditions, outdoor AQ, grid price / carbon, DR status, occupancy, demand. */
+function siteStrip() {
+  const it = (href, label, body, cls = '') => `<a class="ovs ${cls}" href="${href}"><span class="k">${label}</span><span class="ovs-v">${body}</span></a>`;
+  const items = [
+    has('WX/OA-T') ? it('#weather', 'Outdoor', `${pv('WX/OA-T')} ${has('WX/OA-RH') ? pv('WX/OA-RH') : ''}`) : '',
+    has('WX/OA-PM25') ? it('#weather', 'Outdoor PM2.5', `${pv('WX/OA-PM25')} <span class="lvchip lv-na" id="ovs-aqi">-</span>`) : '',
+    has('GRID/PRICE') ? it('#weather', 'Grid price', `${pv('GRID/PRICE')} <span class="tou" id="ovs-tou">${pv('GRID/TOU-PERIOD')}</span>`) : '',
+    has('GRID/CO2-INT') ? it('#weather', 'Grid carbon', pv('GRID/CO2-INT')) : '',
+    has('GRID/DR-EVENT') ? it('#weather', 'Demand response', `${lamp('GRID/DR-EVENT', '', 'alarm')} <span id="ovs-shed"></span>`, 'ovs-dr') : '',
+    has('BLDG/OCC-COUNT') ? it('#zone', 'Occupancy', `${pv('BLDG/OCC-COUNT')}`) : '',
+    has('MTR/BLDG-DMD-15') ? it('#weather', '15-min demand', pv('MTR/BLDG-DMD-15')) : '',
+  ].filter(Boolean);
+  return items.length ? `<div class="ov-strip">${items.join('')}</div>` : '';
+}
 
 function zonesOf(f) {
   if (f.zones) return f.zones;
@@ -69,6 +85,7 @@ export function render(main) {
 
   main.innerHTML = `
   <div class="page-head"><h1>Building overview</h1><span class="crumb">${esc(S.info.building)}</span></div>
+  ${siteStrip()}
   <div class="ov-grid">
     <section class="card section-card">
       <div class="card-h"><b>Building section</b><small>zone air temperature vs. heating / cooling set points</small><span class="spacer"></span>
@@ -133,6 +150,18 @@ export function onTruth() { loadChart(); }
 
 export function update() {
   const s = S.snap;
+  // site strip
+  const aqi = document.getElementById('ovs-aqi');
+  if (aqi) { const c = classify('aqi25', val('WX/OA-PM25')); aqi.textContent = c.label; aqi.className = 'lvchip lv-' + c.level; }
+  const tou = document.getElementById('ovs-tou');
+  if (tou) tou.dataset.p = String(Math.round(val('GRID/TOU-PERIOD') ?? -1));
+  const dr = document.querySelector('.ovs-dr');
+  if (dr) {
+    const on = (val('GRID/DR-EVENT') ?? 0) >= 0.5;
+    dr.classList.toggle('on', on);
+    const shed = val('GRID/DR-SHED-KW');
+    document.getElementById('ovs-shed').textContent = on && shed !== null ? `shed ${Math.round(shed)} kW` : '';
+  }
   // zone tile colour: compare observed zone temperature to active set points
   for (const el of $$('.ztile[data-zone]')) {
     const z = el.dataset.zone;

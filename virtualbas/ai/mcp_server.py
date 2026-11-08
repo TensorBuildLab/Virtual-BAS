@@ -38,10 +38,16 @@ def build_server(url: str):
         return json.dumps([{k: e[k] for k in ("id", "type", "description", "parent")} for e in eq], indent=1)
 
     @mcp.tool()
-    def list_points(equip: str = "", kind: str = "") -> str:
-        """BAS points (optionally filtered by equipment id and kind: sensor|setpoint|command|meter|status|virtual)."""
-        pts = bas.points(equip or None, kind or None)
-        return json.dumps([{k: p[k] for k in ("id", "kind", "unit", "description", "tags")} for p in pts], indent=1)
+    def list_points(equip: str = "", kind: str = "", tier: str = "") -> str:
+        """BAS points, optionally filtered by equipment id, kind (sensor|setpoint|command|meter|status|virtual) and
+        tier (standard = typical BAS today | advanced | next_gen = IEQ, people counts, BTU meters, grid signals...)."""
+        pts = bas.points(equip or None, kind or None, tier or None)
+        return json.dumps([{k: p[k] for k in ("id", "kind", "unit", "description", "tier")} for p in pts], indent=1)
+
+    @mcp.tool()
+    def weather_forecast(hours: int = 24) -> str:
+        """Hourly forecast of outdoor temperature, humidity, irradiance and sky cover for the next `hours` hours."""
+        return json.dumps(bas.forecast(hours), indent=1)
 
     @mcp.tool()
     def read_points(points: list[str]) -> str:

@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install -e ".[dev,ai,analysis]"
-      - run: pytest -q tests/test_sensors_faults.py
+      - run: pytest -q tests/test_sensors_faults.py tests/test_environment.py
   integration:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-22.04

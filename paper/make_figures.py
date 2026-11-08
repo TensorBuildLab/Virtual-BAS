@@ -74,8 +74,8 @@ def fig_architecture():
     box(59, 29, 17, 10, "BAS controllers\n(observed values only)\nVAV, AHU, plant", "white", C[1], fs=6.3)
     box(81, 29, 16, 10, "Overrides\npriority array\n(operator / AI)", "white", C[1], fs=6.3)
     box(36, 15, 18, 9.5, "Actuator models &\nlocal-loop emulation\n$x^*=(r-b)/(1+g)$", "white", C[1], fs=6.3)
-    box(59, 15, 17, 9.5, "Real-world randomness\noccupancy, weather,\ngains, infiltration", "white", C[1], fs=6.3)
-    box(81, 15, 16, 9.5, "Fault & event\ninjection (39 types)\n5 layers", "white", C[1], fs=6.3)
+    box(59, 15, 17, 9.5, "Real world & environment\noccupancy, weather, IEQ,\nforecast, grid signals", "white", C[1], fs=6.3)
+    box(81, 15, 16, 9.5, "Fault & event\ninjection (44 types)\n5 layers", "white", C[1], fs=6.3)
     box(36, 4, 61, 7, "Historian: observed | truth | commands | labels  -  GUI, REST/WebSocket, MCP, Gymnasium  -  speed 1x ... max",
         "#ffffff", INK2, fs=6.3)
     arrow(24.5, 34.5, 36, 34.5, "truth $x_k$")
@@ -323,6 +323,75 @@ def fig_speed():
     return s
 
 
+# ----------------------------------------------------------------------------- Fig: extended environment
+EXP7_CASES = ["MERV 8", "MERV 13", "MERV 8 + bypass fault", "MERV 8 + smoke economizer lock-out"]
+
+
+def _exp7_series(name):
+    f = RES / "exp7_environment" / f"series_{name.replace(' ', '_').replace('+', 'plus')}.json"
+    d = pd.DataFrame(json.loads(f.read_text()))
+    d["time"] = pd.to_datetime(d["time"])
+    return d.set_index("time")
+
+
+def fig_environment():
+    zone = "ZN-Perimeter_mid_ZN_1"
+    fig, axs = plt.subplots(2, 2, figsize=(7.2, 4.4))
+    # (a) smoke episode
+    ax = axs[0, 0]
+    base = _exp7_series(EXP7_CASES[0])
+    ax.plot(base.index, base["WX/OA-PM25"], color=INK2, lw=1.0, label="outdoor")
+    for i, n in enumerate(EXP7_CASES):
+        d = _exp7_series(n)
+        lab = n.replace("smoke economizer lock-out", "econ. lock-out").replace("bypass fault", "filter bypass")
+        ax.plot(d.index, d["mean_in_pm25"], color=C[i], lw=1.2, label=f"indoor, {lab}")
+    ax.axhline(35, color=C[7], lw=0.7, ls=":")
+    ax.text(base.index[10], 37, "35 µg/m³", fontsize=6, color=C[7])
+    ax.set_ylabel("PM2.5 [µg/m³]")
+    ax.set_title("(a) wildfire smoke episode, filters and economizer", fontsize=7.5, loc="left")
+    ax.set_ylim(0, 175)
+    ax.legend(fontsize=5.6, loc="upper left", ncol=2)
+    ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%a"))
+    # day profile of one perimeter zone (Monday, MERV 8)
+    day = base.loc["2023-07-10 05:00":"2023-07-10 21:00"]
+    hrs = day.index.hour + day.index.minute / 60
+    ax = axs[0, 1]
+    ax.plot(hrs, day[f"{zone}/ZN-LUX"], color=C[3], label="work-plane illuminance")
+    ax.plot(hrs, day[f"{zone}/DAYLIGHT-LUX"], color=C[3], ls="--", lw=1.0, label="daylight share (truth)")
+    ax.plot(hrs, day[f"obs:{zone}/ZN-LUX"], color=INK2, lw=0.6, label="photosensor reading")
+    ax.set_ylabel("illuminance [lx]")
+    ax.set_title("(b) light", fontsize=7.5, loc="left")
+    ax.legend(fontsize=5.8, loc="upper left")
+    ax = axs[1, 0]
+    ax.plot(hrs, day[f"{zone}/ZN-TVOC"], color=C[6], label="TVOC (truth)")
+    ax.plot(hrs, day[f"obs:{zone}/ZN-TVOC"], color=C[6], lw=0.6, alpha=0.7, label="MOx sensor")
+    ax.set_ylabel("TVOC [µg/m³]")
+    ax2 = ax.twinx()
+    ax2.plot(hrs, day[f"{zone}/ZN-DBA"], color=C[4], lw=1.0, label="sound level")
+    ax2.set_ylabel("sound [dBA]", color=C[4])
+    ax2.set_ylim(5, 50)
+    ax.set_ylim(0, 260)
+    ax2.spines["right"].set_visible(True)
+    ax2.grid(False)
+    ax.set_title("(c) air quality and sound", fontsize=7.5, loc="left")
+    h1, l1 = ax.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax.legend(h1 + h2, l1 + l2, fontsize=5.8, loc="center right")
+    ax.set_xlabel("hour of day")
+    ax = axs[1, 1]
+    ax.plot(hrs, day[f"{zone}/PMV"], color=C[0], label="PMV (truth)")
+    v = day[f"{zone}/TS-VOTE"].astype(float)
+    ax.plot(hrs, v, ".", color=C[1], ms=2.5, label="mean occupant vote, last hour")
+    ax.axhspan(-0.5, 0.5, color=C[2], alpha=0.08, lw=0)
+    ax.set_ylim(-2.2, 2.2)
+    ax.set_ylabel("thermal sensation [-]")
+    ax.set_title("(d) comfort and occupant feedback", fontsize=7.5, loc="left")
+    ax.legend(fontsize=5.8, loc="lower right")
+    ax.set_xlabel("hour of day")
+    fig.tight_layout()
+    save(fig, "fig_environment")
+
+
 # ----------------------------------------------------------------------------- Fig: AI agents
 def fig_ai():
     b = json.loads((RES / "exp6_ai/partB.json").read_text())
@@ -377,6 +446,12 @@ def latex_outputs():
     M["NumSensorPts"] = sum(p.kind in ("sensor", "meter") for p in cat.points.values())
     M["NumSoftPts"] = sum(p.kind in ("setpoint", "command", "virtual", "status") for p in cat.points.values())
     M["NumTruthPts"] = sum(p.kind == "truth" for p in cat.points.values())
+    for key, tier in (("NumStdPts", "standard"), ("NumAdvPts", "advanced"), ("NumNextPts", "next_gen")):
+        M[key] = sum(p.tier == tier for p in cat.points.values())
+    M["NumModelPts"] = sum(p.source in ("model", "surrogate") for p in cat.points.values())
+    M["NumCalcPts"] = sum(p.source == "bas" and p.kind == "virtual" for p in cat.points.values())
+    M["NumZonePts"] = len(cat.points_of(next(e.id for e in cat.equipment.values() if e.id == "ZN-Perimeter_mid_ZN_1")))
+    M["NumWxPts"] = len(cat.points_of("WX"))
     # ---- validation
     e = pd.read_csv(TAB / "validation_energy.csv").set_index("meter")
     t = pd.read_csv(TAB / "validation_temps.csv")
@@ -466,6 +541,15 @@ def latex_outputs():
     g = json.loads((RES / "exp5_generality/generality.json").read_text())
     hosp = [x for x in g if "Hospital" in x["model"]][0]
     M["NumHospitalPts"] = hosp["n_points"]
+    # ---- extended environment (exp7)
+    e7 = json.loads((RES / "exp7_environment/summary.json").read_text())
+    M["EnvPeakOut"] = f"{e7['MERV 8']['peak_out_pm25']:.0f}"
+    for key, case in (("Eight", "MERV 8"), ("Thirteen", "MERV 13"), ("Bypass", "MERV 8 + bypass fault"),
+                      ("Lock", "MERV 8 + smoke economizer lock-out")):
+        M[f"EnvPeak{key}"] = f"{e7[case]['peak_in_pm25']:.0f}"
+        M[f"EnvHrs{key}"] = f"{e7[case]['occ_zone_hours_over_35']:.0f}"
+    from virtualbas.realworld.sensors import SENSOR_CLASSES
+    M["NumSensorClasses"] = len(SENSOR_CLASSES) - 1
     M["HospitalSps"] = f"{hosp['steps_per_s']:.0f}"
     rows = [r"\begin{tabular}{lrrrrrrr}", r"\toprule",
             r"Building & Zones & VAV & AHUs & Plant loops & Equipment & Points & Samples/s \\", r"\midrule"]
@@ -483,7 +567,7 @@ def latex_outputs():
 
 if __name__ == "__main__":
     for f in [fig_sensor_model, fig_validation, fig_drift, fig_fault_matrix, fig_occupancy, fig_fdd,
-              fig_speed, fig_ai, tables_misc, latex_outputs]:
+              fig_speed, fig_ai, fig_environment, tables_misc, latex_outputs]:
         try:
             f()
         except Exception as e:  # noqa: BLE001

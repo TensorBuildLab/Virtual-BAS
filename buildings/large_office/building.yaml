@@ -6,3 +6,11 @@ description: >
   hot-water reheat, 2 water-cooled chillers, 1 cooling tower, 1 gas boiler and variable-speed pumps.
 control:
   profile: baseline        # baseline (reproduces native EnergyPlus controls) | g36 (ASHRAE Guideline 36 inspired)
+# exposed / recorded point tiers: standard (typical BAS today), advanced, next_gen. Truth is always recorded.
+# point_tiers: [standard, advanced, next_gen]
+# outer-space environment models (realworld/environment.py), all optional
+environment:
+  filter_merv: 8                 # AHU filter class (particle removal)
+  design_illuminance_lux: 500    # work-plane illuminance at design lighting power
+  pm25_out_mean: 8.0             # ug/m3 long-term outdoor PM2.5
+  # tou: {off_peak: 0.08, mid_peak: 0.14, on_peak: 0.24, on_peak_hours: [12, 18], mid_peak_hours: [[8, 12], [18, 21]]}

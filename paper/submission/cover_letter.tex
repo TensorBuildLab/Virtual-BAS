@@ -1,0 +1,35 @@
+\documentclass[11pt]{letter}
+\usepackage[margin=1in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\signature{Liang Zhang\University of Arizona\liangzhang1@arizona.edu}
+\address{Liang Zhang\University of Arizona\Tucson, AZ, USA}
+\begin{document}
+\begin{letter}{Editors-in-Chief\Energy and Buildings}
+\opening{Dear Editors,}
+
+I am pleased to submit the manuscript entitled \emph{``Virtual BAS: a physics-grounded, real-world-like building
+automation system emulator with labelled faults, sensor imperfections and stochastic operation for developing and
+testing building AI''} for consideration as a research article in \emph{Energy and Buildings}.
+
+Artificial intelligence for building operation---fault detection and diagnosis, supervisory and reinforcement-learning
+control, and emerging ambient and large-language-model agents---must work on the data of real building automation
+systems, where sensors drift, data go missing, occupants behave randomly and equipment fails. Real BAS data rarely come
+with ground truth, while existing simulation test beds are mostly idealised. The manuscript presents an open-source
+framework that couples a step-wise EnergyPlus simulation (the physics) with an explicitly modelled and fully labelled
+real-world layer, in which BAS controllers act on imperfect observations so that the physical consequences of
+imperfection are simulated. Faults and events from a library of 39 mathematically defined types can be injected at run
+time by people and by AI agents, the clock runs from real time to tens of thousands of times faster, and any EnergyPlus
+model is converted automatically. Using the DOE reference large office, we verify the emulator against native
+EnergyPlus and demonstrate equipment-level fault impacts, labelled data generation for FDD, AI agents in the loop,
+time-acceleration accuracy and generality across five reference buildings.
+
+We believe the work fits the scope of \emph{Energy and Buildings} on building energy systems, controls, automation and
+data-driven methods, and that the open software and tutorials
+(\url{https://github.com/TensorBuildLab/Virtual-BAS}) will be useful to the journal's readership.
+
+The manuscript is original, has not been published previously and is not under consideration elsewhere. The author
+declares no competing interests. The use of generative AI assistance is disclosed in the manuscript.
+
+\closing{Sincerely,}
+\end{letter}
+\end{document}

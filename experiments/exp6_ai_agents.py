@@ -61,8 +61,8 @@ def part_a(out: Path):
         r = c.post("/api/injections", json=dict(dec, source="ai"))
         log.append({"time": c.get("/api/status").json()["time"], "decision": dec, "status": r.status_code,
                     "id": r.json().get("id")})
+        k0 = v.step_count               # read before releasing the steps (avoids a race at max speed)
         c.post("/api/control", json={"action": "step", "value": 72})
-        k0 = v.step_count
         while v.step_count < k0 + 72 and not v.engine.finished.is_set():
             time.sleep(0.01)
         if v.engine.finished.is_set():

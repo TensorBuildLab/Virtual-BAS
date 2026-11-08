@@ -1626,7 +1626,9 @@
    "terminal": "Basement VAV Box Component",
    "zone": "Basement",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 7.94164,
+   "reheat_max_water_m3s": 0.000647107
   },
   "Core_bottom VAV Box Component FLOW": {
    "schedule": "VBAS CMD Core_bottom VAV Box Component FLOW",
@@ -1635,7 +1637,9 @@
    "terminal": "Core_bottom VAV Box Component",
    "zone": "Core_bottom",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 9.6803,
+   "reheat_max_water_m3s": 0.000688452
   },
   "Core_mid VAV Box Component FLOW": {
    "schedule": "VBAS CMD Core_mid VAV Box Component FLOW",
@@ -1644,7 +1648,9 @@
    "terminal": "Core_mid VAV Box Component",
    "zone": "Core_mid",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 103.49342,
+   "reheat_max_water_m3s": 0.00753382
   },
   "Core_top VAV Box Component FLOW": {
    "schedule": "VBAS CMD Core_top VAV Box Component FLOW",
@@ -1653,7 +1659,9 @@
    "terminal": "Core_top VAV Box Component",
    "zone": "Core_top",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 9.96608,
+   "reheat_max_water_m3s": 0.00225316
   },
   "Perimeter_bot_ZN_1 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_bot_ZN_1 VAV Box Component FLOW",
@@ -1662,7 +1670,9 @@
    "terminal": "Perimeter_bot_ZN_1 VAV Box Component",
    "zone": "Perimeter_bot_ZN_1",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 1.99331,
+   "reheat_max_water_m3s": 0.000535764
   },
   "Perimeter_bot_ZN_2 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_bot_ZN_2 VAV Box Component FLOW",
@@ -1671,7 +1681,9 @@
    "terminal": "Perimeter_bot_ZN_2 VAV Box Component",
    "zone": "Perimeter_bot_ZN_2",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 1.90482,
+   "reheat_max_water_m3s": 0.000375878
   },
   "Perimeter_bot_ZN_3 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_bot_ZN_3 VAV Box Component FLOW",
@@ -1680,7 +1692,9 @@
    "terminal": "Perimeter_bot_ZN_3 VAV Box Component",
    "zone": "Perimeter_bot_ZN_3",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 1.47036,
+   "reheat_max_water_m3s": 0.000535727
   },
   "Perimeter_bot_ZN_4 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_bot_ZN_4 VAV Box Component FLOW",
@@ -1689,7 +1703,9 @@
    "terminal": "Perimeter_bot_ZN_4 VAV Box Component",
    "zone": "Perimeter_bot_ZN_4",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 2.00016,
+   "reheat_max_water_m3s": 0.000378563
   },
   "Perimeter_mid_ZN_1 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_mid_ZN_1 VAV Box Component FLOW",
@@ -1698,7 +1714,9 @@
    "terminal": "Perimeter_mid_ZN_1 VAV Box Component",
    "zone": "Perimeter_mid_ZN_1",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 20.57835,
+   "reheat_max_water_m3s": 0.00604069
   },
   "Perimeter_mid_ZN_2 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_mid_ZN_2 VAV Box Component FLOW",
@@ -1707,7 +1725,9 @@
    "terminal": "Perimeter_mid_ZN_2 VAV Box Component",
    "zone": "Perimeter_mid_ZN_2",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 19.90123,
+   "reheat_max_water_m3s": 0.00412422
   },
   "Perimeter_mid_ZN_3 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_mid_ZN_3 VAV Box Component FLOW",
@@ -1716,7 +1736,9 @@
    "terminal": "Perimeter_mid_ZN_3 VAV Box Component",
    "zone": "Perimeter_mid_ZN_3",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 15.15452,
+   "reheat_max_water_m3s": 0.00604067
   },
   "Perimeter_mid_ZN_4 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_mid_ZN_4 VAV Box Component FLOW",
@@ -1725,7 +1747,9 @@
    "terminal": "Perimeter_mid_ZN_4 VAV Box Component",
    "zone": "Perimeter_mid_ZN_4",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 21.09414,
+   "reheat_max_water_m3s": 0.00421828
   },
   "Perimeter_top_ZN_1 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_top_ZN_1 VAV Box Component FLOW",
@@ -1734,7 +1758,9 @@
    "terminal": "Perimeter_top_ZN_1 VAV Box Component",
    "zone": "Perimeter_top_ZN_1",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 2.04266,
+   "reheat_max_water_m3s": 0.000840328
   },
   "Perimeter_top_ZN_2 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_top_ZN_2 VAV Box Component FLOW",
@@ -1743,7 +1769,9 @@
    "terminal": "Perimeter_top_ZN_2 VAV Box Component",
    "zone": "Perimeter_top_ZN_2",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 1.93229,
+   "reheat_max_water_m3s": 0.000546557
   },
   "Perimeter_top_ZN_3 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_top_ZN_3 VAV Box Component FLOW",
@@ -1752,7 +1780,9 @@
    "terminal": "Perimeter_top_ZN_3 VAV Box Component",
    "zone": "Perimeter_top_ZN_3",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 1.45409,
+   "reheat_max_water_m3s": 0.000840322
   },
   "Perimeter_top_ZN_4 VAV Box Component FLOW": {
    "schedule": "VBAS CMD Perimeter_top_ZN_4 VAV Box Component FLOW",
@@ -1761,7 +1791,9 @@
    "terminal": "Perimeter_top_ZN_4 VAV Box Component",
    "zone": "Perimeter_top_ZN_4",
    "unit": "-",
-   "autosized": false
+   "autosized": false,
+   "vmax_m3s": 2.15286,
+   "reheat_max_water_m3s": 0.000556246
   }
  },
  "faults": {

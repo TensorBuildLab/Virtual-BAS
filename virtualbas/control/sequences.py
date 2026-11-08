@@ -41,8 +41,8 @@ class ControlConfig:
     night_cycle_tol: float = 1.0
     night_cycle_min_run_s: float = 1800.0
     # VAV loops
-    vav_kp: float = 0.25
-    vav_ti: float = 1500.0
+    vav_kp: float = 0.15       # 15 %/K - tuned for 5-min sampling (no limit cycles with ideal sensors)
+    vav_ti: float = 1200.0
     heat_dual_max: bool = False
     heat_max_frac: float = 0.5
     # AHU

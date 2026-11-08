@@ -234,8 +234,9 @@ def build_catalog(man: Manifest) -> Catalog:
         frac_min = man.commands.get(f"{t.name} FLOW", {}).get("default", 0.3)
         if man.commands.get(f"{t.name} FLOW", {}).get("autosized"):
             frac_min = man.design_value(t.type, t.name, "Constant Minimum Air Flow Fraction", frac_min) or frac_min
-        rh_w = None
-        if t.reheat:
+        rh_w = man.commands.get(f"{t.name} FLOW", {}).get("reheat_max_water_m3s")
+        vmax = man.commands.get(f"{t.name} FLOW", {}).get("vmax_m3s") or vmax
+        if t.reheat and not rh_w:
             rh_w = man.design_value(t.reheat.type, t.reheat.name, "Maximum Water Flow Rate", None) or \
                 man.design_value(t.type, t.name, "Maximum Reheat Water Flow Rate", None)
         cat.add_equip(Equipment(vid, "VAV", t.name, f"VAV terminal with hot-water reheat serving {z.name}", parent=None,

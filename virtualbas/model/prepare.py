@@ -157,8 +157,11 @@ def _bind_terminals(model: EpJSON, topo: Topology, cmd, design: dict[str, dict[s
             continue
         raw_frac = to.get("constant_minimum_air_flow_fraction", 0.3)
         frac = float(raw_frac) if isinstance(raw_frac, (int, float)) else 0.3  # 'Autosize' -> updated after sizing
+        num = lambda v: float(v) if isinstance(v, (int, float)) else None  # noqa: E731
         s = cmd(f"{tname} FLOW", frac, kind="terminal_flow_fraction", terminal=tname, zone=term.zone, unit="-",
-                autosized=not isinstance(raw_frac, (int, float)))
+                autosized=not isinstance(raw_frac, (int, float)),
+                vmax_m3s=num(to.get("maximum_air_flow_rate")),
+                reheat_max_water_m3s=num(to.get("maximum_hot_water_or_steam_flow_rate")))
         to["zone_minimum_air_flow_input_method"] = "Scheduled"
         to["minimum_air_flow_fraction_schedule_name"] = s
         to["constant_minimum_air_flow_fraction"] = raw_frac  # used for sizing only

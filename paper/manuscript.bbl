@@ -1,0 +1,218 @@
+\begin{thebibliography}{10}
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\expandafter\ifx\csname href\endcsname\relax
+  \def\href#1#2{#2} \def\path#1{#1}\fi
+
+\bibitem{katipamula2005review1}
+S.~Katipamula, M.~R. Brambley, Methods for fault detection, diagnostics, and
+  prognostics for building systems---a review, part {I}, HVAC\&R Research
+  11~(1) (2005) 3--25.
+
+\bibitem{kim2018fddreview}
+W.~Kim, S.~Katipamula, A review of fault detection and diagnostics methods for
+  building systems, Science and Technology for the Built Environment 24~(1)
+  (2018) 3--21.
+
+\bibitem{wang2020rlreview}
+Z.~Wang, T.~Hong, Reinforcement learning for building controls: The
+  opportunities and challenges, Applied Energy 269 (2020) 115036.
+\newblock \href {https://doi.org/10.1016/j.apenergy.2020.115036}
+  {\path{doi:10.1016/j.apenergy.2020.115036}}.
+
+\bibitem{wei2017drl}
+T.~Wei, Y.~Wang, Q.~Zhu, Deep reinforcement learning for building {HVAC}
+  control, in: Proceedings of the 54th Annual Design Automation Conference (DAC
+  '17), 2017, pp. 1--6.
+
+\bibitem{zhang2018radiant}
+Z.~Zhang, K.~P. Lam, Practical implementation and evaluation of deep
+  reinforcement learning control for a radiant heating system, in: Proceedings
+  of the 5th Conference on Systems for Built Environments (BuildSys '18), 2018,
+  pp. 148--157.
+
+\bibitem{nweye2022realworld}
+K.~Nweye, B.~Liu, P.~Stone, Z.~Nagy, Real-world challenges for multi-agent
+  reinforcement learning in grid-interactive buildings, Energy and AI 10 (2022)
+  100202.
+\newblock \href {https://doi.org/10.1016/j.egyai.2022.100202}
+  {\path{doi:10.1016/j.egyai.2022.100202}}.
+
+\bibitem{dulacarnold2021challenges}
+G.~Dulac-Arnold, N.~Levine, D.~J. Mankowitz, J.~Li, C.~Paduraru, S.~Gowal,
+  T.~Hester, Challenges of real-world reinforcement learning: definitions,
+  benchmarks and analysis, Machine Learning 110~(9) (2021) 2419--2468.
+
+\bibitem{wetter2011bcvtb}
+M.~Wetter, Co-simulation of building energy and control systems with the
+  {Building Controls Virtual Test Bed}, Journal of Building Performance
+  Simulation 4~(3) (2011) 185--203.
+\newblock \href {https://doi.org/10.1080/19401493.2010.518631}
+  {\path{doi:10.1080/19401493.2010.518631}}.
+
+\bibitem{crawley2001energyplus}
+D.~B. Crawley, L.~K. Lawrie, F.~C. Winkelmann, W.~F. Buhl, Y.~J. Huang, C.~O.
+  Pedersen, R.~K. Strand, R.~J. Liesen, D.~E. Fisher, M.~J. Witte, J.~Glazer,
+  Energyplus: creating a new-generation building energy simulation program,
+  Energy and Buildings 33~(4) (2001) 319--331.
+\newblock \href {https://doi.org/10.1016/S0378-7788(00)00114-6}
+  {\path{doi:10.1016/S0378-7788(00)00114-6}}.
+
+\bibitem{wetter2014modelica}
+M.~Wetter, W.~Zuo, T.~S. Nouidui, X.~Pang, Modelica {Buildings} library,
+  Journal of Building Performance Simulation 7~(4) (2014) 253--270.
+\newblock \href {https://doi.org/10.1080/19401493.2013.765506}
+  {\path{doi:10.1080/19401493.2013.765506}}.
+
+\bibitem{blum2021boptest}
+D.~Blum, J.~Arroyo, S.~Huang, J.~Drgo{\v{n}}a, F.~Jorissen, H.~T. Walnum,
+  Y.~Chen, K.~Benne, D.~Vrabie, M.~Wetter, L.~Helsen, Building optimization
+  testing framework ({BOPTEST}) for simulation-based benchmarking of control
+  strategies in buildings, Journal of Building Performance Simulation 14~(5)
+  (2021) 586--610.
+\newblock \href {https://doi.org/10.1080/19401493.2021.1986574}
+  {\path{doi:10.1080/19401493.2021.1986574}}.
+
+\bibitem{marzullo2022actb}
+T.~Marzullo, S.~Dey, N.~Long, J.~Leiva~Vilaplana, G.~Henze, A high-fidelity
+  building performance simulation test bed for the development and evaluation
+  of advanced controls, Journal of Building Performance Simulation 15~(3)
+  (2022) 379--397.
+\newblock \href {https://doi.org/10.1080/19401493.2022.2058091}
+  {\path{doi:10.1080/19401493.2022.2058091}}.
+
+\bibitem{scharnhorst2021energym}
+P.~Scharnhorst, B.~Schubnel, C.~Fern{\'a}ndez~Bandera, J.~Salom, P.~Taddeo,
+  M.~Boegli, T.~Gorecki, Y.~Stauffer, A.~Peppas, C.~Politi, Energym: A building
+  model library for controller benchmarking, Applied Sciences 11~(8) (2021)
+  3518.
+\newblock \href {https://doi.org/10.3390/app11083518}
+  {\path{doi:10.3390/app11083518}}.
+
+\bibitem{jimenez2021sinergym}
+J.~Jim{\'e}nez-Raboso, A.~Campoy-Nieves, A.~Manjavacas-Lucas,
+  J.~G{\'o}mez-Romero, M.~Molina-Solana, Sinergym: a building simulation and
+  control framework for training reinforcement learning agents, in: Proceedings
+  of the 8th ACM International Conference on Systems for Energy-Efficient
+  Buildings, Cities, and Transportation (BuildSys '21), 2021, pp. 319--323.
+
+\bibitem{vazquez2019citylearn}
+J.~R. V{\'a}zquez-Canteli, J.~K{\"a}mpf, G.~Henze, Z.~Nagy, {CityLearn} v1.0:
+  An {OpenAI Gym} environment for demand response with deep reinforcement
+  learning, in: Proceedings of the 6th ACM International Conference on Systems
+  for Energy-Efficient Buildings, Cities, and Transportation (BuildSys '19),
+  2019, pp. 356--357.
+
+\bibitem{zhang2017faults}
+R.~Zhang, T.~Hong, Modeling of {HVAC} operational faults in building
+  performance simulation, Applied Energy 202 (2017) 178--188.
+
+\bibitem{li2018faultreview}
+Y.~Li, Z.~O'Neill, A critical review of fault modeling of {HVAC} systems in
+  buildings, Building Simulation 11~(5) (2018) 953--975.
+\newblock \href {https://doi.org/10.1007/s12273-018-0458-4}
+  {\path{doi:10.1007/s12273-018-0458-4}}.
+
+\bibitem{wen2012rp1312}
+J.~Wen, S.~Li, {RP-1312} -- tools for evaluating fault detection and diagnostic
+  methods for air-handling units, Tech. rep., ASHRAE, Atlanta, GA (2012).
+
+\bibitem{granderson2023dataset}
+J.~Granderson, G.~Lin, Y.~Chen, A.~Casillas, J.~Wen, Z.~Chen, P.~Im, S.~Huang,
+  J.~Ling, A labeled dataset for building {HVAC} systems operating in faulted
+  and fault-free states, Scientific Data 10 (2023) 342.
+\newblock \href {https://doi.org/10.1038/s41597-023-02197-w}
+  {\path{doi:10.1038/s41597-023-02197-w}}.
+
+\bibitem{chen2021taxonomy}
+Y.~Chen, G.~Lin, E.~Crowe, J.~Granderson, Development of a unified taxonomy for
+  {HVAC} system faults, Energies 14~(17) (2021) 5581.
+\newblock \href {https://doi.org/10.3390/en14175581}
+  {\path{doi:10.3390/en14175581}}.
+
+\bibitem{energyplusapi}
+{U.S. Department of Energy}, {EnergyPlus} {Python} {API} documentation (version
+  23.2), \url{https://energyplus.readthedocs.io/en/latest/api.html}, accessed 8
+  November 2026 (2023).
+
+\bibitem{haystack}
+{Project Haystack}, Project {Haystack}: open source initiative to streamline
+  working with data from the internet of things,
+  \url{https://project-haystack.org}, accessed 8 November 2026 (2026).
+
+\bibitem{balaji2016brick}
+B.~Balaji, A.~Bhattacharya, G.~Fierro, J.~Gao, J.~Gluck, D.~Hong, A.~Johansen,
+  J.~Koh, J.~Ploennigs, Y.~Agarwal, M.~B{\'e}rges, D.~Culler, R.~Gupta, M.~B.
+  Kj{\ae}rgaard, M.~Srivastava, K.~Whitehouse, Brick: Towards a unified
+  metadata schema for buildings, in: Proceedings of the 3rd ACM International
+  Conference on Systems for Energy-Efficient Built Environments (BuildSys '16),
+  2016, pp. 41--50.
+\newblock \href {https://doi.org/10.1145/2993422.2993577}
+  {\path{doi:10.1145/2993422.2993577}}.
+
+\bibitem{mcp2024}
+{Anthropic}, Model {Context} {Protocol} specification,
+  \url{https://modelcontextprotocol.io}, accessed 8 November 2026 (2024).
+
+\bibitem{towers2024gymnasium}
+M.~Towers, A.~Kwiatkowski, J.~Terry, J.~U. Balis, G.~De~Cola, T.~Deleu,
+  M.~Goul{\~a}o, A.~Kallinteris, M.~Krimmel, A.~KG, et~al., Gymnasium: A
+  standard interface for reinforcement learning environments, arXiv:2407.17032
+  (2024).
+
+\bibitem{deru2011reference}
+M.~Deru, K.~Field, D.~Studer, K.~Benne, B.~Griffith, P.~Torcellini, B.~Liu,
+  M.~Halverson, D.~Winiarski, M.~Rosenberg, M.~Yazdanian, J.~Huang, D.~Crawley,
+  U.s. department of energy commercial reference building models of the
+  national building stock, Tech. Rep. NREL/TP-5500-46861, National Renewable
+  Energy Laboratory, Golden, CO (2011).
+
+\bibitem{brockman2016gym}
+G.~Brockman, V.~Cheung, L.~Pettersson, J.~Schneider, J.~Schulman, J.~Tang,
+  W.~Zaremba, {OpenAI Gym}, arXiv:1606.01540 (2016).
+
+\bibitem{uhlenbeck1930brownian}
+G.~E. Uhlenbeck, L.~S. Ornstein, On the theory of the {Brownian} motion,
+  Physical Review 36~(5) (1930) 823--841.
+\newblock \href {https://doi.org/10.1103/PhysRev.36.823}
+  {\path{doi:10.1103/PhysRev.36.823}}.
+
+\bibitem{gilbert1960burst}
+E.~N. Gilbert, Capacity of a burst-noise channel, Bell System Technical Journal
+  39~(5) (1960) 1253--1265.
+\newblock \href {https://doi.org/10.1002/j.1538-7305.1960.tb03959.x}
+  {\path{doi:10.1002/j.1538-7305.1960.tb03959.x}}.
+
+\bibitem{elliott1963burst}
+E.~O. Elliott, Estimates of error rates for codes on burst-noise channels, Bell
+  System Technical Journal 42~(5) (1963) 1977--1997.
+\newblock \href {https://doi.org/10.1002/j.1538-7305.1963.tb00955.x}
+  {\path{doi:10.1002/j.1538-7305.1963.tb00955.x}}.
+
+\bibitem{page2008occupancy}
+J.~Page, D.~Robinson, N.~Morel, J.-L. Scartezzini, A generalised stochastic
+  model for the simulation of occupant presence, Energy and Buildings 40~(2)
+  (2008) 83--98.
+
+\bibitem{ashrae2021g36}
+{ASHRAE}, {ASHRAE} {Guideline} 36-2021: High-Performance Sequences of Operation
+  for {HVAC} Systems, ASHRAE, Atlanta, GA, 2021.
+
+\bibitem{ashrae2014g14}
+{ASHRAE}, {ASHRAE} {Guideline} 14-2014: Measurement of Energy, Demand, and
+  Water Savings, ASHRAE, Atlanta, GA, 2014.
+
+\bibitem{breiman2001rf}
+L.~Breiman, Random forests, Machine Learning 45~(1) (2001) 5--32.
+\newblock \href {https://doi.org/10.1023/A:1010933404324}
+  {\path{doi:10.1023/A:1010933404324}}.
+
+\bibitem{pedregosa2011sklearn}
+F.~Pedregosa, G.~Varoquaux, A.~Gramfort, V.~Michel, B.~Thirion, O.~Grisel,
+  M.~Blondel, P.~Prettenhofer, R.~Weiss, V.~Dubourg, J.~Vanderplas, A.~Passos,
+  D.~Cournapeau, M.~Brucher, M.~Perrot, {\'E}.~Duchesnay, Scikit-learn: Machine
+  learning in {Python}, Journal of Machine Learning Research 12 (2011)
+  2825--2830.
+
+\end{thebibliography}

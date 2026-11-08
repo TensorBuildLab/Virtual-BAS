@@ -21,9 +21,9 @@ Virtual BAS provides that environment:
   values, stochastic occupancy, weather and internal-gain events, and a library of 39 faults/events on five layers
   (sensor, actuator, equipment, control, network). Every imperfection is defined by an equation and **labelled**.
 * **Equipment level** - VAV boxes, AHUs (economizer, coils, fan, filter, static pressure), chillers, boiler, cooling
-  tower and pumps are all exposed as BAS points (≈450 for the large office), with Haystack tags and Brick classes.
+  tower and pumps are all exposed as BAS points (518 for the large office), with Haystack tags and Brick classes.
 * **Time control** - real time (1x), 2x, 10x, 60x, 360x, ... or as fast as possible (one simulated year of the large
-  office in ~3.5 minutes), changeable while running; pause and single-step.
+  office in ~3 minutes, up to 144,000x real time), changeable while running; pause and single-step.
 * **Injection by humans and AI** - GUI, scenario files, REST API, Python client, MCP server (LLM agents), Gymnasium
   environment, and a random fault generator.
 * **Generic methodology** - any EnergyPlus model is converted automatically (`vbas prepare`): topology discovery,
@@ -112,7 +112,7 @@ flowchart LR
 ## Verification (summary)
 
 With ideal sensors and the baseline BAS program, a full year of the DOE large office driven by Virtual BAS reproduces
-the native EnergyPlus simulation within 0.4 % for electricity, 6 % for gas and 0.04 K mean absolute zone-temperature
+the native EnergyPlus simulation within 0.5 % for electricity, 5 % for gas and 0.03 K mean absolute zone-temperature
 difference (details in the paper and `experiments/exp1_validation.py`).
 
 ## Citing

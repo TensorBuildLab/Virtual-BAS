@@ -10,3 +10,13 @@ buildings/*/sizing/
 buildings/*/sizing_native/
 results/
 !results/README.md
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.blg
+paper/*.spl
+paper/build_*.png
+paper/build.log
+paper/submission/*.aux
+paper/submission/*.log
+paper/submission/*.out

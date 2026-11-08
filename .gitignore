@@ -1,0 +1,12 @@
+.venv/
+.vbas_runs/
+__pycache__/
+*.pyc
+results/**/eplus/
+*.egg-info/
+.pytest_cache/
+paper/build/
+buildings/*/sizing/
+buildings/*/sizing_native/
+results/
+!results/README.md

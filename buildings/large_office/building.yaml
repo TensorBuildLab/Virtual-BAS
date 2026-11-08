@@ -1,0 +1,8 @@
+# Virtual BAS building configuration - DOE Commercial Reference Building "Large Office" (new construction, 90.1-2004), Chicago
+name: DOE Reference Large Office (Chicago)
+description: >
+  12-storey office (46,320 m2) modelled with 16 conditioned zones (basement, ground, middle (x10 multiplier) and top
+  floors, each with 4 perimeter + 1 core zone), 4 VAV air handling units with economizers, 16 VAV boxes with
+  hot-water reheat, 2 water-cooled chillers, 1 cooling tower, 1 gas boiler and variable-speed pumps.
+control:
+  profile: baseline        # baseline (reproduces native EnergyPlus controls) | g36 (ASHRAE Guideline 36 inspired)

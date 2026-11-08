@@ -1,0 +1,37 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      energyplus_url:
+        description: "EnergyPlus Linux tarball URL for the integration job"
+        default: "https://github.com/NREL/EnergyPlus/releases/download/v23.2.0/EnergyPlus-23.2.0-7636e6b3e9-Linux-Ubuntu22.04-x86_64.tar.gz"
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -e ".[dev,ai,analysis]"
+      - run: pytest -q tests/test_sensors_faults.py
+  integration:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install EnergyPlus
+        run: |
+          curl -L -o ep.tar.gz "${{ github.event.inputs.energyplus_url }}"
+          mkdir -p $HOME/energyplus && tar -xzf ep.tar.gz -C $HOME/energyplus --strip-components=1
+          echo "ENERGYPLUS_DIR=$HOME/energyplus" >> $GITHUB_ENV
+      - run: pip install -e ".[dev,ai,analysis]"
+      - run: pytest -q

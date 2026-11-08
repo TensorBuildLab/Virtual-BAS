@@ -1,0 +1,13 @@
+# The canonical inner/outer-space example: a zone temperature sensor drifts; the VAV controller does not know it,
+# controls the (wrong) observed value to set point and sends wrong commands to EnergyPlus.
+name: thermostat_drift
+start: 2023-07-10
+end: 2023-07-16
+seed: 7
+realism: 1.0
+occupancy: {stochastic: true}
+injections:
+  - type: sensor_drift
+    target: ZN-Core_mid/ZN-T
+    start: 2023-07-11T00:00:00
+    params: {rate_per_day: 0.5, max_abs: 4.0}

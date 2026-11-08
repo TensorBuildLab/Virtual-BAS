@@ -1,0 +1,32 @@
+# Interactive demo: two summer weeks, realistic sensors, stochastic occupancy, random faults + scripted events
+name: demo_summer
+start: 2023-07-10
+end: 2023-07-23
+seed: 42
+realism: 1.0              # 0 = ideal sensors, 1 = typical commercial BAS sensors
+speed: 60x                # 1x (real time), 2x, 10x, 60x, 360x, max
+control:
+  profile: baseline       # baseline | g36
+occupancy:
+  stochastic: true
+  mobility: 0.3
+random_faults:
+  rate_per_week: 2        # Poisson arrivals of random faults/events (labelled source=random)
+injections:
+  - type: sensor_drift
+    target: ZN-Core_mid/ZN-T
+    start: 2023-07-11T08:00:00
+    duration: 5d
+    params: {rate_per_day: 0.5, max_abs: 3.0}
+    note: Thermostat drifts warm -> VAV over-cools the core zone (inner/outer-space example)
+  - type: occupancy_surge
+    target: Core_bottom
+    start: 2023-07-12T13:00:00
+    duration: 3h
+    params: {multiplier: 2.5}
+  - type: weather_change
+    target: building
+    start: 2023-07-17T00:00:00
+    duration: 3d
+    params: {delta_t: 4.0}
+    note: heat wave

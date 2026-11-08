@@ -1,0 +1,112 @@
+<!doctype html>
+<!--
+  Virtual BAS - operator workstation (web GUI)
+  Vanilla HTML/CSS/JS, no build step, no external resources (works offline).
+  The page talks to the FastAPI back end in virtualbas/server/app.py:
+    /api/*  REST endpoints    /ws?truth=1  live snapshot push (1 s)
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Virtual BAS</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d3a5f'/%3E%3Cpath d='M6 24V12l10-6 10 6v12z' fill='none' stroke='%2373b4ff' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='17' r='3' fill='%2373b4ff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <!-- ============================================================ header -->
+  <header id="hdr">
+    <div class="hdr-row">
+      <div class="brand">
+        <svg viewBox="0 0 32 32" class="logo" aria-hidden="true"><rect width="32" height="32" rx="6" fill="#1d3a5f"/><path d="M6 24V12l10-6 10 6v12z" fill="none" stroke="#73b4ff" stroke-width="2.5"/><circle cx="16" cy="17" r="3" fill="#73b4ff"/></svg>
+        <div>
+          <div class="brand-name">Virtual BAS</div>
+          <div class="brand-bldg" id="h-bldg">-</div>
+        </div>
+      </div>
+
+      <div class="clock-box">
+        <div class="clock" id="h-clock">--:--</div>
+        <div class="clock-date" id="h-date">-</div>
+      </div>
+      <div class="run-box">
+        <span class="pill" id="h-state">CONNECTING</span>
+        <span class="pill pill-warm" id="h-warm" hidden>WARM-UP</span>
+        <div class="progress" title="Simulation progress"><div id="h-prog"></div></div>
+      </div>
+
+      <div class="ctrl-group" role="group" aria-label="Simulation speed">
+        <span class="ctrl-label">Speed</span>
+        <div class="seg" id="h-speed">
+          <button data-speed="1x">1×</button><button data-speed="2x">2×</button><button data-speed="10x">10×</button><button data-speed="60x">60×</button><button data-speed="360x">360×</button><button data-speed="max">Max</button>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <button class="btn" id="h-pause">⏸ Pause</button>
+        <button class="btn" id="h-step" title="Pause and advance one time step">⏭ Step</button>
+      </div>
+
+      <div class="spacer"></div>
+
+      <label class="truth-switch" title="Show the EnergyPlus ground truth (inner space) next to every observed value">
+        <input type="checkbox" id="h-truth">
+        <span class="sw"><span></span></span>
+        <span class="truth-label"><b>Ground truth</b><small>inner space (EnergyPlus)</small></span>
+      </label>
+      <button class="btn btn-ghost" id="h-session" title="Restart with a new scenario">⚙ Session</button>
+    </div>
+
+    <!-- status strip: alarm banner + key building values -->
+    <div class="hdr-strip">
+      <a class="alarm-banner" id="h-banner" href="#alarms"><span class="ab-icon">●</span><span id="h-banner-text">No active alarms</span></a>
+      <a class="kv kv-click" href="#alarms" title="Active alarms"><span class="k">Alarms</span><span class="badge-n" id="h-nalarm">0</span></a>
+      <a class="kv kv-click" href="#faults" title="Active fault / event injections"><span class="k">Injections</span><span class="badge-n badge-inj" id="h-ninj">0</span></a>
+      <div class="kv"><span class="k">OAT</span><span class="pv" data-pid="WX/OA-T"><span class="v">-</span><span class="u"></span><span class="tv"></span></span></div>
+      <div class="kv"><span class="k">OA RH</span><span class="pv" data-pid="WX/OA-RH"><span class="v">-</span><span class="u"></span><span class="tv"></span></span></div>
+      <div class="kv"><span class="k">Bldg elec</span><span class="pv" data-pid="MTR/BLDG-ELEC-KW"><span class="v">-</span><span class="u"></span><span class="tv"></span></span></div>
+      <div class="kv"><span class="k">Bldg gas</span><span class="pv" data-pid="MTR/BLDG-GAS-KW"><span class="v">-</span><span class="u"></span><span class="tv"></span></span></div>
+    </div>
+    <!-- shown only when the ground-truth toggle is on -->
+    <div class="truth-banner">
+      <b>INNER SPACE VISIBLE</b> - values in <span class="truth-ink">violet</span> are EnergyPlus ground truth, invisible to the BAS controllers.
+      Discrepancy badges: <span class="dbadge lvl-warn">Δ</span> |observed − truth| &gt; tolerance,
+      <span class="dbadge lvl-alarm">Δ</span> &gt; 2.5 × tolerance, <span class="dbadge lvl-missing">MISSING</span> no data / stale.
+    </div>
+  </header>
+
+  <div id="body">
+    <!-- ============================================================ sidebar -->
+    <nav id="side">
+      <a href="#overview" data-nav="overview"><i>▦</i>Overview</a>
+      <a href="#ahu" data-nav="ahu"><i>⌸</i>Air handlers</a>
+      <a href="#vav" data-nav="vav"><i>⊟</i>VAV terminals</a>
+      <a href="#plant" data-nav="plant"><i>⛁</i>Central plant</a>
+      <a href="#trends" data-nav="trends"><i>∿</i>Trends</a>
+      <a href="#alarms" data-nav="alarms"><i>⚠</i>Alarms</a>
+      <a href="#faults" data-nav="faults"><i>⚡</i>Faults &amp; events</a>
+      <a href="#points" data-nav="points"><i>≣</i>Points</a>
+      <div class="side-sep">Equipment</div>
+      <div id="side-tree" class="tree"></div>
+    </nav>
+
+    <!-- ============================================================ page -->
+    <main id="main"><div class="loading">Connecting to Virtual BAS…</div></main>
+  </div>
+
+  <!-- ============================================================ status bar -->
+  <footer id="foot">
+    <span id="f-conn" class="conn">● connecting</span>
+    <span id="f-info">-</span>
+    <span class="spacer"></span>
+    <span class="layers"><span class="lay lay-out">Outer space: BAS observed values</span><span class="lay lay-in">Inner space: EnergyPlus truth</span></span>
+    <a href="/docs" target="_blank">REST API docs</a>
+  </footer>
+
+  <!-- ============================================================ dialogs -->
+  <dialog id="dlg-point" class="dlg"></dialog>
+  <dialog id="dlg-session" class="dlg"></dialog>
+  <div id="toasts"></div>
+
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# Verification run: ideal sensors, deterministic occupancy, controls equivalent to native EnergyPlus
+name: ideal_baseline
+start: 2023-01-01
+end: 2023-12-31
+seed: 0
+realism: 0.0
+speed: max
+occupancy: {stochastic: false}
+control: {profile: baseline}

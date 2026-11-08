@@ -1,0 +1,8 @@
+# Advanced (ASHRAE Guideline 36 inspired) sequences: SAT/DSP/CHWST trim & respond, HW reset
+name: g36_winter
+start: 2023-01-09
+end: 2023-01-22
+seed: 3
+realism: 1.0
+occupancy: {stochastic: true}
+control: {profile: g36}

@@ -1,0 +1,2266 @@
+{
+ "source_model": "buildings/large_office/source/RefBldgLargeOfficeNew2004_Chicago.idf",
+ "weather_file": "weather.epw",
+ "options": {
+  "timesteps_per_hour": 12,
+  "begin_month": 1,
+  "begin_day": 1,
+  "end_month": 12,
+  "end_day": 31,
+  "year": 2023,
+  "enable_co2": true,
+  "outdoor_co2_ppm": 420.0,
+  "keep_summary_reports": true
+ },
+ "topology": {
+  "zones": {
+   "Basement": {
+    "name": "Basement",
+    "multiplier": 1,
+    "thermostat": "Basement Thermostat",
+    "air_node": "Basement Air Node",
+    "return_node": "Basement Return Air Node Name",
+    "terminal": "Basement VAV Box Component",
+    "air_loop": "VAV_5",
+    "people": [
+     "Basement People"
+    ],
+    "lights": [
+     "Basement_Lights"
+    ],
+    "equipment": [
+     "Basement_PlugMisc_Equip"
+    ],
+    "infiltration": []
+   },
+   "Core_bottom": {
+    "name": "Core_bottom",
+    "multiplier": 1,
+    "thermostat": "Core_bottom Thermostat",
+    "air_node": "Core_bottom Air Node",
+    "return_node": "Core_bottom Return Air Node Name",
+    "terminal": "Core_bottom VAV Box Component",
+    "air_loop": "VAV_1",
+    "people": [
+     "Core_bottom People"
+    ],
+    "lights": [
+     "Core_bottom_Lights"
+    ],
+    "equipment": [
+     "Core_bottom_PlugMisc_Equip"
+    ],
+    "infiltration": []
+   },
+   "Core_mid": {
+    "name": "Core_mid",
+    "multiplier": 10,
+    "thermostat": "Core_mid Thermostat",
+    "air_node": "Core_mid Air Node",
+    "return_node": "Core_mid Return Air Node Name",
+    "terminal": "Core_mid VAV Box Component",
+    "air_loop": "VAV_2",
+    "people": [
+     "Core_mid People"
+    ],
+    "lights": [
+     "Core_mid_Lights"
+    ],
+    "equipment": [
+     "Core_mid_PlugMisc_Equip"
+    ],
+    "infiltration": []
+   },
+   "Core_top": {
+    "name": "Core_top",
+    "multiplier": 1,
+    "thermostat": "Core_top Thermostat",
+    "air_node": "Core_top Air Node",
+    "return_node": "Core_top Return Air Node Name",
+    "terminal": "Core_top VAV Box Component",
+    "air_loop": "VAV_3",
+    "people": [
+     "Core_top People"
+    ],
+    "lights": [
+     "Core_top_Lights"
+    ],
+    "equipment": [
+     "Core_top_PlugMisc_Equip"
+    ],
+    "infiltration": []
+   },
+   "GroundFloor_Plenum": {
+    "name": "GroundFloor_Plenum",
+    "multiplier": 1,
+    "thermostat": null,
+    "air_node": null,
+    "return_node": null,
+    "terminal": null,
+    "air_loop": null,
+    "people": [],
+    "lights": [],
+    "equipment": [],
+    "infiltration": [
+     "GroundFloor_Plenum_Infiltration"
+    ]
+   },
+   "MidFloor_Plenum": {
+    "name": "MidFloor_Plenum",
+    "multiplier": 10,
+    "thermostat": null,
+    "air_node": null,
+    "return_node": null,
+    "terminal": null,
+    "air_loop": null,
+    "people": [],
+    "lights": [],
+    "equipment": [],
+    "infiltration": [
+     "MidFloor_Plenum_Infiltration"
+    ]
+   },
+   "Perimeter_bot_ZN_1": {
+    "name": "Perimeter_bot_ZN_1",
+    "multiplier": 1,
+    "thermostat": "Perimeter_bot_ZN_1 Thermostat",
+    "air_node": "Perimeter_bot_ZN_1 Air Node",
+    "return_node": "Perimeter_bot_ZN_1 Return Air Node Name",
+    "terminal": "Perimeter_bot_ZN_1 VAV Box Component",
+    "air_loop": "VAV_1",
+    "people": [
+     "Perimeter_bot_ZN_1 People"
+    ],
+    "lights": [
+     "Perimeter_bot_ZN_1_Lights"
+    ],
+    "equipment": [
+     "Perimeter_bot_ZN_1_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_bot_ZN_1_Infiltration"
+    ]
+   },
+   "Perimeter_bot_ZN_2": {
+    "name": "Perimeter_bot_ZN_2",
+    "multiplier": 1,
+    "thermostat": "Perimeter_bot_ZN_2 Thermostat",
+    "air_node": "Perimeter_bot_ZN_2 Air Node",
+    "return_node": "Perimeter_bot_ZN_2 Return Air Node Name",
+    "terminal": "Perimeter_bot_ZN_2 VAV Box Component",
+    "air_loop": "VAV_1",
+    "people": [
+     "Perimeter_bot_ZN_2 People"
+    ],
+    "lights": [
+     "Perimeter_bot_ZN_2_Lights"
+    ],
+    "equipment": [
+     "Perimeter_bot_ZN_2_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_bot_ZN_2_Infiltration"
+    ]
+   },
+   "Perimeter_bot_ZN_3": {
+    "name": "Perimeter_bot_ZN_3",
+    "multiplier": 1,
+    "thermostat": "Perimeter_bot_ZN_3 Thermostat",
+    "air_node": "Perimeter_bot_ZN_3 Air Node",
+    "return_node": "Perimeter_bot_ZN_3 Return Air Node Name",
+    "terminal": "Perimeter_bot_ZN_3 VAV Box Component",
+    "air_loop": "VAV_1",
+    "people": [
+     "Perimeter_bot_ZN_3 People"
+    ],
+    "lights": [
+     "Perimeter_bot_ZN_3_Lights"
+    ],
+    "equipment": [
+     "Perimeter_bot_ZN_3_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_bot_ZN_3_Infiltration"
+    ]
+   },
+   "Perimeter_bot_ZN_4": {
+    "name": "Perimeter_bot_ZN_4",
+    "multiplier": 1,
+    "thermostat": "Perimeter_bot_ZN_4 Thermostat",
+    "air_node": "Perimeter_bot_ZN_4 Air Node",
+    "return_node": "Perimeter_bot_ZN_4 Return Air Node Name",
+    "terminal": "Perimeter_bot_ZN_4 VAV Box Component",
+    "air_loop": "VAV_1",
+    "people": [
+     "Perimeter_bot_ZN_4 People"
+    ],
+    "lights": [
+     "Perimeter_bot_ZN_4_Lights"
+    ],
+    "equipment": [
+     "Perimeter_bot_ZN_4_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_bot_ZN_4_Infiltration"
+    ]
+   },
+   "Perimeter_mid_ZN_1": {
+    "name": "Perimeter_mid_ZN_1",
+    "multiplier": 10,
+    "thermostat": "Perimeter_mid_ZN_1 Thermostat",
+    "air_node": "Perimeter_mid_ZN_1 Air Node",
+    "return_node": "Perimeter_mid_ZN_1 Return Air Node Name",
+    "terminal": "Perimeter_mid_ZN_1 VAV Box Component",
+    "air_loop": "VAV_2",
+    "people": [
+     "Perimeter_mid_ZN_1 People"
+    ],
+    "lights": [
+     "Perimeter_mid_ZN_1_Lights"
+    ],
+    "equipment": [
+     "Perimeter_mid_ZN_1_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_mid_ZN_1_Infiltration"
+    ]
+   },
+   "Perimeter_mid_ZN_2": {
+    "name": "Perimeter_mid_ZN_2",
+    "multiplier": 10,
+    "thermostat": "Perimeter_mid_ZN_2 Thermostat",
+    "air_node": "Perimeter_mid_ZN_2 Air Node",
+    "return_node": "Perimeter_mid_ZN_2 Return Air Node Name",
+    "terminal": "Perimeter_mid_ZN_2 VAV Box Component",
+    "air_loop": "VAV_2",
+    "people": [
+     "Perimeter_mid_ZN_2 People"
+    ],
+    "lights": [
+     "Perimeter_mid_ZN_2_Lights"
+    ],
+    "equipment": [
+     "Perimeter_mid_ZN_2_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_mid_ZN_2_Infiltration"
+    ]
+   },
+   "Perimeter_mid_ZN_3": {
+    "name": "Perimeter_mid_ZN_3",
+    "multiplier": 10,
+    "thermostat": "Perimeter_mid_ZN_3 Thermostat",
+    "air_node": "Perimeter_mid_ZN_3 Air Node",
+    "return_node": "Perimeter_mid_ZN_3 Return Air Node Name",
+    "terminal": "Perimeter_mid_ZN_3 VAV Box Component",
+    "air_loop": "VAV_2",
+    "people": [
+     "Perimeter_mid_ZN_3 People"
+    ],
+    "lights": [
+     "Perimeter_mid_ZN_3_Lights"
+    ],
+    "equipment": [
+     "Perimeter_mid_ZN_3_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_mid_ZN_3_Infiltration"
+    ]
+   },
+   "Perimeter_mid_ZN_4": {
+    "name": "Perimeter_mid_ZN_4",
+    "multiplier": 10,
+    "thermostat": "Perimeter_mid_ZN_4 Thermostat",
+    "air_node": "Perimeter_mid_ZN_4 Air Node",
+    "return_node": "Perimeter_mid_ZN_4 Return Air Node Name",
+    "terminal": "Perimeter_mid_ZN_4 VAV Box Component",
+    "air_loop": "VAV_2",
+    "people": [
+     "Perimeter_mid_ZN_4 People"
+    ],
+    "lights": [
+     "Perimeter_mid_ZN_4_Lights"
+    ],
+    "equipment": [
+     "Perimeter_mid_ZN_4_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_mid_ZN_4_Infiltration"
+    ]
+   },
+   "Perimeter_top_ZN_1": {
+    "name": "Perimeter_top_ZN_1",
+    "multiplier": 1,
+    "thermostat": "Perimeter_top_ZN_1 Thermostat",
+    "air_node": "Perimeter_top_ZN_1 Air Node",
+    "return_node": "Perimeter_top_ZN_1 Return Air Node Name",
+    "terminal": "Perimeter_top_ZN_1 VAV Box Component",
+    "air_loop": "VAV_3",
+    "people": [
+     "Perimeter_top_ZN_1 People"
+    ],
+    "lights": [
+     "Perimeter_top_ZN_1_Lights"
+    ],
+    "equipment": [
+     "Perimeter_top_ZN_1_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_top_ZN_1_Infiltration"
+    ]
+   },
+   "Perimeter_top_ZN_2": {
+    "name": "Perimeter_top_ZN_2",
+    "multiplier": 1,
+    "thermostat": "Perimeter_top_ZN_2 Thermostat",
+    "air_node": "Perimeter_top_ZN_2 Air Node",
+    "return_node": "Perimeter_top_ZN_2 Return Air Node Name",
+    "terminal": "Perimeter_top_ZN_2 VAV Box Component",
+    "air_loop": "VAV_3",
+    "people": [
+     "Perimeter_top_ZN_2 People"
+    ],
+    "lights": [
+     "Perimeter_top_ZN_2_Lights"
+    ],
+    "equipment": [
+     "Perimeter_top_ZN_2_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_top_ZN_2_Infiltration"
+    ]
+   },
+   "Perimeter_top_ZN_3": {
+    "name": "Perimeter_top_ZN_3",
+    "multiplier": 1,
+    "thermostat": "Perimeter_top_ZN_3 Thermostat",
+    "air_node": "Perimeter_top_ZN_3 Air Node",
+    "return_node": "Perimeter_top_ZN_3 Return Air Node Name",
+    "terminal": "Perimeter_top_ZN_3 VAV Box Component",
+    "air_loop": "VAV_3",
+    "people": [
+     "Perimeter_top_ZN_3 People"
+    ],
+    "lights": [
+     "Perimeter_top_ZN_3_Lights"
+    ],
+    "equipment": [
+     "Perimeter_top_ZN_3_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_top_ZN_3_Infiltration"
+    ]
+   },
+   "Perimeter_top_ZN_4": {
+    "name": "Perimeter_top_ZN_4",
+    "multiplier": 1,
+    "thermostat": "Perimeter_top_ZN_4 Thermostat",
+    "air_node": "Perimeter_top_ZN_4 Air Node",
+    "return_node": "Perimeter_top_ZN_4 Return Air Node Name",
+    "terminal": "Perimeter_top_ZN_4 VAV Box Component",
+    "air_loop": "VAV_3",
+    "people": [
+     "Perimeter_top_ZN_4 People"
+    ],
+    "lights": [
+     "Perimeter_top_ZN_4_Lights"
+    ],
+    "equipment": [
+     "Perimeter_top_ZN_4_PlugMisc_Equip"
+    ],
+    "infiltration": [
+     "Perimeter_top_ZN_4_Infiltration"
+    ]
+   },
+   "TopFloor_Plenum": {
+    "name": "TopFloor_Plenum",
+    "multiplier": 1,
+    "thermostat": null,
+    "air_node": null,
+    "return_node": null,
+    "terminal": null,
+    "air_loop": null,
+    "people": [],
+    "lights": [],
+    "equipment": [],
+    "infiltration": [
+     "TopFloor_Plenum_Infiltration"
+    ]
+   }
+  },
+  "terminals": {
+   "Basement VAV Box Component": {
+    "name": "Basement VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Basement",
+    "inlet": "Basement VAV Box Inlet Node Name",
+    "outlet": "Basement VAV Box Outlet Node Name",
+    "damper_node": "Basement VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Basement VAV Box Reheat Coil",
+     "inlet": "Basement VAV Box Damper Node",
+     "outlet": "Basement VAV Box Outlet Node Name",
+     "water_inlet": "Basement VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Basement VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_5"
+   },
+   "Core_bottom VAV Box Component": {
+    "name": "Core_bottom VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Core_bottom",
+    "inlet": "Core_bottom VAV Box Inlet Node Name",
+    "outlet": "Core_bottom VAV Box Outlet Node Name",
+    "damper_node": "Core_bottom VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Core_bottom VAV Box Reheat Coil",
+     "inlet": "Core_bottom VAV Box Damper Node",
+     "outlet": "Core_bottom VAV Box Outlet Node Name",
+     "water_inlet": "Core_bottom VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Core_bottom VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_1"
+   },
+   "Core_mid VAV Box Component": {
+    "name": "Core_mid VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Core_mid",
+    "inlet": "Core_mid VAV Box Inlet Node Name",
+    "outlet": "Core_mid VAV Box Outlet Node Name",
+    "damper_node": "Core_mid VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Core_mid VAV Box Reheat Coil",
+     "inlet": "Core_mid VAV Box Damper Node",
+     "outlet": "Core_mid VAV Box Outlet Node Name",
+     "water_inlet": "Core_mid VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Core_mid VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_2"
+   },
+   "Core_top VAV Box Component": {
+    "name": "Core_top VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Core_top",
+    "inlet": "Core_top VAV Box Inlet Node Name",
+    "outlet": "Core_top VAV Box Outlet Node Name",
+    "damper_node": "Core_top VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Core_top VAV Box Reheat Coil",
+     "inlet": "Core_top VAV Box Damper Node",
+     "outlet": "Core_top VAV Box Outlet Node Name",
+     "water_inlet": "Core_top VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Core_top VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_3"
+   },
+   "Perimeter_bot_ZN_1 VAV Box Component": {
+    "name": "Perimeter_bot_ZN_1 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_bot_ZN_1",
+    "inlet": "Perimeter_bot_ZN_1 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_bot_ZN_1 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_bot_ZN_1 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_bot_ZN_1 VAV Box Reheat Coil",
+     "inlet": "Perimeter_bot_ZN_1 VAV Box Damper Node",
+     "outlet": "Perimeter_bot_ZN_1 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_bot_ZN_1 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_bot_ZN_1 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_1"
+   },
+   "Perimeter_bot_ZN_2 VAV Box Component": {
+    "name": "Perimeter_bot_ZN_2 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_bot_ZN_2",
+    "inlet": "Perimeter_bot_ZN_2 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_bot_ZN_2 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_bot_ZN_2 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_bot_ZN_2 VAV Box Reheat Coil",
+     "inlet": "Perimeter_bot_ZN_2 VAV Box Damper Node",
+     "outlet": "Perimeter_bot_ZN_2 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_bot_ZN_2 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_bot_ZN_2 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_1"
+   },
+   "Perimeter_bot_ZN_3 VAV Box Component": {
+    "name": "Perimeter_bot_ZN_3 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_bot_ZN_3",
+    "inlet": "Perimeter_bot_ZN_3 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_bot_ZN_3 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_bot_ZN_3 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_bot_ZN_3 VAV Box Reheat Coil",
+     "inlet": "Perimeter_bot_ZN_3 VAV Box Damper Node",
+     "outlet": "Perimeter_bot_ZN_3 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_bot_ZN_3 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_bot_ZN_3 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_1"
+   },
+   "Perimeter_bot_ZN_4 VAV Box Component": {
+    "name": "Perimeter_bot_ZN_4 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_bot_ZN_4",
+    "inlet": "Perimeter_bot_ZN_4 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_bot_ZN_4 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_bot_ZN_4 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_bot_ZN_4 VAV Box Reheat Coil",
+     "inlet": "Perimeter_bot_ZN_4 VAV Box Damper Node",
+     "outlet": "Perimeter_bot_ZN_4 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_bot_ZN_4 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_bot_ZN_4 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_1"
+   },
+   "Perimeter_mid_ZN_1 VAV Box Component": {
+    "name": "Perimeter_mid_ZN_1 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_mid_ZN_1",
+    "inlet": "Perimeter_mid_ZN_1 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_mid_ZN_1 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_mid_ZN_1 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_mid_ZN_1 VAV Box Reheat Coil",
+     "inlet": "Perimeter_mid_ZN_1 VAV Box Damper Node",
+     "outlet": "Perimeter_mid_ZN_1 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_mid_ZN_1 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_mid_ZN_1 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_2"
+   },
+   "Perimeter_mid_ZN_2 VAV Box Component": {
+    "name": "Perimeter_mid_ZN_2 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_mid_ZN_2",
+    "inlet": "Perimeter_mid_ZN_2 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_mid_ZN_2 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_mid_ZN_2 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_mid_ZN_2 VAV Box Reheat Coil",
+     "inlet": "Perimeter_mid_ZN_2 VAV Box Damper Node",
+     "outlet": "Perimeter_mid_ZN_2 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_mid_ZN_2 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_mid_ZN_2 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_2"
+   },
+   "Perimeter_mid_ZN_3 VAV Box Component": {
+    "name": "Perimeter_mid_ZN_3 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_mid_ZN_3",
+    "inlet": "Perimeter_mid_ZN_3 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_mid_ZN_3 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_mid_ZN_3 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_mid_ZN_3 VAV Box Reheat Coil",
+     "inlet": "Perimeter_mid_ZN_3 VAV Box Damper Node",
+     "outlet": "Perimeter_mid_ZN_3 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_mid_ZN_3 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_mid_ZN_3 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_2"
+   },
+   "Perimeter_mid_ZN_4 VAV Box Component": {
+    "name": "Perimeter_mid_ZN_4 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_mid_ZN_4",
+    "inlet": "Perimeter_mid_ZN_4 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_mid_ZN_4 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_mid_ZN_4 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_mid_ZN_4 VAV Box Reheat Coil",
+     "inlet": "Perimeter_mid_ZN_4 VAV Box Damper Node",
+     "outlet": "Perimeter_mid_ZN_4 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_mid_ZN_4 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_mid_ZN_4 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_2"
+   },
+   "Perimeter_top_ZN_1 VAV Box Component": {
+    "name": "Perimeter_top_ZN_1 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_top_ZN_1",
+    "inlet": "Perimeter_top_ZN_1 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_top_ZN_1 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_top_ZN_1 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_top_ZN_1 VAV Box Reheat Coil",
+     "inlet": "Perimeter_top_ZN_1 VAV Box Damper Node",
+     "outlet": "Perimeter_top_ZN_1 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_top_ZN_1 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_top_ZN_1 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_3"
+   },
+   "Perimeter_top_ZN_2 VAV Box Component": {
+    "name": "Perimeter_top_ZN_2 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_top_ZN_2",
+    "inlet": "Perimeter_top_ZN_2 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_top_ZN_2 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_top_ZN_2 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_top_ZN_2 VAV Box Reheat Coil",
+     "inlet": "Perimeter_top_ZN_2 VAV Box Damper Node",
+     "outlet": "Perimeter_top_ZN_2 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_top_ZN_2 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_top_ZN_2 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_3"
+   },
+   "Perimeter_top_ZN_3 VAV Box Component": {
+    "name": "Perimeter_top_ZN_3 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_top_ZN_3",
+    "inlet": "Perimeter_top_ZN_3 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_top_ZN_3 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_top_ZN_3 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_top_ZN_3 VAV Box Reheat Coil",
+     "inlet": "Perimeter_top_ZN_3 VAV Box Damper Node",
+     "outlet": "Perimeter_top_ZN_3 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_top_ZN_3 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_top_ZN_3 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_3"
+   },
+   "Perimeter_top_ZN_4 VAV Box Component": {
+    "name": "Perimeter_top_ZN_4 VAV Box Component",
+    "type": "AirTerminal:SingleDuct:VAV:Reheat",
+    "zone": "Perimeter_top_ZN_4",
+    "inlet": "Perimeter_top_ZN_4 VAV Box Inlet Node Name",
+    "outlet": "Perimeter_top_ZN_4 VAV Box Outlet Node Name",
+    "damper_node": "Perimeter_top_ZN_4 VAV Box Damper Node",
+    "reheat": {
+     "type": "Coil:Heating:Water",
+     "name": "Perimeter_top_ZN_4 VAV Box Reheat Coil",
+     "inlet": "Perimeter_top_ZN_4 VAV Box Damper Node",
+     "outlet": "Perimeter_top_ZN_4 VAV Box Outlet Node Name",
+     "water_inlet": "Perimeter_top_ZN_4 VAV Box Reheat CoilDemand Inlet Node",
+     "water_outlet": "Perimeter_top_ZN_4 VAV Box Reheat CoilDemand Outlet Node",
+     "extra": {}
+    },
+    "air_loop": "VAV_3"
+   }
+  },
+  "air_loops": {
+   "VAV_1": {
+    "name": "VAV_1",
+    "supply_inlet": "VAV_1 Supply Equipment Inlet Node",
+    "supply_outlet": "VAV_1 Supply Equipment Outlet Node",
+    "demand_inlet": "VAV_1 Zone Equipment Inlet Node",
+    "oa_controller": "VAV_1_OA_Controller",
+    "mixed_air_node": "VAV_1_OA-VAV_1_CoolCNode",
+    "oa_node": "VAV_1_OAInlet Node",
+    "return_node": "VAV_1 Supply Equipment Inlet Node",
+    "relief_node": "VAV_1_OARelief Node",
+    "fan": {
+     "type": "Fan:VariableVolume",
+     "name": "VAV_1_Fan",
+     "inlet": "VAV_1_HeatC-VAV_1_FanNode",
+     "outlet": "VAV_1 Supply Equipment Outlet Node",
+     "water_inlet": null,
+     "water_outlet": null,
+     "extra": {}
+    },
+    "cooling_coils": [
+     {
+      "type": "Coil:Cooling:Water",
+      "name": "VAV_1_CoolC",
+      "inlet": "VAV_1_OA-VAV_1_CoolCNode",
+      "outlet": "VAV_1_CoolC-VAV_1_HeatCNode",
+      "water_inlet": "VAV_1_CoolCDemand Inlet Node",
+      "water_outlet": "VAV_1_CoolCDemand Outlet Node",
+      "extra": {}
+     }
+    ],
+    "heating_coils": [
+     {
+      "type": "Coil:Heating:Water",
+      "name": "VAV_1_HeatC",
+      "inlet": "VAV_1_CoolC-VAV_1_HeatCNode",
+      "outlet": "VAV_1_HeatC-VAV_1_FanNode",
+      "water_inlet": "VAV_1_HeatCDemand Inlet Node",
+      "water_outlet": "VAV_1_HeatCDemand Outlet Node",
+      "extra": {}
+     }
+    ],
+    "terminals": [
+     "Core_bottom VAV Box Component",
+     "Perimeter_bot_ZN_3 VAV Box Component",
+     "Perimeter_bot_ZN_2 VAV Box Component",
+     "Perimeter_bot_ZN_1 VAV Box Component",
+     "Perimeter_bot_ZN_4 VAV Box Component"
+    ],
+    "zones": [
+     "Core_bottom",
+     "Perimeter_bot_ZN_3",
+     "Perimeter_bot_ZN_2",
+     "Perimeter_bot_ZN_1",
+     "Perimeter_bot_ZN_4"
+    ],
+    "availability_manager_list": "VAV_1 Availability Manager List"
+   },
+   "VAV_2": {
+    "name": "VAV_2",
+    "supply_inlet": "VAV_2 Supply Equipment Inlet Node",
+    "supply_outlet": "VAV_2 Supply Equipment Outlet Node",
+    "demand_inlet": "VAV_2 Zone Equipment Inlet Node",
+    "oa_controller": "VAV_2_OA_Controller",
+    "mixed_air_node": "VAV_2_OA-VAV_2_CoolCNode",
+    "oa_node": "VAV_2_OAInlet Node",
+    "return_node": "VAV_2 Supply Equipment Inlet Node",
+    "relief_node": "VAV_2_OARelief Node",
+    "fan": {
+     "type": "Fan:VariableVolume",
+     "name": "VAV_2_Fan",
+     "inlet": "VAV_2_HeatC-VAV_2_FanNode",
+     "outlet": "VAV_2 Supply Equipment Outlet Node",
+     "water_inlet": null,
+     "water_outlet": null,
+     "extra": {}
+    },
+    "cooling_coils": [
+     {
+      "type": "Coil:Cooling:Water",
+      "name": "VAV_2_CoolC",
+      "inlet": "VAV_2_OA-VAV_2_CoolCNode",
+      "outlet": "VAV_2_CoolC-VAV_2_HeatCNode",
+      "water_inlet": "VAV_2_CoolCDemand Inlet Node",
+      "water_outlet": "VAV_2_CoolCDemand Outlet Node",
+      "extra": {}
+     }
+    ],
+    "heating_coils": [
+     {
+      "type": "Coil:Heating:Water",
+      "name": "VAV_2_HeatC",
+      "inlet": "VAV_2_CoolC-VAV_2_HeatCNode",
+      "outlet": "VAV_2_HeatC-VAV_2_FanNode",
+      "water_inlet": "VAV_2_HeatCDemand Inlet Node",
+      "water_outlet": "VAV_2_HeatCDemand Outlet Node",
+      "extra": {}
+     }
+    ],
+    "terminals": [
+     "Core_mid VAV Box Component",
+     "Perimeter_mid_ZN_3 VAV Box Component",
+     "Perimeter_mid_ZN_2 VAV Box Component",
+     "Perimeter_mid_ZN_1 VAV Box Component",
+     "Perimeter_mid_ZN_4 VAV Box Component"
+    ],
+    "zones": [
+     "Core_mid",
+     "Perimeter_mid_ZN_3",
+     "Perimeter_mid_ZN_2",
+     "Perimeter_mid_ZN_1",
+     "Perimeter_mid_ZN_4"
+    ],
+    "availability_manager_list": "VAV_2 Availability Manager List"
+   },
+   "VAV_3": {
+    "name": "VAV_3",
+    "supply_inlet": "VAV_3 Supply Equipment Inlet Node",
+    "supply_outlet": "VAV_3 Supply Equipment Outlet Node",
+    "demand_inlet": "VAV_3 Zone Equipment Inlet Node",
+    "oa_controller": "VAV_3_OA_Controller",
+    "mixed_air_node": "VAV_3_OA-VAV_3_CoolCNode",
+    "oa_node": "VAV_3_OAInlet Node",
+    "return_node": "VAV_3 Supply Equipment Inlet Node",
+    "relief_node": "VAV_3_OARelief Node",
+    "fan": {
+     "type": "Fan:VariableVolume",
+     "name": "VAV_3_Fan",
+     "inlet": "VAV_3_HeatC-VAV_3_FanNode",
+     "outlet": "VAV_3 Supply Equipment Outlet Node",
+     "water_inlet": null,
+     "water_outlet": null,
+     "extra": {}
+    },
+    "cooling_coils": [
+     {
+      "type": "Coil:Cooling:Water",
+      "name": "VAV_3_CoolC",
+      "inlet": "VAV_3_OA-VAV_3_CoolCNode",
+      "outlet": "VAV_3_CoolC-VAV_3_HeatCNode",
+      "water_inlet": "VAV_3_CoolCDemand Inlet Node",
+      "water_outlet": "VAV_3_CoolCDemand Outlet Node",
+      "extra": {}
+     }
+    ],
+    "heating_coils": [
+     {
+      "type": "Coil:Heating:Water",
+      "name": "VAV_3_HeatC",
+      "inlet": "VAV_3_CoolC-VAV_3_HeatCNode",
+      "outlet": "VAV_3_HeatC-VAV_3_FanNode",
+      "water_inlet": "VAV_3_HeatCDemand Inlet Node",
+      "water_outlet": "VAV_3_HeatCDemand Outlet Node",
+      "extra": {}
+     }
+    ],
+    "terminals": [
+     "Core_top VAV Box Component",
+     "Perimeter_top_ZN_3 VAV Box Component",
+     "Perimeter_top_ZN_2 VAV Box Component",
+     "Perimeter_top_ZN_1 VAV Box Component",
+     "Perimeter_top_ZN_4 VAV Box Component"
+    ],
+    "zones": [
+     "Core_top",
+     "Perimeter_top_ZN_3",
+     "Perimeter_top_ZN_2",
+     "Perimeter_top_ZN_1",
+     "Perimeter_top_ZN_4"
+    ],
+    "availability_manager_list": "VAV_3 Availability Manager List"
+   },
+   "VAV_5": {
+    "name": "VAV_5",
+    "supply_inlet": "VAV_5 Supply Equipment Inlet Node",
+    "supply_outlet": "VAV_5 Supply Equipment Outlet Node",
+    "demand_inlet": "VAV_5 Zone Equipment Inlet Node",
+    "oa_controller": "VAV_5_OA_Controller",
+    "mixed_air_node": "VAV_5_OA-VAV_5_CoolCNode",
+    "oa_node": "VAV_5_OAInlet Node",
+    "return_node": "VAV_5 Supply Equipment Inlet Node",
+    "relief_node": "VAV_5_OARelief Node",
+    "fan": {
+     "type": "Fan:VariableVolume",
+     "name": "VAV_5_Fan",
+     "inlet": "VAV_5_HeatC-VAV_5_FanNode",
+     "outlet": "VAV_5 Supply Equipment Outlet Node",
+     "water_inlet": null,
+     "water_outlet": null,
+     "extra": {}
+    },
+    "cooling_coils": [
+     {
+      "type": "Coil:Cooling:Water",
+      "name": "VAV_5_CoolC",
+      "inlet": "VAV_5_OA-VAV_5_CoolCNode",
+      "outlet": "VAV_5_CoolC-VAV_5_HeatCNode",
+      "water_inlet": "VAV_5_CoolCDemand Inlet Node",
+      "water_outlet": "VAV_5_CoolCDemand Outlet Node",
+      "extra": {}
+     }
+    ],
+    "heating_coils": [
+     {
+      "type": "Coil:Heating:Water",
+      "name": "VAV_5_HeatC",
+      "inlet": "VAV_5_CoolC-VAV_5_HeatCNode",
+      "outlet": "VAV_5_HeatC-VAV_5_FanNode",
+      "water_inlet": "VAV_5_HeatCDemand Inlet Node",
+      "water_outlet": "VAV_5_HeatCDemand Outlet Node",
+      "extra": {}
+     }
+    ],
+    "terminals": [
+     "Basement VAV Box Component"
+    ],
+    "zones": [
+     "Basement"
+    ],
+    "availability_manager_list": "VAV_5 Availability Manager List"
+   }
+  },
+  "plant_loops": {
+   "CoolSys1": {
+    "name": "CoolSys1",
+    "kind": "chilled_water",
+    "supply_inlet": "CoolSys1 Supply Inlet Node",
+    "supply_outlet": "CoolSys1 Supply Outlet Node",
+    "demand_inlet": "CoolSys1 Demand Inlet Node",
+    "demand_outlet": "CoolSys1 Demand Outlet Node",
+    "setpoint_node": "CoolSys1 Supply Outlet Node",
+    "chillers": [
+     {
+      "type": "Chiller:Electric:ReformulatedEIR",
+      "name": "CoolSys1 Chiller 1",
+      "inlet": "CoolSys1 Pump-CoolSys1 ChillerNode 1",
+      "outlet": "CoolSys1 Supply Equipment Outlet Node 1",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {
+       "condenser_inlet": "CoolSys1 Chiller Water Inlet Node 1",
+       "condenser_outlet": "CoolSys1 Chiller Water Outlet Node 1"
+      }
+     },
+     {
+      "type": "Chiller:Electric:ReformulatedEIR",
+      "name": "CoolSys1 Chiller 2",
+      "inlet": "CoolSys1 Pump-CoolSys1 ChillerNode 2",
+      "outlet": "CoolSys1 Supply Equipment Outlet Node 2",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {
+       "condenser_inlet": "CoolSys1 Chiller Water Inlet Node 2",
+       "condenser_outlet": "CoolSys1 Chiller Water Outlet Node 2"
+      }
+     }
+    ],
+    "boilers": [],
+    "towers": [],
+    "pumps": [
+     {
+      "type": "Pump:VariableSpeed",
+      "name": "CoolSys1 Pump",
+      "inlet": "CoolSys1 Supply Inlet Node",
+      "outlet": "CoolSys1 Pump-CoolSys1 ChillerNodeviaConnector",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     }
+    ],
+    "other_supply": [],
+    "demand_components": [
+     {
+      "type": "Coil:Cooling:Water",
+      "name": "VAV_5_CoolC",
+      "inlet": "VAV_5_CoolCDemand Inlet Node",
+      "outlet": "VAV_5_CoolCDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Cooling:Water",
+      "name": "VAV_1_CoolC",
+      "inlet": "VAV_1_CoolCDemand Inlet Node",
+      "outlet": "VAV_1_CoolCDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Cooling:Water",
+      "name": "VAV_2_CoolC",
+      "inlet": "VAV_2_CoolCDemand Inlet Node",
+      "outlet": "VAV_2_CoolCDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Cooling:Water",
+      "name": "VAV_3_CoolC",
+      "inlet": "VAV_3_CoolCDemand Inlet Node",
+      "outlet": "VAV_3_CoolCDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     }
+    ]
+   },
+   "HeatSys1": {
+    "name": "HeatSys1",
+    "kind": "hot_water",
+    "supply_inlet": "HeatSys1 Supply Inlet Node",
+    "supply_outlet": "HeatSys1 Supply Outlet Node",
+    "demand_inlet": "HeatSys1 Demand Inlet Node",
+    "demand_outlet": "HeatSys1 Demand Outlet Node",
+    "setpoint_node": "HeatSys1 Supply Outlet Node",
+    "chillers": [],
+    "boilers": [
+     {
+      "type": "Boiler:HotWater",
+      "name": "HeatSys1 Boiler",
+      "inlet": "HeatSys1 Pump-HeatSys1 BoilerNode",
+      "outlet": "HeatSys1 Supply Equipment Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     }
+    ],
+    "towers": [],
+    "pumps": [
+     {
+      "type": "Pump:VariableSpeed",
+      "name": "HeatSys1 Pump",
+      "inlet": "HeatSys1 Supply Inlet Node",
+      "outlet": "HeatSys1 Pump-HeatSys1 BoilerNodeviaConnector",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     }
+    ],
+    "other_supply": [],
+    "demand_components": [
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Basement VAV Box Reheat Coil",
+      "inlet": "Basement VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Basement VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Core_bottom VAV Box Reheat Coil",
+      "inlet": "Core_bottom VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Core_bottom VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Core_mid VAV Box Reheat Coil",
+      "inlet": "Core_mid VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Core_mid VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Core_top VAV Box Reheat Coil",
+      "inlet": "Core_top VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Core_top VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_bot_ZN_3 VAV Box Reheat Coil",
+      "inlet": "Perimeter_bot_ZN_3 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_bot_ZN_3 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_bot_ZN_2 VAV Box Reheat Coil",
+      "inlet": "Perimeter_bot_ZN_2 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_bot_ZN_2 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_bot_ZN_1 VAV Box Reheat Coil",
+      "inlet": "Perimeter_bot_ZN_1 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_bot_ZN_1 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_bot_ZN_4 VAV Box Reheat Coil",
+      "inlet": "Perimeter_bot_ZN_4 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_bot_ZN_4 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_mid_ZN_3 VAV Box Reheat Coil",
+      "inlet": "Perimeter_mid_ZN_3 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_mid_ZN_3 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_mid_ZN_2 VAV Box Reheat Coil",
+      "inlet": "Perimeter_mid_ZN_2 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_mid_ZN_2 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_mid_ZN_1 VAV Box Reheat Coil",
+      "inlet": "Perimeter_mid_ZN_1 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_mid_ZN_1 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_mid_ZN_4 VAV Box Reheat Coil",
+      "inlet": "Perimeter_mid_ZN_4 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_mid_ZN_4 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_top_ZN_3 VAV Box Reheat Coil",
+      "inlet": "Perimeter_top_ZN_3 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_top_ZN_3 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_top_ZN_2 VAV Box Reheat Coil",
+      "inlet": "Perimeter_top_ZN_2 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_top_ZN_2 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_top_ZN_1 VAV Box Reheat Coil",
+      "inlet": "Perimeter_top_ZN_1 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_top_ZN_1 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "Perimeter_top_ZN_4 VAV Box Reheat Coil",
+      "inlet": "Perimeter_top_ZN_4 VAV Box Reheat CoilDemand Inlet Node",
+      "outlet": "Perimeter_top_ZN_4 VAV Box Reheat CoilDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "VAV_5_HeatC",
+      "inlet": "VAV_5_HeatCDemand Inlet Node",
+      "outlet": "VAV_5_HeatCDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "VAV_1_HeatC",
+      "inlet": "VAV_1_HeatCDemand Inlet Node",
+      "outlet": "VAV_1_HeatCDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "VAV_2_HeatC",
+      "inlet": "VAV_2_HeatCDemand Inlet Node",
+      "outlet": "VAV_2_HeatCDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Coil:Heating:Water",
+      "name": "VAV_3_HeatC",
+      "inlet": "VAV_3_HeatCDemand Inlet Node",
+      "outlet": "VAV_3_HeatCDemand Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     }
+    ]
+   },
+   "SWHSys1": {
+    "name": "SWHSys1",
+    "kind": "service_hot_water",
+    "supply_inlet": "SWHSys1 Supply Inlet Node",
+    "supply_outlet": "SWHSys1 Supply Outlet Node",
+    "demand_inlet": "SWHSys1 Demand Inlet Node",
+    "demand_outlet": "SWHSys1 Demand Outlet Node",
+    "setpoint_node": "SWHSys1 Supply Outlet Node",
+    "chillers": [],
+    "boilers": [],
+    "towers": [],
+    "pumps": [
+     {
+      "type": "Pump:VariableSpeed",
+      "name": "SWHSys1 Pump",
+      "inlet": "SWHSys1 Supply Inlet Node",
+      "outlet": "SWHSys1 Pump-SWHSys1 Water HeaterNodeviaConnector",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     }
+    ],
+    "other_supply": [
+     {
+      "type": "WaterHeater:Mixed",
+      "name": "SWHSys1 Water Heater",
+      "inlet": "SWHSys1 Pump-SWHSys1 Water HeaterNode",
+      "outlet": "SWHSys1 Supply Equipment Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     }
+    ],
+    "demand_components": [
+     {
+      "type": "WaterUse:Connections",
+      "name": "Core_bottom Water Equipment",
+      "inlet": "Core_bottom Water Equipment Water Inlet Node",
+      "outlet": "Core_bottom Water Equipment Water Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "WaterUse:Connections",
+      "name": "Core_mid Water Equipment",
+      "inlet": "Core_mid Water Equipment Water Inlet Node",
+      "outlet": "Core_mid Water Equipment Water Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "WaterUse:Connections",
+      "name": "Core_top Water Equipment",
+      "inlet": "Core_top Water Equipment Water Inlet Node",
+      "outlet": "Core_top Water Equipment Water Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     }
+    ]
+   },
+   "TowerWaterSys": {
+    "name": "TowerWaterSys",
+    "kind": "condenser",
+    "supply_inlet": "TowerWaterSys Supply Inlet Node",
+    "supply_outlet": "TowerWaterSys Supply Outlet Node",
+    "demand_inlet": "TowerWaterSys Demand Inlet Node",
+    "demand_outlet": "TowerWaterSys Demand Outlet Node",
+    "setpoint_node": "TowerWaterSys Supply Outlet Node",
+    "chillers": [],
+    "boilers": [],
+    "towers": [
+     {
+      "type": "CoolingTower:SingleSpeed",
+      "name": "TowerWaterSys CoolTower",
+      "inlet": "TowerWaterSys Pump-TowerWaterSys CoolTowerNode",
+      "outlet": "TowerWaterSys Supply Equipment Outlet Node",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     }
+    ],
+    "pumps": [
+     {
+      "type": "Pump:ConstantSpeed",
+      "name": "TowerWaterSys Pump",
+      "inlet": "TowerWaterSys Supply Inlet Node",
+      "outlet": "TowerWaterSys Pump-TowerWaterSys CoolTowerNodeviaConnector",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     }
+    ],
+    "other_supply": [],
+    "demand_components": [
+     {
+      "type": "Chiller:Electric:ReformulatedEIR",
+      "name": "CoolSys1 Chiller 1",
+      "inlet": "CoolSys1 Chiller Water Inlet Node 1",
+      "outlet": "CoolSys1 Chiller Water Outlet Node 1",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     },
+     {
+      "type": "Chiller:Electric:ReformulatedEIR",
+      "name": "CoolSys1 Chiller 2",
+      "inlet": "CoolSys1 Chiller Water Inlet Node 2",
+      "outlet": "CoolSys1 Chiller Water Outlet Node 2",
+      "water_inlet": null,
+      "water_outlet": null,
+      "extra": {}
+     }
+    ]
+   }
+  },
+  "setpoint_managers": [
+   {
+    "type": "SetpointManager:FollowOutdoorAirTemperature",
+    "name": "MyCondenserControl",
+    "nodes": [
+     "TowerWaterSys Supply Outlet Node"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_1_CoolC SAT Manager",
+    "nodes": [
+     "VAV_1_CoolC-VAV_1_HeatCNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_1_HeatC SAT Manager",
+    "nodes": [
+     "VAV_1_HeatC-VAV_1_FanNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_1_OAMixed Air Temp Manager",
+    "nodes": [
+     "VAV_1_OA-VAV_1_CoolCNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_2_CoolC SAT Manager",
+    "nodes": [
+     "VAV_2_CoolC-VAV_2_HeatCNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_2_HeatC SAT Manager",
+    "nodes": [
+     "VAV_2_HeatC-VAV_2_FanNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_2_OAMixed Air Temp Manager",
+    "nodes": [
+     "VAV_2_OA-VAV_2_CoolCNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_3_CoolC SAT Manager",
+    "nodes": [
+     "VAV_3_CoolC-VAV_3_HeatCNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_3_HeatC SAT Manager",
+    "nodes": [
+     "VAV_3_HeatC-VAV_3_FanNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_3_OAMixed Air Temp Manager",
+    "nodes": [
+     "VAV_3_OA-VAV_3_CoolCNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_5_CoolC SAT Manager",
+    "nodes": [
+     "VAV_5_CoolC-VAV_5_HeatCNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_5_HeatC SAT Manager",
+    "nodes": [
+     "VAV_5_HeatC-VAV_5_FanNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:MixedAir",
+    "name": "VAV_5_OAMixed Air Temp Manager",
+    "nodes": [
+     "VAV_5_OA-VAV_5_CoolCNode"
+    ],
+    "schedule": null,
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:Scheduled",
+    "name": "CoolSys1 Chiller 1 Setpoint Manager",
+    "nodes": [
+     "CoolSys1 Supply Equipment Outlet Node 1"
+    ],
+    "schedule": "CW-Loop-Temp-Schedule",
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:Scheduled",
+    "name": "CoolSys1 Chiller 2 Setpoint Manager",
+    "nodes": [
+     "CoolSys1 Supply Equipment Outlet Node 2"
+    ],
+    "schedule": "CW-Loop-Temp-Schedule",
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:Scheduled",
+    "name": "CoolSys1 Loop Setpoint Manager",
+    "nodes": [
+     "CoolSys1 Supply Outlet Node"
+    ],
+    "schedule": "CW-Loop-Temp-Schedule",
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:Scheduled",
+    "name": "HeatSys1 Boiler Setpoint Manager",
+    "nodes": [
+     "HeatSys1 Supply Equipment Outlet Node"
+    ],
+    "schedule": "HW-Loop-Temp-Schedule",
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:Scheduled",
+    "name": "HeatSys1 Loop Setpoint Manager",
+    "nodes": [
+     "HeatSys1 Supply Outlet Node"
+    ],
+    "schedule": "HW-Loop-Temp-Schedule",
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:Scheduled",
+    "name": "SWHSys1 Loop Setpoint Manager",
+    "nodes": [
+     "SWHSys1 Supply Outlet Node"
+    ],
+    "schedule": "SWHSys1-Loop-Temp-Schedule",
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:Scheduled",
+    "name": "VAV_1 SAT setpoint",
+    "nodes": [
+     "VAV_1 Supply Equipment Outlet Node"
+    ],
+    "schedule": "Seasonal-Reset-Supply-Air-Temp-Sch",
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:Scheduled",
+    "name": "VAV_2 SAT setpoint",
+    "nodes": [
+     "VAV_2 Supply Equipment Outlet Node"
+    ],
+    "schedule": "Seasonal-Reset-Supply-Air-Temp-Sch",
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:Scheduled",
+    "name": "VAV_3 SAT setpoint",
+    "nodes": [
+     "VAV_3 Supply Equipment Outlet Node"
+    ],
+    "schedule": "Seasonal-Reset-Supply-Air-Temp-Sch",
+    "control_variable": "Temperature"
+   },
+   {
+    "type": "SetpointManager:Scheduled",
+    "name": "VAV_5 SAT setpoint",
+    "nodes": [
+     "VAV_5 Supply Equipment Outlet Node"
+    ],
+    "schedule": "Seasonal-Reset-Supply-Air-Temp-Sch",
+    "control_variable": "Temperature"
+   }
+  ]
+ },
+ "commands": {
+  "VAV_1 SAT": {
+   "schedule": "VBAS CMD VAV_1 SAT",
+   "default": 12.8,
+   "kind": "sat_setpoint",
+   "air_loop": "VAV_1",
+   "unit": "C"
+  },
+  "VAV_1 FAN": {
+   "schedule": "VBAS CMD VAV_1 FAN",
+   "default": 1.0,
+   "kind": "fan_enable",
+   "air_loop": "VAV_1",
+   "unit": "-"
+  },
+  "VAV_2 SAT": {
+   "schedule": "VBAS CMD VAV_2 SAT",
+   "default": 12.8,
+   "kind": "sat_setpoint",
+   "air_loop": "VAV_2",
+   "unit": "C"
+  },
+  "VAV_2 FAN": {
+   "schedule": "VBAS CMD VAV_2 FAN",
+   "default": 1.0,
+   "kind": "fan_enable",
+   "air_loop": "VAV_2",
+   "unit": "-"
+  },
+  "VAV_3 SAT": {
+   "schedule": "VBAS CMD VAV_3 SAT",
+   "default": 12.8,
+   "kind": "sat_setpoint",
+   "air_loop": "VAV_3",
+   "unit": "C"
+  },
+  "VAV_3 FAN": {
+   "schedule": "VBAS CMD VAV_3 FAN",
+   "default": 1.0,
+   "kind": "fan_enable",
+   "air_loop": "VAV_3",
+   "unit": "-"
+  },
+  "VAV_5 SAT": {
+   "schedule": "VBAS CMD VAV_5 SAT",
+   "default": 12.8,
+   "kind": "sat_setpoint",
+   "air_loop": "VAV_5",
+   "unit": "C"
+  },
+  "VAV_5 FAN": {
+   "schedule": "VBAS CMD VAV_5 FAN",
+   "default": 1.0,
+   "kind": "fan_enable",
+   "air_loop": "VAV_5",
+   "unit": "-"
+  },
+  "CoolSys1 SWT": {
+   "schedule": "VBAS CMD CoolSys1 SWT",
+   "default": 6.7,
+   "kind": "plant_supply_temperature",
+   "plant_loop": "chilled_water",
+   "loop": "CoolSys1",
+   "unit": "C"
+  },
+  "HeatSys1 SWT": {
+   "schedule": "VBAS CMD HeatSys1 SWT",
+   "default": 82.2,
+   "kind": "plant_supply_temperature",
+   "plant_loop": "hot_water",
+   "loop": "HeatSys1",
+   "unit": "C"
+  },
+  "TowerWaterSys SWT": {
+   "schedule": "VBAS CMD TowerWaterSys SWT",
+   "default": 29.4,
+   "kind": "plant_supply_temperature",
+   "plant_loop": "condenser",
+   "loop": "TowerWaterSys",
+   "unit": "C"
+  },
+  "OUTDOOR CO2": {
+   "schedule": "VBAS CMD OUTDOOR CO2",
+   "default": 420.0,
+   "kind": "outdoor_co2",
+   "unit": "ppm"
+  },
+  "Basement VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Basement VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Basement VAV Box Component",
+   "zone": "Basement",
+   "unit": "-",
+   "autosized": false
+  },
+  "Core_bottom VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Core_bottom VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Core_bottom VAV Box Component",
+   "zone": "Core_bottom",
+   "unit": "-",
+   "autosized": false
+  },
+  "Core_mid VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Core_mid VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Core_mid VAV Box Component",
+   "zone": "Core_mid",
+   "unit": "-",
+   "autosized": false
+  },
+  "Core_top VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Core_top VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Core_top VAV Box Component",
+   "zone": "Core_top",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_bot_ZN_1 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_bot_ZN_1 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_bot_ZN_1 VAV Box Component",
+   "zone": "Perimeter_bot_ZN_1",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_bot_ZN_2 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_bot_ZN_2 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_bot_ZN_2 VAV Box Component",
+   "zone": "Perimeter_bot_ZN_2",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_bot_ZN_3 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_bot_ZN_3 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_bot_ZN_3 VAV Box Component",
+   "zone": "Perimeter_bot_ZN_3",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_bot_ZN_4 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_bot_ZN_4 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_bot_ZN_4 VAV Box Component",
+   "zone": "Perimeter_bot_ZN_4",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_mid_ZN_1 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_mid_ZN_1 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_mid_ZN_1 VAV Box Component",
+   "zone": "Perimeter_mid_ZN_1",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_mid_ZN_2 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_mid_ZN_2 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_mid_ZN_2 VAV Box Component",
+   "zone": "Perimeter_mid_ZN_2",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_mid_ZN_3 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_mid_ZN_3 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_mid_ZN_3 VAV Box Component",
+   "zone": "Perimeter_mid_ZN_3",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_mid_ZN_4 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_mid_ZN_4 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_mid_ZN_4 VAV Box Component",
+   "zone": "Perimeter_mid_ZN_4",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_top_ZN_1 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_top_ZN_1 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_top_ZN_1 VAV Box Component",
+   "zone": "Perimeter_top_ZN_1",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_top_ZN_2 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_top_ZN_2 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_top_ZN_2 VAV Box Component",
+   "zone": "Perimeter_top_ZN_2",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_top_ZN_3 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_top_ZN_3 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_top_ZN_3 VAV Box Component",
+   "zone": "Perimeter_top_ZN_3",
+   "unit": "-",
+   "autosized": false
+  },
+  "Perimeter_top_ZN_4 VAV Box Component FLOW": {
+   "schedule": "VBAS CMD Perimeter_top_ZN_4 VAV Box Component FLOW",
+   "default": 0.3,
+   "kind": "terminal_flow_fraction",
+   "terminal": "Perimeter_top_ZN_4 VAV Box Component",
+   "zone": "Perimeter_top_ZN_4",
+   "unit": "-",
+   "autosized": false
+  }
+ },
+ "faults": {
+  "CoolSys1 Chiller 1 FOULING": {
+   "active_schedule": "VBAS FAULT CoolSys1 Chiller 1 FOULING ACTIVE",
+   "value_schedule": "VBAS FAULT CoolSys1 Chiller 1 FOULING VALUE",
+   "value_default": 1.0,
+   "object_type": "FaultModel:Fouling:Chiller",
+   "kind": "chiller_fouling",
+   "equipment": "CoolSys1 Chiller 1"
+  },
+  "CoolSys1 Chiller 2 FOULING": {
+   "active_schedule": "VBAS FAULT CoolSys1 Chiller 2 FOULING ACTIVE",
+   "value_schedule": "VBAS FAULT CoolSys1 Chiller 2 FOULING VALUE",
+   "value_default": 1.0,
+   "object_type": "FaultModel:Fouling:Chiller",
+   "kind": "chiller_fouling",
+   "equipment": "CoolSys1 Chiller 2"
+  },
+  "HeatSys1 Boiler FOULING": {
+   "active_schedule": "VBAS FAULT HeatSys1 Boiler FOULING ACTIVE",
+   "value_schedule": "VBAS FAULT HeatSys1 Boiler FOULING VALUE",
+   "value_default": 1.0,
+   "object_type": "FaultModel:Fouling:Boiler",
+   "kind": "boiler_fouling",
+   "equipment": "HeatSys1 Boiler"
+  },
+  "TowerWaterSys CoolTower FOULING": {
+   "active_schedule": "VBAS FAULT TowerWaterSys CoolTower FOULING ACTIVE",
+   "value_schedule": "VBAS FAULT TowerWaterSys CoolTower FOULING VALUE",
+   "value_default": 1.0,
+   "object_type": "FaultModel:Fouling:CoolingTower",
+   "kind": "tower_fouling",
+   "equipment": "TowerWaterSys CoolTower"
+  }
+ },
+ "design": {
+  "AIRTERMINAL:SINGLEDUCT:VAV:REHEAT": {
+   "BASEMENT VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 7.94164,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 7.94164,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "CORE_BOTTOM VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 9.6803,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 9.6803,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "CORE_MID VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 103.49342,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 103.49342,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "CORE_TOP VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 9.96608,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 9.96608,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_BOT_ZN_1 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 1.99331,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 1.99331,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_BOT_ZN_2 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 1.90482,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 1.90482,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_BOT_ZN_3 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 1.47036,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 1.47036,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_BOT_ZN_4 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 2.00016,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 2.00016,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_MID_ZN_1 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 20.57835,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 20.57835,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_MID_ZN_2 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 19.90123,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 19.90123,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_MID_ZN_3 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 15.15452,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 15.15452,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_MID_ZN_4 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 21.09414,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 21.09414,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_TOP_ZN_1 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 2.04266,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 2.04266,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_TOP_ZN_2 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 1.93229,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 1.93229,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_TOP_ZN_3 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 1.45409,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 1.45409,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   },
+   "PERIMETER_TOP_ZN_4 VAV BOX COMPONENT": {
+    "Design Size Maximum Air Flow Rate [m3/s]": 2.15286,
+    "User-Specified Maximum Air Flow Rate [m3/s]": 2.15286,
+    "Design Size Maximum Flow per Zone Floor Area during Reheat [m3/s-m2]": 0.0,
+    "Design Size Maximum Flow Fraction during Reheat []": 0.0
+   }
+  },
+  "AIRLOOPHVAC": {
+   "VAV_1": {
+    "Sum of Air Terminal Maximum Heating Flow Rates [m3/s]": 5.11469,
+    "Sum of Air Terminal Minimum Heating Flow Rates [m3/s]": 5.11469,
+    "Sum of Air Terminal Maximum Flow Rates [m3/s]": 17.04895,
+    "Adjusted Heating Design Air Flow Rate [m3/s]": 5.11469,
+    "Adjusted Cooling Design Air Flow Rate [m3/s]": 17.04895,
+    "Adjusted Main Design Air Flow Rate [m3/s]": 17.04895,
+    "User Heating Air Flow Ratio []": 0.3,
+    "Calculated Heating Air Flow Ratio []": 0.3,
+    "Design Supply Air Flow Rate [m3/s]": 17.04895
+   },
+   "VAV_2": {
+    "Sum of Air Terminal Maximum Heating Flow Rates [m3/s]": 54.0665,
+    "Sum of Air Terminal Minimum Heating Flow Rates [m3/s]": 54.0665,
+    "Sum of Air Terminal Maximum Flow Rates [m3/s]": 180.22166,
+    "Adjusted Heating Design Air Flow Rate [m3/s]": 54.0665,
+    "Adjusted Cooling Design Air Flow Rate [m3/s]": 180.22166,
+    "Adjusted Main Design Air Flow Rate [m3/s]": 180.22166,
+    "User Heating Air Flow Ratio []": 0.3,
+    "Calculated Heating Air Flow Ratio []": 0.3,
+    "Design Supply Air Flow Rate [m3/s]": 180.22166
+   },
+   "VAV_3": {
+    "Sum of Air Terminal Maximum Heating Flow Rates [m3/s]": 5.26439,
+    "Sum of Air Terminal Minimum Heating Flow Rates [m3/s]": 5.26439,
+    "Sum of Air Terminal Maximum Flow Rates [m3/s]": 17.54798,
+    "Adjusted Heating Design Air Flow Rate [m3/s]": 5.69912,
+    "Adjusted Cooling Design Air Flow Rate [m3/s]": 17.54798,
+    "Adjusted Main Design Air Flow Rate [m3/s]": 17.54798,
+    "User Heating Air Flow Ratio []": 0.3,
+    "Calculated Heating Air Flow Ratio []": 0.32477,
+    "Design Supply Air Flow Rate [m3/s]": 17.54798
+   },
+   "VAV_5": {
+    "Sum of Air Terminal Maximum Heating Flow Rates [m3/s]": 2.38249,
+    "Sum of Air Terminal Minimum Heating Flow Rates [m3/s]": 2.38249,
+    "Sum of Air Terminal Maximum Flow Rates [m3/s]": 7.94164,
+    "Adjusted Heating Design Air Flow Rate [m3/s]": 2.38249,
+    "Adjusted Cooling Design Air Flow Rate [m3/s]": 7.94164,
+    "Adjusted Main Design Air Flow Rate [m3/s]": 7.94164,
+    "User Heating Air Flow Ratio []": 0.3,
+    "Calculated Heating Air Flow Ratio []": 0.3,
+    "Design Supply Air Flow Rate [m3/s]": 7.94164
+   }
+  },
+  "CONTROLLER:OUTDOORAIR": {
+   "VAV_1_OA_CONTROLLER": {
+    "Maximum Outdoor Air Flow Rate [m3/s]": 17.04895,
+    "Minimum Outdoor Air Flow Rate [m3/s]": 2.39714
+   },
+   "VAV_2_OA_CONTROLLER": {
+    "Maximum Outdoor Air Flow Rate [m3/s]": 180.22166,
+    "Minimum Outdoor Air Flow Rate [m3/s]": 23.97138
+   },
+   "VAV_3_OA_CONTROLLER": {
+    "Maximum Outdoor Air Flow Rate [m3/s]": 17.54798,
+    "Minimum Outdoor Air Flow Rate [m3/s]": 2.39714
+   },
+   "VAV_5_OA_CONTROLLER": {
+    "Maximum Outdoor Air Flow Rate [m3/s]": 7.94164,
+    "Minimum Outdoor Air Flow Rate [m3/s]": 1.19857
+   }
+  },
+  "COIL:COOLING:WATER": {
+   "VAV_1_COOLC": {
+    "Design Size design_inlet_air_temperature [C]": 24.07341,
+    "Design Size design_inlet_water_temperature [C]": 6.67,
+    "Design Size design_outlet_air_temperature [C]": 11.40104,
+    "Design Size design_inlet_air_humidity_ratio [kgWater/kgDryAir]": 0.00993581,
+    "Design Size design_outlet_air_humidity_ratio [kgWater/kgDryAir]": 0.0085,
+    "Design Size Design Coil Load [W]": 332571.31991,
+    "Design Size design_water_flow_rate [m3/s]": 0.0118787,
+    "Design Size design_air_flow_rate [m3/s]": 17.04895
+   },
+   "VAV_2_COOLC": {
+    "Design Size design_inlet_air_temperature [C]": 24.09055,
+    "Design Size design_inlet_water_temperature [C]": 6.67,
+    "Design Size design_outlet_air_temperature [C]": 11.43031,
+    "Design Size design_inlet_air_humidity_ratio [kgWater/kgDryAir]": 0.00986083,
+    "Design Size design_outlet_air_humidity_ratio [kgWater/kgDryAir]": 0.0085,
+    "Design Size Design Coil Load [W]": 3472487.70331,
+    "Design Size design_water_flow_rate [m3/s]": 0.12403,
+    "Design Size design_air_flow_rate [m3/s]": 180.22166
+   },
+   "VAV_3_COOLC": {
+    "Design Size design_inlet_air_temperature [C]": 24.09721,
+    "Design Size design_inlet_water_temperature [C]": 6.67,
+    "Design Size design_outlet_air_temperature [C]": 11.40095,
+    "Design Size design_inlet_air_humidity_ratio [kgWater/kgDryAir]": 0.00989906,
+    "Design Size design_outlet_air_humidity_ratio [kgWater/kgDryAir]": 0.0085,
+    "Design Size Design Coil Load [W]": 340879.62767,
+    "Design Size design_water_flow_rate [m3/s]": 0.0121754,
+    "Design Size design_air_flow_rate [m3/s]": 17.54798
+   },
+   "VAV_5_COOLC": {
+    "Design Size design_inlet_air_temperature [C]": 23.77312,
+    "Design Size design_inlet_water_temperature [C]": 6.67,
+    "Design Size design_outlet_air_temperature [C]": 11.24062,
+    "Design Size design_inlet_air_humidity_ratio [kgWater/kgDryAir]": 0.00981846,
+    "Design Size design_outlet_air_humidity_ratio [kgWater/kgDryAir]": 0.0085,
+    "Design Size Design Coil Load [W]": 150786.49122,
+    "Design Size design_water_flow_rate [m3/s]": 0.00538574,
+    "Design Size design_air_flow_rate [m3/s]": 7.94164
+   }
+  },
+  "COIL:HEATING:WATER": {
+   "VAV_1_HEATC": {
+    "Design Size rated_capacity [W]": 91852.82554,
+    "Design Size maximum_water_flow_rate [m3/s]": 0.00201109,
+    "Design Size u-factor_times_area_value [W/K]": 1413.67326
+   },
+   "VAV_2_HEATC": {
+    "Design Size rated_capacity [W]": 903710.08607,
+    "Design Size maximum_water_flow_rate [m3/s]": 0.0197865,
+    "Design Size u-factor_times_area_value [W/K]": 14040.74942
+   },
+   "VAV_3_HEATC": {
+    "Design Size rated_capacity [W]": 91092.77725,
+    "Design Size maximum_water_flow_rate [m3/s]": 0.00199445,
+    "Design Size u-factor_times_area_value [W/K]": 1408.9002
+   },
+   "VAV_5_HEATC": {
+    "Design Size rated_capacity [W]": 46809.89009,
+    "Design Size maximum_water_flow_rate [m3/s]": 0.00102489,
+    "Design Size u-factor_times_area_value [W/K]": 711.52396
+   }
+  },
+  "FAN:VARIABLEVOLUME": {
+   "VAV_1_FAN": {
+    "Design Size maximum_flow_rate [m3/s]": 17.04895
+   },
+   "VAV_2_FAN": {
+    "Design Size maximum_flow_rate [m3/s]": 180.22166
+   },
+   "VAV_3_FAN": {
+    "Design Size maximum_flow_rate [m3/s]": 17.54798
+   },
+   "VAV_5_FAN": {
+    "Design Size maximum_flow_rate [m3/s]": 7.94164
+   }
+  },
+  "CONTROLLER:WATERCOIL": {
+   "VAV_1_COOLC_CONTROLLER": {
+    "Maximum Actuated Flow [m3/s]": 0.0118787,
+    "Controller Convergence Tolerance": 4.00878e-05
+   },
+   "VAV_1_HEATC_CONTROLLER": {
+    "Maximum Actuated Flow [m3/s]": 0.00201109
+   },
+   "VAV_2_COOLC_CONTROLLER": {
+    "Maximum Actuated Flow [m3/s]": 0.12403,
+    "Controller Convergence Tolerance": 3.83934e-06
+   },
+   "VAV_2_HEATC_CONTROLLER": {
+    "Maximum Actuated Flow [m3/s]": 0.0197865
+   },
+   "VAV_3_COOLC_CONTROLLER": {
+    "Maximum Actuated Flow [m3/s]": 0.0121754,
+    "Controller Convergence Tolerance": 3.91108e-05
+   },
+   "VAV_3_HEATC_CONTROLLER": {
+    "Maximum Actuated Flow [m3/s]": 0.00199445
+   },
+   "VAV_5_COOLC_CONTROLLER": {
+    "Maximum Actuated Flow [m3/s]": 0.00538574,
+    "Controller Convergence Tolerance": 8.84168e-05
+   },
+   "VAV_5_HEATC_CONTROLLER": {
+    "Maximum Actuated Flow [m3/s]": 0.00102489
+   }
+  },
+  "PLANTLOOP": {
+   "COOLSYS1": {
+    "Initial Maximum Loop Flow Rate [m3/s]": 0.15347,
+    "Initial Plant Loop Volume [m3]": 18.41629,
+    "Maximum Loop Flow Rate [m3/s]": 0.14815,
+    "Plant Loop Volume [m3]": 17.77812
+   },
+   "HEATSYS1": {
+    "Initial Maximum Loop Flow Rate [m3/s]": 0.0609727,
+    "Initial Plant Loop Volume [m3]": 7.31673,
+    "Maximum Loop Flow Rate [m3/s]": 0.049073,
+    "Plant Loop Volume [m3]": 5.88876
+   },
+   "SWHSYS1": {
+    "Initial Maximum Loop Flow Rate [m3/s]": 0.0002688,
+    "Initial Plant Loop Volume [m3]": 0.032256,
+    "Maximum Loop Flow Rate [m3/s]": 0.0002688,
+    "Plant Loop Volume [m3]": 0.032256
+   }
+  },
+  "PUMP:VARIABLESPEED": {
+   "COOLSYS1 PUMP": {
+    "Initial Design Flow Rate [m3/s]": 0.15347,
+    "Initial Design Power Consumption [W]": 53514.83176,
+    "Initial Design Minimum Flow Rate [m3/s]": 0.0,
+    "Design Flow Rate [m3/s]": 0.14815,
+    "Design Power Consumption [W]": 51660.4305,
+    "Design Minimum Flow Rate [m3/s]": 0.0
+   },
+   "HEATSYS1 PUMP": {
+    "Initial Design Flow Rate [m3/s]": 0.0609727,
+    "Initial Design Power Consumption [W]": 16022.82474,
+    "Design Flow Rate [m3/s]": 0.049073,
+    "Design Power Consumption [W]": 12895.73976
+   },
+   "SWHSYS1 PUMP": {
+    "Initial Design Flow Rate [m3/s]": 0.0002688,
+    "Initial Design Power Consumption [W]": 72.71466,
+    "Design Flow Rate [m3/s]": 0.0002688,
+    "Design Power Consumption [W]": 72.71466
+   }
+  },
+  "CHILLER:ELECTRIC:REFORMULATEDEIR": {
+   "COOLSYS1 CHILLER 1": {
+    "Initial Design Size Reference Chilled Water Flow Rate [m3/s]": 0.0767345,
+    "Initial Design Size Reference Capacity [W]": 2150540.05271,
+    "Initial Design Size Reference Condenser Water Flow Rate [m3/s]": 0.10763,
+    "Design Size Reference Chilled Water Flow Rate [m3/s]": 0.0740755,
+    "Design Size Reference Capacity [W]": 2076019.32566,
+    "Design Size Reference Condenser Water Flow Rate [m3/s]": 0.10483
+   },
+   "COOLSYS1 CHILLER 2": {
+    "Initial Design Size Reference Chilled Water Flow Rate [m3/s]": 0.0767345,
+    "Initial Design Size Reference Capacity [W]": 2150540.05271,
+    "Initial Design Size Reference Condenser Water Flow Rate [m3/s]": 0.10763,
+    "Design Size Reference Chilled Water Flow Rate [m3/s]": 0.0740755,
+    "Design Size Reference Capacity [W]": 2076019.32566,
+    "Design Size Reference Condenser Water Flow Rate [m3/s]": 0.10483
+   }
+  },
+  "BOILER:HOTWATER": {
+   "HEATSYS1 BOILER": {
+    "Initial Design Size Nominal Capacity [W]": 2784811.63743,
+    "Initial Design Size Design Water Flow Rate [m3/s]": 0.0609727,
+    "Design Size Nominal Capacity [W]": 2241315.5441,
+    "Design Size Design Water Flow Rate [m3/s]": 0.049073
+   }
+  },
+  "WATERHEATER:MIXED": {
+   "SWHSYS1 WATER HEATER": {
+    "Initial Use Side Design Flow Rate [m3/s]": 0.0002688,
+    "Use Side Design Flow Rate [m3/s]": 0.0002688
+   }
+  },
+  "CONDENSERLOOP": {
+   "TOWERWATERSYS": {
+    "Initial Maximum Loop Flow Rate [m3/s]": 0.21527,
+    "Initial Condenser Loop Volume [m3]": 25.83224,
+    "Maximum Loop Flow Rate [m3/s]": 0.20966,
+    "Condenser Loop Volume [m3]": 25.15866
+   }
+  },
+  "PUMP:CONSTANTSPEED": {
+   "TOWERWATERSYS PUMP": {
+    "Initial Design Flow Rate [m3/s]": 0.21527,
+    "Initial Design Power Consumption [W]": 64829.47952,
+    "Design Flow Rate [m3/s]": 0.20966,
+    "Design Power Consumption [W]": 63139.02997
+   }
+  },
+  "COOLINGTOWER:SINGLESPEED": {
+   "TOWERWATERSYS COOLTOWER": {
+    "Initial Design Water Flow Rate [m3/s]": 0.21527,
+    "Initial Fan Power at Design Air Flow Rate [W]": 52902.68446,
+    "Initial Design Air Flow Rate [m3/s]": 142.58283,
+    "Initial U-Factor Times Area Value at Design Air Flow Rate [W/C]": 304424.49088,
+    "Initial Free Convection Regime Air Flow Rate [m3/s]": 14.25828,
+    "Initial Free Convection U-Factor Times Area Value [W/K]": 30442.44909,
+    "Design Water Flow Rate [m3/s]": 0.20966,
+    "Fan Power at Design Air Flow Rate [W]": 51523.22993,
+    "Design Air Flow Rate [m3/s]": 138.86493,
+    "U-Factor Times Area Value at Design Air Flow Rate [W/C]": 296486.52426,
+    "Free Convection Regime Air Flow Rate [m3/s]": 13.88649,
+    "Free Convection U-Factor Times Area Value [W/K]": 29648.65243
+   }
+  }
+ },
+ "energyplus_version": "23.2.0",
+ "native": {
+  "air_loops": {
+   "VAV_1": {
+    "fan_schedule": "HVACOperationSchd",
+    "min_oa_schedule": "MinOA_MotorizedDamper_Sched"
+   },
+   "VAV_2": {
+    "fan_schedule": "HVACOperationSchd",
+    "min_oa_schedule": "MinOA_MotorizedDamper_Sched"
+   },
+   "VAV_3": {
+    "fan_schedule": "HVACOperationSchd",
+    "min_oa_schedule": "MinOA_MotorizedDamper_Sched"
+   },
+   "VAV_5": {
+    "fan_schedule": "HVACOperationSchd",
+    "min_oa_schedule": "MinOA_MotorizedDamper_Sched"
+   }
+  },
+  "zones": {
+   "Basement": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Core_bottom": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Core_mid": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Core_top": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_bot_ZN_1": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_bot_ZN_2": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_bot_ZN_3": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_bot_ZN_4": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_mid_ZN_1": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_mid_ZN_2": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_mid_ZN_3": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_mid_ZN_4": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_top_ZN_1": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_top_ZN_2": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_top_ZN_3": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   },
+   "Perimeter_top_ZN_4": {
+    "htg_schedule": "HTGSETP_SCH",
+    "clg_schedule": "CLGSETP_SCH"
+   }
+  }
+ }
+}

@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "virtualbas"
+version = "0.1.0"
+description = "Virtual BAS: a physics-grounded, real-world-like Building Automation System emulator driven step-by-step by EnergyPlus"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Liang Zhang", email = "liangzhang1@arizona.edu" }]
+keywords = ["building automation", "BAS", "EnergyPlus", "digital twin", "fault detection", "HVAC", "reinforcement learning", "ambient AI"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "numpy>=1.23",
+  "pandas>=1.5",
+  "pyyaml>=6",
+  "fastapi>=0.100",
+  "uvicorn>=0.22",
+  "pydantic>=2",
+]
+
+[project.optional-dependencies]
+ai = ["gymnasium>=0.29", "scikit-learn>=1.2", "httpx>=0.24"]
+analysis = ["matplotlib>=3.6", "pyarrow>=12"]
+dev = ["pytest>=7", "httpx>=0.24"]
+all = ["gymnasium>=0.29", "scikit-learn>=1.2", "httpx>=0.24", "matplotlib>=3.6", "pyarrow>=12", "pytest>=7"]
+
+[project.scripts]
+vbas = "virtualbas.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/TensorBuildLab/Virtual-BAS"
+
+[tool.setuptools.packages.find]
+include = ["virtualbas*"]
+
+[tool.setuptools.package-data]
+virtualbas = ["server/static/*", "config/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

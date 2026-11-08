@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use Virtual BAS, please cite the software and the accompanying article."
+title: "Virtual BAS: a physics-grounded, real-world-like building automation system emulator driven step-by-step by EnergyPlus"
+authors:
+  - family-names: Zhang
+    given-names: Liang
+    affiliation: "University of Arizona"
+    email: liangzhang1@arizona.edu
+version: 0.1.0
+date-released: 2026-11-08
+license: MIT
+repository-code: "https://github.com/TensorBuildLab/Virtual-BAS"
+keywords: [building automation system, EnergyPlus, co-simulation, fault injection, sensor drift, digital twin, ambient AI, FDD, reinforcement learning]

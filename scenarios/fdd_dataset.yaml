@@ -1,0 +1,10 @@
+# Labelled data set for fault detection & diagnosis research (run headless with `vbas run`)
+name: fdd_dataset
+start: 2023-06-05
+end: 2023-07-30
+seed: 2024
+realism: 1.0
+speed: max
+occupancy: {stochastic: true}
+random_faults:
+  rate_per_week: 3

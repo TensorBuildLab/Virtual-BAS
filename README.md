@@ -4,6 +4,9 @@
 labelled sensor drift, noise, data loss, stochastic occupancy and equipment/control faults that people, scripts and AI
 agents can inject at run time.**
 
+**Author:** [Liang Zhang](mailto:liangzhang1@arizona.edu), University of Arizona, Tucson, AZ, USA
+([TensorBuild Lab](https://sites.arizona.edu/tensorbuild-lab)); GitHub: [lz356](https://github.com/lz356).
+
 > EmuBAS (emulated BAS) was called *Virtual BAS* until November 2026. The Python package (`virtualbas`), the command
 > line (`vbas`) and this repository's URL keep their names, so existing installs and scripts work unchanged.
 

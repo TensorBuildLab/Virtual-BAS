@@ -7,102 +7,57 @@ import json
 import sys
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.dates as mdates  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "experiments"))
+sys.path.insert(0, str(ROOT / "paper"))
+from figstyle import (AI, C, ENV, FAULT, FULL_W, INK, INK2, INNER, MUTED, OUTER, panel,  # noqa: E402,F401
+                      plt, save)
 from virtualbas.bas.historian import load_dataset  # noqa: E402
 
 RES = ROOT / "results"
-FIG = ROOT / "paper/figures"
 TAB = ROOT / "paper/tables"
-FIG.mkdir(parents=True, exist_ok=True)
 TAB.mkdir(parents=True, exist_ok=True)
-
-# validated categorical palette (fixed order) + neutrals
-C = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
-INK, INK2, GRID = "#0b0b0b", "#52514e", "#d9d8d4"
-plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 8, "axes.edgecolor": INK2, "axes.labelcolor": INK,
-                     "xtick.color": INK2, "ytick.color": INK2, "axes.grid": True, "grid.color": GRID, "grid.linewidth": 0.5,
-                     "axes.spines.top": False, "axes.spines.right": False, "lines.linewidth": 1.4, "legend.frameon": False,
-                     "savefig.dpi": 300, "savefig.bbox": "tight", "figure.dpi": 150})
+# The architecture and other conceptual diagrams are HTML/SVG files in paper/diagrams/ (tools/render_html.py);
+# model and data figures beyond the experiments are in paper/make_figures_extra.py.
 
 
-def save(fig, name):
-    fig.savefig(FIG / f"{name}.pdf")
-    fig.savefig(FIG / f"{name}.png")
-    plt.close(fig)
-    print("figure", name)
+def legend_above(ax, ncol=3, **kw):
+    """Frameless legend in the band between the panel title and the plot area (never on the data).
+    The panel title (set before) is lifted above the legend rows."""
+    n = len(ax.get_legend_handles_labels()[0])
+    rows = -(-n // ncol)
+    fs = kw.get("fontsize", plt.rcParams["legend.fontsize"])
+    leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=ncol, borderaxespad=0.15, handlelength=1.8,
+                    columnspacing=1.4, labelspacing=0.3, **kw)
+    title = ax.get_title(loc="left")
+    if title:
+        ax.set_title(title, loc="left", pad=3 + rows * (fs * 1.45))
+    return leg
 
 
-# ----------------------------------------------------------------------------- Fig: architecture
-def fig_architecture():
-    fig, ax = plt.subplots(figsize=(7.2, 3.6))
-    ax.set_axis_off()
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 50)
-
-    def box(x, y, w, h, text, fc, ec, fs=7, bold=False):
-        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.4,rounding_size=1.2", fc=fc, ec=ec, lw=0.8))
-        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=fs, color=INK,
-                weight="bold" if bold else "normal", wrap=True)
-
-    def arrow(x1, y1, x2, y2, text="", color=INK2, rad=0.0, dy=1.2):
-        ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=8, color=color, lw=0.9,
-                                     connectionstyle=f"arc3,rad={rad}"))
-        if text:
-            ax.text((x1 + x2) / 2, (y1 + y2) / 2 + dy, text, ha="center", va="bottom", fontsize=6.3, color=INK2, style="italic")
-
-    # inner space
-    ax.add_patch(FancyBboxPatch((1, 2), 26, 46, boxstyle="round,pad=0.3,rounding_size=2", fc="#eef4fc", ec=C[0], lw=1.0))
-    ax.text(14, 45.5, "INNER SPACE", ha="center", fontsize=8, weight="bold", color=C[0])
-    ax.text(14, 42.6, "EnergyPlus physics (ground truth)", ha="center", fontsize=6.5, color=INK2)
-    box(3.5, 30, 21, 9, "Zones & envelope\noccupants, gains, CO$_2$", "white", C[0])
-    box(3.5, 17.5, 21, 9.5, "Air side: AHU (OA damper, coils,\nfan), VAV boxes + reheat", "white", C[0])
-    box(3.5, 5, 21, 9.5, "Water side: chillers, tower,\nboiler, pumps (fault models)", "white", C[0])
-    # outer space
-    ax.add_patch(FancyBboxPatch((33, 2), 66, 46, boxstyle="round,pad=0.3,rounding_size=2", fc="#fdf3ec", ec=C[1], lw=1.0))
-    ax.text(66, 45.5, "OUTER SPACE", ha="center", fontsize=8, weight="bold", color=C[1])
-    ax.text(66, 42.6, "real world: labelled imperfection and randomness", ha="center", fontsize=6.5, color=INK2)
-    box(36, 29, 18, 10, "Sensor models\n$y=(1+g)\\tilde x+b+d(t)+n$\nstuck, missing, spikes", "white", C[1], fs=6.3)
-    box(59, 29, 17, 10, "BAS controllers\n(observed values only)\nVAV, AHU, plant", "white", C[1], fs=6.3)
-    box(81, 29, 16, 10, "Overrides\npriority array\n(operator / AI)", "white", C[1], fs=6.3)
-    box(36, 15, 18, 9.5, "Actuator models &\nlocal-loop emulation\n$x^*=(r-b)/(1+g)$", "white", C[1], fs=6.3)
-    box(59, 15, 17, 9.5, "Real world & environment\noccupancy, weather, IEQ,\nforecast, grid signals", "white", C[1], fs=6.3)
-    box(81, 15, 16, 9.5, "Fault & event\ninjection (44 types)\n5 layers", "white", C[1], fs=6.3)
-    box(36, 4, 61, 7, "Historian: observed | truth | commands | labels  -  GUI, REST/WebSocket, MCP, Gymnasium  -  speed 1x ... max",
-        "#ffffff", INK2, fs=6.3)
-    arrow(24.5, 34.5, 36, 34.5, "truth $x_k$")
-    arrow(54, 34.5, 59, 34.5, "$y_k$", dy=0.8)
-    arrow(81, 34, 76, 34, "")
-    arrow(67, 29, 47, 24.5, "commands $u_k$", rad=0.0, dy=0.3)
-    arrow(36, 19.5, 24.5, 22, "actuators", dy=0.6)
-    arrow(59, 19.5, 24.5, 34, "", rad=0.25)
-    arrow(89, 24.5, 89, 29, "")
-    arrow(81, 18, 76, 18, "")
-    ax.text(70, 26.4, "faults modify sensors, controllers,\nactuators and EnergyPlus physics", fontsize=5.8, color=INK2, ha="left")
-    save(fig, "fig_architecture")
+def day_ticks(ax, fmt="%a %d"):
+    ax.xaxis.set_major_locator(mdates.DayLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter(fmt))
+    ax.tick_params(axis="x", labelrotation=0)
 
 
 # ----------------------------------------------------------------------------- Fig: sensor model
 def fig_sensor_model():
     from virtualbas.realworld.sensors import SENSOR_CLASSES, FaultOverlay, Sensor
-    rng = np.random.default_rng(3)
     t = np.arange(0, 3 * 288) * 300 / 3600.0
     x = 22 + 2.0 * np.sin(2 * np.pi * (t - 9) / 24) + 0.3 * np.sin(2 * np.pi * t / 3.1)
     spec = SENSOR_CLASSES["zone_temperature"]
-    cases = [("Typical sensor (bias, noise, lag, quantisation)", None),
-             ("Drift fault (+1 K/day from day 1)", "drift"),
-             ("Spikes + bursty missing data", "spk"),
-             ("Stuck at day 1.5", "stuck")]
-    fig, axs = plt.subplots(2, 2, figsize=(7.2, 3.8), sharex=True, sharey=True)
-    for ax, (title, kind) in zip(axs.flat, cases):
+    cases = [("typical sensor", None),
+             ("drift fault, +1 K/d", "drift"),
+             ("spikes, missing data", "spk"),
+             ("stuck sensor", "stuck")]
+    fig, axs = plt.subplots(2, 2, figsize=(FULL_W, 3.5), sharex=True, sharey=True)
+    for i, (ax, (title, kind)) in enumerate(zip(axs.flat, cases)):
         s = Sensor("demo", spec, np.random.default_rng(7), realism=1.0)
         s.bias = 0.25
         y = []
@@ -115,21 +70,26 @@ def fig_sensor_model():
             if kind == "stuck" and t[k] >= 36:
                 ov.stuck = True
             y.append(s.measure(float(xv), 300, ov)[0])
-        ax.plot(t / 24, x, color=INK2, lw=1.0, ls="--", label="truth $x_k$ (EnergyPlus)")
-        ax.plot(t / 24, y, color=C[1], lw=0.9, label="observed $y_k$ (BAS)")
-        ax.set_title(title, fontsize=7.5, loc="left", color=INK)
+        ax.plot(t / 24, x, color=INNER, lw=1.6, label="truth $x_k$ (EnergyPlus)")
+        ax.plot(t / 24, y, color=OUTER, lw=0.8, label="observed $y_k$ (BAS)")
+        if kind in ("drift", "stuck"):
+            ax.axvline(1.0 if kind == "drift" else 1.5, color=FAULT, lw=0.8, ls=":")
+            ax.text(1.0 if kind == "drift" else 1.5, 28.3, " fault onset", color=INK2, fontsize=7, va="top")
+        panel(ax, "abcd"[i], title)
+        ax.set_xlim(0, 3)
     for ax in axs[1]:
-        ax.set_xlabel("time [day]")
+        ax.set_xlabel("time [d]")
     for ax in axs[:, 0]:
         ax.set_ylabel("zone temperature [°C]")
-    axs[0, 0].legend(loc="lower left", fontsize=6.5)
-    fig.tight_layout()
+    h, lab = axs[0, 0].get_legend_handles_labels()
+    fig.legend(h, lab, loc="upper center", ncol=2, bbox_to_anchor=(0.5, 1.045))
+    fig.tight_layout(h_pad=1.2)
     save(fig, "fig_sensor_model")
 
 
 # ----------------------------------------------------------------------------- Fig/table: validation
 def fig_validation():
-    from compare_native import METERS, compare, native_hourly
+    from compare_native import compare, native_hourly
     exp = RES / "exp1_validation"
     r = compare(exp)
     r["energy"].round(2).to_csv(TAB / "validation_energy.csv", index=False)
@@ -138,21 +98,20 @@ def fig_validation():
     tr = load_dataset(exp / "vbas")["truth"]
     vb = tr.resample("1h", label="right", closed="right").mean()
     idx = nat.index.intersection(vb.index)
-    fig, axs = plt.subplots(1, 3, figsize=(7.2, 2.5), gridspec_kw={"width_ratios": [1.25, 1.25, 1]})
-    for ax, (m, pid, lab) in zip(axs[:2], [("Electricity:Facility", "MTR/BLDG-ELEC-KW", "Electricity"),
-                                          ("NaturalGas:Facility", "MTR/BLDG-GAS-KW", "Natural gas")]):
+    fig, axs = plt.subplots(1, 3, figsize=(FULL_W, 2.25), gridspec_kw={"width_ratios": [1.2, 1.2, 1]})
+    for i, (ax, (m, pid, lab)) in enumerate(zip(axs[:2], [("Electricity:Facility", "MTR/BLDG-ELEC-KW", "electricity"),
+                                                         ("NaturalGas:Facility", "MTR/BLDG-GAS-KW", "natural gas")])):
         col = next(c for c in nat.columns if c.startswith(m))
         n = (nat.loc[idx, col] / 3.6e9).groupby(idx.month).sum()
         v = (vb.loc[idx, pid] / 1000).groupby(idx.month).sum()
-        w = 0.38
-        ax.bar(n.index - w / 2, n.values, w, color=C[0], label="native EnergyPlus")
-        ax.bar(v.index + w / 2, v.values, w, color=C[1], label="Virtual BAS (ideal sensors)")
+        w = 0.4
+        ax.bar(n.index - w / 2, n.values, w * 0.95, color=INNER, label="native EnergyPlus")
+        ax.bar(v.index + w / 2, v.values, w * 0.95, color=OUTER, label="Virtual BAS, ideal sensors")
         ax.set_xticks(range(1, 13))
         ax.set_xticklabels("JFMAMJJASOND")
-        ax.set_ylabel(f"{lab} [MWh/month]")
-        ax.set_title(lab, fontsize=8, loc="left")
-    h, l = axs[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="upper center", ncol=2, fontsize=7, bbox_to_anchor=(0.4, 1.06))
+        ax.set_ylabel("MWh per month")
+        ax.grid(axis="x", visible=False)
+        panel(ax, "ab"[i], f"monthly {lab}")
     ax = axs[2]
     xs, ys = [], []
     for c in nat.columns:
@@ -164,14 +123,19 @@ def fig_validation():
             xs.append(nat.loc[idx, c].values)
             ys.append(vb.loc[idx, pid].values)
     xs, ys = np.concatenate(xs), np.concatenate(ys)
-    ax.hexbin(xs, ys, gridsize=60, cmap="Blues", mincnt=1, bins="log", linewidths=0)
-    ax.plot([12, 32], [12, 32], color=INK2, lw=0.8, ls="--")
+    ax.hexbin(xs, ys, gridsize=55, cmap="Blues", mincnt=1, bins="log", linewidths=0)
+    ax.plot([12, 32], [12, 32], color=INK2, lw=0.7, ls="--")
     ax.set_xlim(12, 32)
     ax.set_ylim(12, 32)
-    ax.set_xlabel("native zone temp. [°C]")
-    ax.set_ylabel("Virtual BAS zone temp. [°C]")
-    ax.set_title("16 zones, 8760 h", fontsize=8, loc="left")
-    fig.tight_layout()
+    ax.set_aspect("equal")
+    ax.set_xlabel("native [°C]")
+    ax.set_ylabel("Virtual BAS [°C]")
+    mae = np.nanmean(np.abs(xs - ys))
+    ax.text(31.5, 13, f"MAE {mae:.2f} K", ha="right", va="bottom", fontsize=7.5, color=INK)
+    panel(ax, "c", "hourly zone temperature")
+    h, lab = axs[0].get_legend_handles_labels()
+    fig.legend(h, lab, loc="upper center", ncol=2, bbox_to_anchor=(0.42, 1.08))
+    fig.tight_layout(w_pad=1.0)
     save(fig, "fig_validation")
     return r
 
@@ -181,32 +145,32 @@ def fig_drift():
     base = load_dataset(RES / "exp2_faults/summer/none")
     drift = load_dataset(RES / "exp2_faults/summer/ZN_T_drift__Core_mid___0_5_K_d_")
     z, v = "ZN-Core_mid", "VAV-Core_mid"
-    fig, axs = plt.subplots(3, 1, figsize=(7.2, 4.6), sharex=True)
+    fig, axs = plt.subplots(3, 1, figsize=(FULL_W, 4.9), sharex=True, gridspec_kw={"height_ratios": [1.35, 1, 1]})
     ax = axs[0]
-    ax.plot(drift["observed"].index, drift["observed"][f"{z}/ZN-T"], color=C[1], lw=0.8, label="observed by BAS (drifting sensor)")
-    ax.plot(drift["truth"].index, drift["truth"][f"{z}/ZN-T"], color=C[0], lw=1.0, label="true zone temperature (EnergyPlus)")
     ax.plot(drift["commands"].index, drift["commands"][f"{z}/CLG-SP"], color=INK2, lw=0.8, ls="--", label="cooling set point")
+    ax.plot(drift["observed"].index, drift["observed"][f"{z}/ZN-T"], color=OUTER, lw=0.8, label="observed by BAS (drifting sensor)")
+    ax.plot(drift["truth"].index, drift["truth"][f"{z}/ZN-T"], color=INNER, lw=1.1, label="truth (EnergyPlus)")
     ax.set_ylabel("°C")
-    ax.legend(fontsize=6.3, ncol=3, loc="lower left")
-    ax.set_title("(a) Zone Core_mid: the BAS keeps the observed value at set point while the true temperature drops", fontsize=7.5, loc="left")
+    panel(ax, "a", "zone Core_mid: the BAS holds the reading at set point while the true zone cools")
+    legend_above(ax, ncol=3)
     ax = axs[1]
-    ax.plot(base["truth"].index, base["truth"][f"{v}/DA-F"], color=INK2, lw=0.8, label="fault-free twin")
-    ax.plot(drift["truth"].index, drift["truth"][f"{v}/DA-F"], color=C[1], lw=0.9, label="with drift")
+    ax.plot(base["truth"].index, base["truth"][f"{v}/DA-F"], color=MUTED, lw=0.8, label="fault-free twin")
+    ax.plot(drift["truth"].index, drift["truth"][f"{v}/DA-F"], color=OUTER, lw=0.9, label="with sensor drift")
     ax.set_ylabel("m³/s")
-    ax.legend(fontsize=6.3, loc="upper left")
-    ax.set_title("(b) VAV-Core_mid discharge air flow: wrong control signal sent to EnergyPlus", fontsize=7.5, loc="left")
+    panel(ax, "b", "VAV-Core_mid discharge air flow: the wrong command reaches EnergyPlus")
+    legend_above(ax, ncol=2)
     ax = axs[2]
     eb = base["truth"]["MTR/HVAC-ELEC-KW"].resample("1h").mean()
     ed = drift["truth"]["MTR/HVAC-ELEC-KW"].resample("1h").mean()
-    ax.plot(eb.index, eb.values, color=INK2, lw=0.8, label="fault-free twin")
-    ax.plot(ed.index, ed.values, color=C[1], lw=0.9, label="with drift")
+    ax.plot(eb.index, eb.values, color=MUTED, lw=0.8, label="fault-free twin")
+    ax.plot(ed.index, ed.values, color=OUTER, lw=0.9, label="with sensor drift")
     ax.set_ylabel("kW")
-    ax.legend(fontsize=6.3, loc="upper left")
-    ax.set_title("(c) HVAC electric demand (hourly mean)", fontsize=7.5, loc="left")
+    panel(ax, "c", "HVAC electric demand, hourly mean")
+    legend_above(ax, ncol=2)
     for ax in axs:
         ax.margins(x=0)
-    fig.autofmt_xdate()
-    fig.tight_layout()
+    day_ticks(axs[-1], "%a %d Jul")
+    fig.tight_layout(h_pad=0.6)
     save(fig, "fig_drift_case")
 
 
@@ -229,37 +193,49 @@ def fig_fault_matrix():
     order = ["sensor", "actuator", "equipment", "control", "network", "event"]
     piv = piv.reset_index()
     piv["lo"] = piv["layer"].map({k: i for i, k in enumerate(order)})
-    piv = piv.sort_values(["lo"], kind="stable")
-    labels = [f"{f}" for f in piv["fault"]]
+    piv = piv.sort_values(["lo"], kind="stable").reset_index(drop=True)
+    labels = list(piv["fault"])
     cols = [("d_elec_%", "summer"), ("d_elec_%", "winter"), ("d_gas_%", "summer"), ("d_gas_%", "winter"),
             ("d_comfort_Kh", "summer"), ("d_comfort_Kh", "winter")]
-    titles = ["ΔElec.\nsummer [%]", "ΔElec.\nwinter [%]", "ΔGas\nsummer [%]", "ΔGas\nwinter [%]", "ΔDiscomfort\nsummer [K·h]", "ΔDiscomfort\nwinter [K·h]"]
     M = np.array([[piv[c].iloc[i] for c in cols] for i in range(len(piv))], dtype=float)
-    fig, ax = plt.subplots(figsize=(7.2, 7.2))
-    # diverging per-column scaling (signed log-like compression for readability)
     S = np.sign(M) * np.log10(1 + np.abs(M))
     vmax = np.nanmax(np.abs(S))
     from matplotlib.colors import LinearSegmentedColormap
-    cmap = LinearSegmentedColormap.from_list("div", ["#2a78d6", "#f2f1ee", "#e34948"])
+    cmap = LinearSegmentedColormap.from_list("div", [INNER, "#f2f1ee", FAULT])
+    n = len(labels)
+    fig, ax = plt.subplots(figsize=(FULL_W, 0.19 * n + 1.0))
     ax.imshow(S, cmap=cmap, vmin=-vmax, vmax=vmax, aspect="auto")
-    for i in range(M.shape[0]):
+    for i in range(n):
         for j in range(M.shape[1]):
             val = M[i, j]
-            ax.text(j, i, f"{val:+.1f}" if abs(val) < 100 else f"{val:+.0f}", ha="center", va="center", fontsize=6.2,
+            if np.isnan(val):
+                continue
+            txt = "0.0" if abs(val) < 0.05 else (f"{val:+.1f}" if abs(val) < 100 else f"{val:+.0f}")
+            ax.text(j, i, txt, ha="center", va="center", fontsize=6.6,
                     color=INK if abs(S[i, j]) < 0.6 * vmax else "white")
-    ax.set_xticks(range(len(titles)))
-    ax.set_xticklabels(titles, fontsize=6.5)
+    ax.set_xticks(range(6))
+    ax.set_xticklabels(["summer", "winter"] * 3, fontsize=7)
     ax.xaxis.tick_top()
-    ax.set_yticks(range(len(labels)))
-    ax.set_yticklabels(labels, fontsize=6.5)
+    ax.tick_params(axis="both", length=0)
+    for j, t in enumerate(["Δ electricity [%]", "Δ natural gas [%]", "Δ discomfort [K·h]"]):
+        ax.text(2 * j + 0.5, -1.55, t, ha="center", va="bottom", fontsize=7.5, fontweight="bold", color=INK)
+    ax.set_yticks(range(n))
+    ax.set_yticklabels(labels, fontsize=7)
     ax.grid(False)
+    for s in ax.spines.values():
+        s.set_visible(False)
+    for j in (1.5, 3.5):
+        ax.axvline(j, color="white", lw=3)
     prev = None
     for i, lay in enumerate(piv["layer"]):
         if lay != prev:
-            ax.axhline(i - 0.5, color="white", lw=2)
-            ax.text(-0.6 - 0.02, i - 0.45, lay.upper(), transform=ax.transData, ha="right", va="top", fontsize=6, color=C[6],
-                    weight="bold", clip_on=False) if False else None
+            if i:
+                ax.axhline(i - 0.5, color="white", lw=3)
+            ax.annotate(lay, xy=(1.0, i - 0.5), xycoords=("axes fraction", "data"), xytext=(4, -2),
+                        textcoords="offset points", ha="left", va="top", fontsize=7, color=INK2, style="italic")
             prev = lay
+    ax.text(0, n - 0.1, "colour: signed log scale; blue = decrease, red = increase vs. fault-free run",
+            ha="left", va="top", fontsize=6.8, color=INK2, transform=ax.transData)
     fig.tight_layout()
     save(fig, "fig_fault_matrix")
     return d
@@ -269,14 +245,17 @@ def fig_fault_matrix():
 def fig_occupancy():
     d = load_dataset(RES / "exp2_faults/summer/none")
     occ = d["truth"]["ZN-Core_mid/OCCUPANTS"]
-    fig, ax = plt.subplots(figsize=(7.2, 1.9))
-    ax.plot(occ.index, occ.values, color=C[0], lw=0.8, label="stochastic occupants (Markov chain, truth)")
-    o2 = d["observed"]["ZN-Core_mid/ZN-OCC"] * occ.max() * 1.05
-    ax.fill_between(o2.index, 0, o2.values, color=C[2], alpha=0.15, lw=0, label="PIR occupancy sensor = 1")
-    ax.set_ylabel("people (Core_mid)")
-    ax.legend(fontsize=6.3, ncol=2, loc="upper right")
+    fig, ax = plt.subplots(figsize=(FULL_W, 1.75))
+    o2 = d["observed"]["ZN-Core_mid/ZN-OCC"].fillna(0) * occ.max() * 1.05
+    ax.fill_between(o2.index, 0, o2.values, color=ENV, alpha=0.18, lw=0, step="post", label="PIR occupancy sensor on")
+    ax.plot(occ.index, occ.values, color=INNER, lw=0.8, label="occupants, Markov chain (truth)")
+    ax.set_ylabel("people")
     ax.margins(x=0)
-    fig.autofmt_xdate()
+    ax.set_ylim(0, None)
+    panel(ax, "", "")
+    ax.set_title("")
+    legend_above(ax, ncol=2)
+    day_ticks(ax, "%a %d Jul")
     fig.tight_layout()
     save(fig, "fig_occupancy")
 
@@ -286,17 +265,21 @@ def fig_fdd():
     r = json.loads((RES / "exp3_fdd/fdd_results.json").read_text())
     rep = r["diagnosis"]["report"]
     classes = [k for k in rep if k not in ("accuracy", "macro avg", "weighted avg")]
-    f1 = [rep[k]["f1-score"] for k in classes]
+    f1 = np.array([rep[k]["f1-score"] for k in classes])
     sup = [rep[k]["support"] for k in classes]
     o = np.argsort(f1)
-    fig, ax = plt.subplots(figsize=(3.5, 2.6))
-    ax.barh(range(len(classes)), np.array(f1)[o], color=C[0], height=0.6)
+    fig, ax = plt.subplots(figsize=(3.9, 0.22 * len(classes) + 0.7))
+    ax.barh(range(len(classes)), f1[o], color=INNER, height=0.62)
+    for i, k in enumerate(o):
+        ax.text(f1[k] + 0.015, i, f"{f1[k]:.2f}", va="center", fontsize=7, color=INK)
     ax.set_yticks(range(len(classes)))
-    ax.set_yticklabels([f"{classes[i]} (n={int(sup[i])})" for i in o], fontsize=6.2)
-    ax.set_xlabel("F1 score (test period)")
-    ax.set_xlim(0, 1)
-    ax.set_title(f"AHU diagnosis, macro-F1 = {r['diagnosis']['macro_f1']:.2f}\n(detection macro-F1 = {r['detection']['macro_f1']:.2f})",
-                 fontsize=7.5, loc="left")
+    ax.set_yticklabels([f"{classes[i]} (n={int(sup[i])})" for i in o], fontsize=7)
+    ax.set_xlabel("F1 score, test period")
+    ax.set_xlim(0, 1.08)
+    ax.grid(axis="y", visible=False)
+    ax.tick_params(axis="y", length=0)
+    ax.set_title(f"AHU diagnosis: macro-F1 {r['diagnosis']['macro_f1']:.2f}; detection: macro-F1 {r['detection']['macro_f1']:.2f}",
+                 fontsize=8, loc="left")
     fig.tight_layout()
     save(fig, "fig_fdd")
     return r
@@ -306,18 +289,19 @@ def fig_fdd():
 def fig_speed():
     s = json.loads((RES / "exp4_speed/speed.json").read_text())
     pts = [x for x in s if x["target"] != "max"]
-    fig, ax = plt.subplots(figsize=(3.5, 2.4))
+    fig, ax = plt.subplots(figsize=(3.6, 2.4))
     tg = [float(x["target"]) for x in pts]
     ac = [x["achieved_factor"] for x in pts]
-    ax.loglog(tg, tg, color=INK2, ls="--", lw=0.8, label="target")
-    ax.loglog(tg, ac, "o", color=C[0], ms=5, label="achieved")
     mx = [x for x in s if x["target"] == "max"][0]
-    ax.axhline(mx["achieved_factor"], color=C[1], lw=1.0)
-    ax.text(tg[0], mx["achieved_factor"] * 0.55, f"max speed: {mx['achieved_factor']:,.0f}× real time ({mx['ms_per_step']:.1f} ms/step)",
-            fontsize=6.3, color=INK)
-    ax.set_xlabel("target speed factor [-]")
-    ax.set_ylabel("achieved speed factor [-]")
-    ax.legend(fontsize=6.3, loc="upper left")
+    ax.axhline(mx["achieved_factor"], color=OUTER, lw=1.0)
+    ax.text(tg[0], mx["achieved_factor"] * 1.25, f"as fast as possible: {mx['achieved_factor']:,.0f}× ({mx['ms_per_step']:.1f} ms/step)",
+            fontsize=7, color=INK)
+    ax.loglog(tg, tg, color=INK2, ls="--", lw=0.8, label="target")
+    ax.loglog(tg, ac, "o", color=INNER, ms=5, mec="white", mew=0.8, label="achieved")
+    ax.set_xlabel("target speed factor")
+    ax.set_ylabel("achieved speed factor")
+    ax.set_ylim(0.5, mx["achieved_factor"] * 4)
+    ax.legend(loc="center right")
     fig.tight_layout()
     save(fig, "fig_speed")
     return s
@@ -336,59 +320,62 @@ def _exp7_series(name):
 
 def fig_environment():
     zone = "ZN-Perimeter_mid_ZN_1"
-    fig, axs = plt.subplots(2, 2, figsize=(7.2, 4.4))
-    # (a) smoke episode
-    ax = axs[0, 0]
+    fig = plt.figure(figsize=(FULL_W, 5.6))
+    gs = fig.add_gridspec(3, 2, height_ratios=[1.3, 1, 1], hspace=0.75, wspace=0.32)
+    ax = fig.add_subplot(gs[0, :])
     base = _exp7_series(EXP7_CASES[0])
     ax.plot(base.index, base["WX/OA-PM25"], color=INK2, lw=1.0, label="outdoor")
     for i, n in enumerate(EXP7_CASES):
         d = _exp7_series(n)
-        lab = n.replace("smoke economizer lock-out", "econ. lock-out").replace("bypass fault", "filter bypass")
+        lab = n.replace("smoke economizer lock-out", "economizer lock-out").replace("bypass fault", "filter bypass fault")
         ax.plot(d.index, d["mean_in_pm25"], color=C[i], lw=1.2, label=f"indoor, {lab}")
-    ax.axhline(35, color=C[7], lw=0.7, ls=":")
-    ax.text(base.index[10], 37, "35 µg/m³", fontsize=6, color=C[7])
+    ax.axhline(35, color=FAULT, lw=0.7, ls=":")
+    ax.text(base.index[-1], 36, "35 µg/m³ (24-h guideline)", fontsize=7, color=INK2, ha="right", va="bottom")
     ax.set_ylabel("PM2.5 [µg/m³]")
-    ax.set_title("(a) wildfire smoke episode, filters and economizer", fontsize=7.5, loc="left")
     ax.set_ylim(0, 175)
-    ax.legend(fontsize=5.6, loc="upper left", ncol=2)
-    ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%a"))
-    # day profile of one perimeter zone (Monday, MERV 8)
+    ax.margins(x=0)
+    day_ticks(ax, "%a %d Jul")
+    panel(ax, "a", "wildfire-smoke episode: outdoor and mean indoor PM2.5")
+    legend_above(ax, ncol=3)
     day = base.loc["2023-07-10 05:00":"2023-07-10 21:00"]
     hrs = day.index.hour + day.index.minute / 60
-    ax = axs[0, 1]
-    ax.plot(hrs, day[f"{zone}/ZN-LUX"], color=C[3], label="work-plane illuminance")
-    ax.plot(hrs, day[f"{zone}/DAYLIGHT-LUX"], color=C[3], ls="--", lw=1.0, label="daylight share (truth)")
-    ax.plot(hrs, day[f"obs:{zone}/ZN-LUX"], color=INK2, lw=0.6, label="photosensor reading")
+    ax = fig.add_subplot(gs[1, 0])
+    ax.plot(hrs, day[f"{zone}/ZN-LUX"], color=C[3], label="work plane (truth)")
+    ax.plot(hrs, day[f"{zone}/DAYLIGHT-LUX"], color=C[3], ls="--", lw=1.0, label="daylight share")
+    ax.plot(hrs, day[f"obs:{zone}/ZN-LUX"], color=INK2, lw=0.6, label="photosensor")
     ax.set_ylabel("illuminance [lx]")
-    ax.set_title("(b) light", fontsize=7.5, loc="left")
-    ax.legend(fontsize=5.8, loc="upper left")
-    ax = axs[1, 0]
-    ax.plot(hrs, day[f"{zone}/ZN-TVOC"], color=C[6], label="TVOC (truth)")
-    ax.plot(hrs, day[f"obs:{zone}/ZN-TVOC"], color=C[6], lw=0.6, alpha=0.7, label="MOx sensor")
-    ax.set_ylabel("TVOC [µg/m³]")
-    ax2 = ax.twinx()
-    ax2.plot(hrs, day[f"{zone}/ZN-DBA"], color=C[4], lw=1.0, label="sound level")
-    ax2.set_ylabel("sound [dBA]", color=C[4])
-    ax2.set_ylim(5, 50)
-    ax.set_ylim(0, 260)
-    ax2.spines["right"].set_visible(True)
-    ax2.grid(False)
-    ax.set_title("(c) air quality and sound", fontsize=7.5, loc="left")
-    h1, l1 = ax.get_legend_handles_labels()
-    h2, l2 = ax2.get_legend_handles_labels()
-    ax.legend(h1 + h2, l1 + l2, fontsize=5.8, loc="center right")
-    ax.set_xlabel("hour of day")
-    ax = axs[1, 1]
-    ax.plot(hrs, day[f"{zone}/PMV"], color=C[0], label="PMV (truth)")
+    panel(ax, "b", "light")
+    legend_above(ax, ncol=2, fontsize=6.8)
+    ax = fig.add_subplot(gs[1, 1])
+    ax.axhspan(-0.5, 0.5, color=ENV, alpha=0.10, lw=0)
+    ax.plot(hrs, day[f"{zone}/PMV"], color=INNER, label="PMV (truth)")
     v = day[f"{zone}/TS-VOTE"].astype(float)
-    ax.plot(hrs, v, ".", color=C[1], ms=2.5, label="mean occupant vote, last hour")
-    ax.axhspan(-0.5, 0.5, color=C[2], alpha=0.08, lw=0)
+    v = v[v.diff().fillna(1) != 0].dropna()          # one marker per new hourly vote
+    ax.plot(v.index.hour + v.index.minute / 60, v.values, "o", color=OUTER, ms=3.5, mec="white", mew=0.6,
+            label="mean occupant vote, hourly")
     ax.set_ylim(-2.2, 2.2)
     ax.set_ylabel("thermal sensation [-]")
-    ax.set_title("(d) comfort and occupant feedback", fontsize=7.5, loc="left")
-    ax.legend(fontsize=5.8, loc="lower right")
-    ax.set_xlabel("hour of day")
-    fig.tight_layout()
+    panel(ax, "c", "comfort and occupant feedback")
+    legend_above(ax, ncol=2, fontsize=6.8)
+    ax = fig.add_subplot(gs[2, 0])
+    ax.plot(hrs, day[f"{zone}/ZN-TVOC"], color=AI, label="TVOC (truth)")
+    ax.plot(hrs, day[f"obs:{zone}/ZN-TVOC"], color=INK2, lw=0.6, label="MOx sensor")
+    ax.set_ylabel("TVOC [µg/m³]")
+    ax.set_ylim(0, 260)
+    ax.set_xlabel("hour of day, Monday")
+    panel(ax, "d", "volatile organic compounds")
+    legend_above(ax, ncol=2, fontsize=6.8)
+    ax = fig.add_subplot(gs[2, 1])
+    ax.plot(hrs, day[f"{zone}/ZN-DBA"], color=C[4], label="sound level (truth)")
+    ax.plot(hrs, day[f"obs:{zone}/ZN-DBA"], color=INK2, lw=0.6, label="sound meter")
+    ax.set_ylabel("sound [dBA]")
+    ax.set_ylim(20, 55)
+    ax.set_xlabel("hour of day, Monday")
+    panel(ax, "e", "sound")
+    legend_above(ax, ncol=2, fontsize=6.8)
+    for a in fig.axes[1:]:
+        a.set_xlim(5, 21)
+        a.set_xticks([6, 9, 12, 15, 18, 21])
     save(fig, "fig_environment")
 
 
@@ -399,10 +386,9 @@ def fig_ai():
                         "gas": r["kpi"]["gas_kwh"] / 1000, "comfort": r["kpi"]["comfort_kh"]} for r in b])
     df.to_csv(TAB / "ai_partB.csv", index=False)
     cases = ["ideal", "realistic", "oat_bias"]
-    names = ["ideal sensors", "realistic sensors", "realistic +\nOA-T bias"]
-    names = [n.replace(" sensors", "\nsensors") for n in names]
-    fig, axs = plt.subplots(1, 2, figsize=(7.2, 2.5))
-    for ax, (metric, lab) in zip(axs, [("elec", "electricity saving of AI agent [%]"), ("gas", "gas increase of AI agent [MWh]")]):
+    names = ["ideal\nsensors", "realistic\nsensors", "realistic +\nOA-T bias"]
+    fig, axs = plt.subplots(1, 2, figsize=(FULL_W, 2.3))
+    for k, (ax, (metric, lab)) in enumerate(zip(axs, [("elec", "electricity saving [%]"), ("gas", "gas increase [MWh]")])):
         w = 0.36
         for j, season in enumerate(["shoulder", "summer"]):
             d = df[df.season == season]
@@ -412,15 +398,19 @@ def fig_ai():
                 n_ = float(d[(d.case == c) & (~d.agent)][metric].iloc[0])
                 vals.append((n_ - a_) / n_ * 100 if metric == "elec" else a_ - n_)
             x = np.arange(3) + (j - 0.5) * w
-            ax.bar(x, vals, w * 0.92, color=C[j], label=f"{season} (2 weeks)")
+            ax.bar(x, vals, w * 0.92, color=[INNER, C[3]][j], label=f"{season} season, 2 weeks")
             for xi, v in zip(x, vals):
-                ax.text(xi, v, f"{v:.1f}", ha="center", va="bottom" if v >= 0 else "top", fontsize=6.3, color=INK)
+                ax.text(xi, v, f"{v:.1f}", ha="center", va="bottom" if v >= 0 else "top", fontsize=7, color=INK)
         ax.axhline(0, color=INK2, lw=0.6)
         ax.set_xticks(range(3))
-        ax.set_xticklabels(names, fontsize=6.8)
+        ax.set_xticklabels(names, fontsize=7.5)
         ax.set_ylabel(lab)
-    axs[0].legend(fontsize=6.5, loc="upper right")
-    fig.tight_layout()
+        ax.grid(axis="x", visible=False)
+        ax.margins(y=0.15)
+        panel(ax, "ab"[k], "AI agent vs. baseline: " + ("electricity" if metric == "elec" else "natural gas"))
+    h, lab = axs[0].get_legend_handles_labels()
+    fig.legend(h, lab, loc="upper center", ncol=2, bbox_to_anchor=(0.5, 1.08))
+    fig.tight_layout(w_pad=2)
     save(fig, "fig_ai_agent")
     return df
 
@@ -449,6 +439,8 @@ def latex_outputs():
     for key, tier in (("NumStdPts", "standard"), ("NumAdvPts", "advanced"), ("NumNextPts", "next_gen")):
         M[key] = sum(p.tier == tier for p in cat.points.values())
     M["NumModelPts"] = sum(p.source in ("model", "surrogate") for p in cat.points.values())
+    M["NumStdPct"] = f"{100 * M['NumStdPts'] / M['NumPoints']:.0f}"
+    M["NumBasSrcPts"] = sum(p.source == "bas" for p in cat.points.values())
     M["NumCalcPts"] = sum(p.source == "bas" and p.kind == "virtual" for p in cat.points.values())
     M["NumZonePts"] = len(cat.points_of(next(e.id for e in cat.equipment.values() if e.id == "ZN-Perimeter_mid_ZN_1")))
     M["NumWxPts"] = len(cat.points_of("WX"))
@@ -536,7 +528,8 @@ def latex_outputs():
     mx = [x for x in s if x["target"] == "max"][0]
     M["SpeedMs"] = f"{mx['ms_per_step']:.1f}"
     M["SpeedMaxK"] = f"{int(round(mx['achieved_factor'], -3)):,}".replace(",", "{,}")
-    M["SpeedErr"] = f"{max(abs(x['error_%']) for x in s if x['target'] != 'max'):.2f}"
+    err = max(abs(x['error_%']) for x in s if x['target'] != 'max')
+    M["SpeedErr"] = f"{max(err, 0.01):.2f}"           # an upper bound; never print 0.00
     # ---- generality
     g = json.loads((RES / "exp5_generality/generality.json").read_text())
     hosp = [x for x in g if "Hospital" in x["model"]][0]

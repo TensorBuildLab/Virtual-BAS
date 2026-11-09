@@ -98,6 +98,10 @@ injections:
 
 ## Architecture
 
+![Virtual BAS architecture: inner space, outer space, humans and AI](paper/figures/fig_architecture.png)
+
+The same loop as a flow chart:
+
 ```mermaid
 flowchart LR
   subgraph INNER["Inner space: EnergyPlus (step-wise, API)"]
@@ -150,7 +154,9 @@ difference (details in the paper and `experiments/exp1_validation.py`).
 ## Citing
 
 If you use Virtual BAS, please cite the software (see [CITATION.cff](CITATION.cff)) and the accompanying article
-(*Energy and Buildings*, under review).
+(*Energy and Buildings*, under review). The manuscript is in [`paper/`](paper) as LaTeX/PDF and as a Word document
+(`paper/manuscript.docx`); every figure is generated from code - see
+[paper/submission/README.md](paper/submission/README.md) for the build steps.
 
 ## License
 

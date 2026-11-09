@@ -1,0 +1,94 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>fig_basization</title>
+<style>html,body{margin:0;background:#fff} #fig{background:#fff}</style>
+</head><body><div id="fig"></div>
+<script src="diagram_lib.js"></script>
+<script>
+const {C} = D;
+const W = 520, CW = 163, GX = 14, CH = 112, GY = 30;
+const cx = c => 1 + c * (CW + GX), ry = r => 1 + r * (CH + GY);
+const H = ry(2) + CH + 1;
+D.init(W, H);
+
+const STRIP = 16;
+// [row, col, n, title, tag, color, bg, lines, strip]
+const cards = [
+  [0, 0, null, 'Input', null, C.inner, C.innerBg,
+    ['any EnergyPlus model', '(IDF or epJSON) and its', 'weather file (EPW)'], 'DOE large office, Chicago'],
+  [0, 1, 1, 'Read and size', null, C.inner, '#fff',
+    ['IDF converted to epJSON', 'by EnergyPlus; sizing run', 'of the native model gives', 'the design sizes'], 'RefBldgLargeOfficeNew2004'],
+  [0, 2, 2, 'Topology discovery', null, C.inner, '#fff',
+    ['from connection objects:', 'zones, terminals, AHUs,', 'plant loops, set-point', 'managers'], '19 zones · 16 VAV · 4 AHU · 4 loops'],
+  [1, 0, 3, 'Simulation set-up', 'T1–T4, T7', C.inner, '#fff',
+    ['weather-file run period,', 'zone time step = BAS', 'interval (5 min), no file', 'outputs; zone CO_{2} balance'], '12 steps per hour, year 2023'],
+  [1, 1, 4, 'Command binding', 'T5', C.outer, '#fff',
+    ['SAT and plant set points,', 'fan enable, VAV flow →', 'Schedule:Constant; VAV', 'terminals hard-sized'], '28 command schedules'],
+  [1, 2, 5, 'Physical fault hooks', 'T6', C.fault, '#fff',
+    ['FaultModel:Fouling on', 'chillers, boilers, towers;', 'severity set at run time', 'by command schedules'], '4 hooks: 2 chillers, boiler, tower'],
+  [2, 0, 6, 'Native control program', null, C.outer, '#fff',
+    ['fan, minimum outdoor-air', 'and thermostat schedules', 'become the baseline BAS', 'program'], 'electricity within 0.5% of native'],
+  [2, 1, 7, 'Point list', null, C.outer, '#fff',
+    ['Haystack tags, Brick class', 'and tier for every point'], '1,207 points on 54 equipment'],
+  [2, 2, null, 'BAS-ready emulator', null, C.outer, C.outerBg,
+    ['model.epJSON (prepared)', 'manifest.json: topology,', 'bindings, design sizes', 'point list with semantics'], 'vbas serve  |  vbas run'],
+];
+const bgOf = c => ({[C.inner]: C.innerBg, [C.outer]: C.outerBg, [C.fault]: C.faultBg})[c];
+const K = {};
+cards.forEach(([r, c, n, title, tag, col, bg, lines, strip], i) => {
+  const x = cx(c), y = ry(r);
+  const k = D.card({x, y, w: CW, h: CH, color: col, fill: bg, valign: 'top', pad: 7, title, tindent: n ? 18 : 0,
+    lines, ls: 9.5, lh: 1.3, tgap: 4, sw: n ? 1.1 : 1.4});
+  if (n) {
+    D.el('circle', {cx: x + 14, cy: y + 13.6, r: 7.2, fill: col}, k.g);
+    D.text(x + 14, y + 17.1, String(n), {size: 10, weight: 'bold', fill: '#fff', anchor: 'middle', parent: k.g, noqc: true});
+  }
+  if (tag) D.chip(x + CW - 10 - D.width(tag, {size: 9}) - 8, y - 8.5, tag, {size: 9, color: col, bg: '#fff', h: 13, tab: true, sw: 1});
+  // case-study strip
+  const sy = y + CH - STRIP - 5;
+  const sg = D.el('g', {}, k.g);
+  D.el('rect', {x: x + 5, y: sy, width: CW - 10, height: STRIP, rx: 3, fill: (bg === '#fff' ? bgOf(col) : '#fff')}, sg);
+  const mono = strip.startsWith('vbas');
+  const t = D.text(x + 10, sy + STRIP / 2 + 3.3, strip, {size: 9, fill: C.ink, parent: sg, family: mono ? D.MONO : null});
+  t.dataset.c = k.id;
+  K[i] = k;
+});
+
+// tier bar in the point-list card
+{
+  const k = K[7];
+  const tiers = [[508, 'standard', C.tierStd, '#fff'], [244, 'advanced', C.tierAdv, '#fff'], [295, 'next-gen', C.tierNext, C.ink], [160, 'truth', C.truth, C.ink]];
+  const total = 1207, bx = k.x + 7, bw = CW - 14, by = k.y + 49, bh = 13;
+  let x = bx;
+  tiers.forEach(([n, name, col, tc]) => {
+    const w = bw * n / total;
+    D.el('rect', {x, y: by, width: w - 1, height: bh, fill: col}, k.g);
+    D.text(x + (w - 1) / 2, by + 9.6, String(n), {size: 9, fill: tc, anchor: 'middle', parent: k.g, noqc: true});
+    x += w;
+  });
+  tiers.forEach(([n, name, col], i) => {
+    const lx = bx + (i % 2) * 74, ly = by + bh + 5 + Math.floor(i / 2) * 11.5;
+    D.el('rect', {x: lx, y: ly, width: 7, height: 7, rx: 1.2, fill: col}, k.g);
+    const t = D.text(lx + 10, ly + 6.8, name === 'truth' ? 'truth only' : name, {size: 9, fill: C.ink2, parent: k.g});
+    t.dataset.c = k.id;
+  });
+}
+
+// file pictograms in the input card
+{
+  const k = K[0];
+  [['doc', 'model.idf', 0], ['cloud', 'weather.epw', 76]].forEach(([ic, s, dx]) => {
+    D.icon(ic, k.x + 8 + dx, k.y + 58, 15, C.inner);
+    D.text(k.x + 26 + dx, k.y + 69, s, {size: 9.5, fill: C.ink, parent: k.g}).dataset.c = k.id;
+  });
+}
+// flow arrows
+const mid = r => ry(r) + 38;
+for (let r = 0; r < 3; r++) for (let c = 0; c < 2; c++)
+  D.conn([[cx(c) + CW, mid(r)], [cx(c + 1), mid(r)]], {color: C.ink2, w: 1.3});
+for (let r = 0; r < 2; r++) {
+  const yg = ry(r) + CH + GY / 2;
+  D.conn([[cx(2) + CW / 2, ry(r) + CH], [cx(2) + CW / 2, yg], [cx(0) + CW / 2, yg], [cx(0) + CW / 2, ry(r + 1)]], {color: C.ink2, w: 1.3, r: 6});
+}
+D.finish();
+</script>
+</body></html>

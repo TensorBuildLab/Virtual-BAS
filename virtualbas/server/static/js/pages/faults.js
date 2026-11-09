@@ -5,6 +5,26 @@
  * ========================================================================== */
 import { S, $, $$, esc, post, del, toast, fmtDT, unitLabel } from '../core.js';
 
+/** Render the catalogue's LaTeX equation strings as readable HTML (unicode symbols, <sub>/<sup>). */
+const TEX_SYM = {
+  varepsilon: 'ε', emptyset: '∅', forall: '∀', lceil: '⌈', rceil: '⌉', Delta: 'Δ', sigma: 'σ', theta: 'θ',
+  dots: '…', bmod: 'mod', beta: 'β', min: 'min', max: 'max', eta: 'η', phi: 'φ', ell: 'ℓ', sim: '~',
+  pm: '±', pi: 'π', ge: '≥', le: '≤', in: '∈',
+};
+const GREEK = new Set(['varepsilon', 'Delta', 'sigma', 'theta', 'beta', 'eta', 'phi', 'ell', 'pi']);
+const TEX_CMD = new RegExp(`\\\\(${Object.keys(TEX_SYM).join('|')})( (?=[A-Za-z]))?`, 'g');
+function texToHtml(tex) {
+  let s = String(tex ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  s = s.replace(/\\(?:mathrm|text)\{([^{}]*)\}/g, '$1').replace(/\\mathcal\s*N/g, String.fromCodePoint(0x1D4A9))
+    .replace(/\\big([()])/g, '$1').replace(/\\dot\s+([A-Za-z])/g, (m, c) => c + String.fromCharCode(0x307))
+    .replace(/\\,/g, String.fromCharCode(0x2009)).replace(/\\ /g, ' ').replace(/\{\}/g, '')
+    .replace(TEX_CMD, (m, w, sp) => TEX_SYM[w] + (sp && !GREEK.has(w) ? ' ' : ''));
+  // sub/superscripts, innermost braces first
+  for (let i = 0; i < 4; i++) s = s.replace(/([_^])\{([^{}]*)\}/g, (m, k, x) => (k === '_' ? `<sub>${x}</sub>` : `<sup>${x}</sup>`));
+  s = s.replace(/([_^])([A-Za-z0-9])/g, (m, k, x) => (k === '_' ? `<sub>${x}</sub>` : `<sup>${x}</sup>`));
+  return s.replace(/[{}]/g, '');
+}
+
 const LAYERS = [
   ['sensor', 'Sensor', 'Measurement layer - corrupts what the BAS sees; physics unaffected'],
   ['actuator', 'Actuator', 'Dampers, valves and fans not doing what they are told'],
@@ -44,7 +64,7 @@ export function render(main, { q = {} } = {}) {
         <div class="fcards">${byLayer[k].map((f) => `<button class="fcard" data-type="${esc(f.name)}">
           <div class="fc-h"><b>${esc(f.name)}</b><span class="cat cat-${esc(f.category)}">${esc(f.category)}</span></div>
           <div class="fc-d">${esc(f.description)}</div>
-          <code class="eq">${esc(f.equation)}</code>
+          <code class="eq">${texToHtml(f.equation)}</code>
           <div class="fc-t">target: ${esc(f.target)}</div></button>`).join('')}</div></section>`).join('')}
     </div>
     <aside class="card inj-form" id="inj-form"><div class="muted pad">Select a fault or event from the catalogue to configure an injection.</div></aside>
@@ -105,7 +125,7 @@ function selectType(name) {
   box.innerHTML = `
     <div class="card-h"><b>${esc(f.name)}</b><span class="cat cat-${esc(f.category)}">${esc(f.category)}</span><span class="lay-badge lay-${esc(f.layer)}">${esc(f.layer)}</span></div>
     <p class="fc-d">${esc(f.description)}</p>
-    <code class="eq block">${esc(f.equation)}</code>
+    <code class="eq block">${texToHtml(f.equation)}</code>
     <div class="form-grid one">
       <label>Target <small>${esc(f.target)}</small>
         ${tg.reduce((n, g) => n + g.items.length, 0) > 12 ? '<input type="search" id="if-tq" class="search sm" placeholder="filter targets…">' : ''}

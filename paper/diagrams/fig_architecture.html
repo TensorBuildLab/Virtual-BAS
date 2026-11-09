@@ -1,0 +1,135 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>fig_architecture</title>
+<style>html,body{margin:0;background:#fff} #fig{background:#fff}</style>
+</head><body><div id="fig"></div>
+<script src="diagram_lib.js"></script>
+<script>
+const {C} = D;
+// ---------------------------------------------------------------- grid
+const W = 520;
+const IN = {x: 1, w: 114};            // inner panel
+const OUT = {x: 137, w: 251};         // outer panel
+const RC = {x: 401, w: 118};          // right column
+const pad = 7;
+const L = {x: OUT.x + pad, w: 107};   // left column of the loop
+const R = {x: OUT.x + OUT.w - pad - 107, w: 107};
+const TOP = 44;
+const R1 = {y: TOP, h: 70};
+const MID = {y: R1.y + R1.h + 14, h: 80};
+const R2 = {y: MID.y + MID.h + 14, h: 64};
+const R3 = {y: R2.y + R2.h + 14, h: 66};
+const PH = R3.y + R3.h + pad;         // panel height
+const H = PH + 2;
+const cy = r => r.y + r.h / 2;
+D.init(W, H);
+
+// ---------------------------------------------------------------- panels
+D.panel({x: IN.x, y: 1, w: IN.w, h: PH, color: C.inner, fill: C.innerBg, title: 'INNER SPACE', sub: 'EnergyPlus (truth)'});
+D.panel({x: OUT.x, y: 1, w: OUT.w, h: PH, color: C.outer, fill: C.outerBg, title: 'OUTER SPACE', sub: 'the real world, labelled'});
+D.panel({x: RC.x, y: 1, w: RC.w, h: PH, color: C.ai, fill: '#fff', title: 'HUMANS & AI', sub: 'data and interfaces'});
+
+// ---------------------------------------------------------------- inner space
+const ix = IN.x + 7, iw = IN.w - 14;
+D.card({x: ix, y: R1.y, w: iw, h: R1.h, color: C.inner, title: 'Zones & envelope',
+  lines: ['occupants, gains,', 'heat, moisture,', 'CO_{2} balance']});
+D.card({x: ix, y: MID.y, w: iw, h: MID.h, color: C.inner, title: 'Air side',
+  lines: ['AHUs: economizer,', 'coils, supply fan;', 'VAV boxes with', 'hot-water reheat']});
+D.card({x: ix, y: R2.y, w: iw, h: R2.h, color: C.inner, title: 'Water side',
+  lines: ['chillers, tower,', 'boiler, pumps,', 'fouling models']});
+D.card({x: ix, y: R3.y, w: iw, h: R3.h, color: C.inner, fill: C.innerBg, dash: '2.5 2', sw: 1, title: 'Stepped run',
+  lines: ['Python API,', 'one 5-min BAS', 'sample at a time'], ts: 10});
+
+// ---------------------------------------------------------------- outer space: closed loop
+const sens = D.card({x: L.x, y: R1.y, w: L.w, h: R1.h, color: C.outer, title: 'Sensor models', icon: 'thermo', iconSize: 12,
+  lines: ['bias, gain, drift,', 'noise, lag, spikes,', 'stuck, bursty gaps']});
+const ctrl = D.card({x: R.x, y: R1.y, w: R.w, h: R1.h, color: C.outer, title: 'BAS controllers',
+  lines: [{t: 'observed values only', italic: true, fill: C.ink}, 'G36-style VAV, AHU', 'and plant sequences']});
+const act = D.card({x: L.x, y: R2.y, w: L.w, h: R2.h, color: C.outer, title: 'Actuators', icon: 'valve', iconSize: 12,
+  lines: ['stuck / failed; local', 'loops by set-point', 'translation *x*^{\\*}']});
+const ovr = D.card({x: R.x, y: R2.y, w: R.w, h: R2.h, color: C.outer, title: 'Overrides',
+  lines: ['priority array 1…16', 'operator 8 · AI 10', 'BAS program 16']});
+
+// fault card in the middle of the loop
+const fx = L.x + 14, fw = 162;
+const flt = D.card({x: fx, y: MID.y, w: fw, h: MID.h, color: C.fault, fill: '#fff', valign: 'top', pad: 6,
+  title: 'Fault & event injection', icon: 'bolt', iconSize: 12, lines: ['44 types on 5 layers + events']});
+{
+  const rows = [['sensor', 'actuator', 'equipment'], ['control', 'network', 'events']];
+  let y = MID.y + 35;
+  for (const row of rows) {
+    let x = fx + 7;
+    for (const s of row) { const c = D.chip(x, y, s, {size: 9, color: C.fault, bg: C.faultBg, h: 13}); x += c.w + 4; }
+    y += 16;
+  }
+  D.text(fx + 7, MID.y + MID.h - 6, 'human · scenario · random · AI', {size: 9, fill: C.ink2, parent: flt.g}).dataset.c = flt.id;
+}
+
+// randomness & environment strip
+const env = D.card({x: L.x, y: R3.y, w: OUT.w - 2 * pad, h: R3.h, color: C.env, fill: '#fff'});
+{
+  const half = (OUT.w - 2 * pad) / 2;
+  const blocks = [
+    ['Randomness', ['stochastic occupancy', 'weather & load events', 'infiltration, windows'], 'dice'],
+    ['Environment', ['PM2.5, PM10, TVOC,', 'light, sound, comfort,', 'votes, forecasts, grid'], 'leaf']];
+  blocks.forEach(([title, lines, ic], i) => {
+    const x0 = L.x + i * half + 7;
+    D.text(x0, R3.y + 15, title, {size: 10.5, weight: 'bold', parent: env.g}).dataset.c = env.id;
+    D.icon(ic, L.x + (i + 1) * half - 18, R3.y + 5, 12, C.env);
+    lines.forEach((l, j) => { D.text(x0, R3.y + 29 + j * 12.2, l, {size: 9.5, fill: C.ink2, parent: env.g}).dataset.c = env.id; });
+  });
+  D.el('line', {x1: L.x + half, x2: L.x + half, y1: R3.y + 8, y2: R3.y + R3.h - 8, stroke: C.grid, 'stroke-width': 1}, env.g);
+}
+
+// ---------------------------------------------------------------- right column
+const rx = RC.x + 6, rw = RC.w - 12;
+const hist = D.card({x: rx, y: R1.y, w: rw, h: R1.h + 4, color: C.ink2, title: 'Historian', icon: 'db', iconSize: 12, valign: 'top'});
+[['observed', C.outer], ['truth', C.inner], ['commands', C.ink2], ['labels', C.fault]].forEach(([s, c], i) => {
+  const y = R1.y + 29 + i * 12;
+  D.el('rect', {x: rx + 8, y: y - 6.8, width: 7, height: 7, rx: 1.5, fill: c}, hist.g);
+  D.text(rx + 20, y, s, {size: 9.5, fill: C.ink2, parent: hist.g}).dataset.c = hist.id;
+});
+const ifTop = R1.y + R1.h + 4 + 10, ifH = R3.y - 10 - ifTop;
+const itf = D.card({x: rx, y: ifTop, w: rw, h: ifH, color: C.ai, title: 'Interfaces', valign: 'top', icon: 'people', iconSize: 12});
+const items = [['monitor', 'Web GUI', 'BAS-like front end'], ['doc', 'Scenario files', 'YAML, seeded'],
+  ['api', 'REST, WebSocket', 'any language'], ['robot', 'MCP server', 'tools for LLMs'], ['loop', 'Gymnasium', 'RL, in-process']];
+const step = (ifH - 30 - 22) / (items.length - 1);
+items.forEach(([ic, s, sub], i) => {
+  const y = ifTop + 34 + i * step;
+  D.icon(ic, rx + 7, y - 9.5, 12, C.ai);
+  D.text(rx + 24, y, s, {size: 9.5, fill: C.ink, parent: itf.g}).dataset.c = itf.id;
+  D.text(rx + 24, y + 11, sub, {size: 9, fill: C.ink2, parent: itf.g}).dataset.c = itf.id;
+});
+const clk = D.card({x: rx, y: R3.y, w: rw, h: R3.h, color: C.ai, title: 'Clock', icon: 'clock', iconSize: 12, valign: 'top',
+  lines: [{t: '1× … 92,000×', fill: C.ink}, 'pause, single step;', 'speed set at run time']});
+
+// ---------------------------------------------------------------- connectors
+const gx0 = IN.x + IN.w, gx1 = OUT.x;   // left gutter
+const gmid = (gx0 + gx1) / 2;
+const yx = cy(R1) + 6, ya = cy(R2) + 6, yw = cy(R3) + 6;
+D.conn([[gx0, yx], [sens.l, yx]], {color: C.inner, w: 1.3});
+D.pill(gmid + 3, yx - 8, '*x*_{k}', {size: 10});
+D.conn([[act.l, ya], [gx0, ya]], {color: C.outer, w: 1.3});
+D.pill(gmid + 3, ya - 8, '*a*_{k}', {size: 10});
+D.conn([[env.l, yw], [gx0, yw]], {color: C.env, w: 1.3});
+D.pill(gmid + 3, yw - 8, '*w*_{k}', {size: 10});
+// loop inside outer space
+D.conn([[sens.r, yx], [ctrl.l, yx]], {color: C.outer, w: 1.3});
+D.pill((sens.r + ctrl.l) / 2, yx - 8, '*y*_{k}', {size: 10});
+const xv = ctrl.r - 20;
+D.conn([[xv, ctrl.b], [xv, ovr.t]], {color: C.outer, w: 1.3});
+D.pill(xv + 9, ovr.t - 14, '*u*_{k}', {size: 10});
+D.conn([[ovr.l, ya], [act.r, ya]], {color: C.outer, w: 1.3});
+// faults (dashed)
+const fc = {color: C.fault, w: 1.1, dash: '3 2.2'};
+D.conn([[sens.cx, flt.t], [sens.cx, sens.b]], fc);
+D.conn([[flt.r - 22, flt.t], [flt.r - 22, ctrl.b]], fc);
+D.conn([[sens.cx, flt.b], [sens.cx, act.t]], fc);
+D.conn([[flt.l, cy(MID)], [gx0, cy(MID)]], fc);
+// interfaces and historian
+const yi = flt.t + 14;
+D.conn([[itf.l, yi], [flt.r, yi]], {color: C.ai, w: 1.3, halo: 3});
+D.conn([[itf.l, ya], [ovr.r, ya]], {color: C.ai, w: 1.3});
+D.conn([[ctrl.r, yx], [hist.l, yx]], {color: C.ink2, w: 1.3});
+D.finish();
+</script>
+</body></html>

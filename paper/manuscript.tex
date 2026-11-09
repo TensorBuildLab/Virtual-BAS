@@ -8,8 +8,12 @@
 \usepackage{tabularx}
 \usepackage{multirow}
 \usepackage{xcolor}
-\usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc}
+\usepackage[section]{placeins}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf,labelsep=period}
+\renewcommand{\topfraction}{0.9}\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}\renewcommand{\floatpagefraction}{0.8}
+\setcounter{topnumber}{3}\setcounter{totalnumber}{5}
 \usepackage[hidelinks]{hyperref}
 \usepackage{lineno}
 \usepackage{siunitx}
@@ -130,6 +134,11 @@ and AI agents. A canonical example motivates the design: if a zone temperature s
 not know it; it controls the drifting reading to set point, computes a wrong air-flow command and sends it to the
 physical model, so the true zone temperature departs from comfort while the BAS screen shows everything in order. In
 Virtual BAS this happens exactly so, and both trajectories and the defining equation of the drift are recorded.
+Fig.~\ref{fig:architecture} follows this loop: the truth $x_k$ leaves EnergyPlus on the left, becomes the observed
+value $y_k$ in the sensor models, drives the BAS controllers, passes the priority array, and returns to EnergyPlus as
+actuator values $a_k$. Faults can enter at every box of the loop, and every person or program that interacts with the
+building does so from the right-hand side, through the same interfaces and with the same priority rules as in a real
+BAS.
 
 The contributions are:
 \begin{enumerate}
@@ -160,45 +169,12 @@ presents the methodology. Section~\ref{sec:case} describes the case study and Se
 experiments. Section~\ref{sec:discussion} discusses potential uses and limitations, and Section~\ref{sec:conclusions}
 concludes.
 
-\begin{figure*}[t]
+\begin{figure}[!htbp]
 \centering
-\resizebox{\textwidth}{!}{%
-\begin{tikzpicture}[font=\sffamily\small, node distance=4mm and 6mm,
-  blk/.style={draw, rounded corners=2pt, align=center, minimum height=12mm, text width=33mm, fill=white, line width=0.6pt},
-  arr/.style={-{Stealth[length=2.2mm]}, line width=0.7pt, draw=black!70},
-  lab/.style={font=\sffamily\scriptsize\itshape, text=black!70}]
-\node[blk, draw=blue!70] (zone) {Zones \& envelope\\occupants, gains, CO$_2$};
-\node[blk, draw=blue!70, below=of zone] (air) {Air side\\AHU, VAV boxes, reheat};
-\node[blk, draw=blue!70, below=of air] (water) {Water side: chillers,\\tower, boiler, pumps};
-\begin{scope}[on background layer]
-\node[fit=(zone)(air)(water), draw=blue!70, fill=blue!5, rounded corners=4pt, inner sep=4mm, label={[font=\sffamily\bfseries, text=blue!70]above:INNER SPACE: EnergyPlus (truth)}] (inner) {};
-\end{scope}
-\node[blk, draw=orange!80!black, right=22mm of zone] (sens) {Sensor models\\bias, drift, noise, lag,\\stuck, missing, spikes};
-\node[blk, draw=orange!80!black, right=of sens] (ctrl) {BAS controllers\\(observed values only)\\VAV, AHU, plant};
-\node[blk, draw=orange!80!black, right=of ctrl] (ovr) {Overrides\\priority array\\operator / AI};
-\node[blk, draw=orange!80!black, right=22mm of air] (act) {Actuator models \&\\local-loop emulation\\$x^*=(r-b)/(1+g)$};
-\node[blk, draw=orange!80!black, right=of act] (rand) {Real-world randomness\\occupancy, weather,\\gains, infiltration};
-\node[blk, draw=orange!80!black, right=of rand] (inj) {Fault \& event injection\\\NumFaultTypes{} types, 5 layers\\human / script / AI};
-\node[blk, draw=black!60, right=22mm of water, text width=113mm, minimum height=9mm] (hist) {Historian: observed $\mid$ truth $\mid$ commands $\mid$ labels \quad--\quad GUI, REST/WebSocket, MCP, Gymnasium \quad--\quad clock $1\times\ldots$max};
-\begin{scope}[on background layer]
-\node[fit=(sens)(ovr)(inj)(hist), draw=orange!80!black, fill=orange!5, rounded corners=4pt, inner sep=4mm, label={[font=\sffamily\bfseries, text=orange!80!black]above:OUTER SPACE: real world (labelled imperfection)}] (outer) {};
-\end{scope}
-\draw[arr] (zone.east) -- node[lab, above]{truth $x_k$} (sens.west);
-\draw[arr] (sens) -- node[lab, above]{$y_k$} (ctrl);
-\draw[arr] (ovr) -- (ctrl);
-\draw[arr] (ctrl.south) -- node[lab, right, pos=0.35]{commands $u_k$} (act.north east);
-\draw[arr] (act.west) -- node[lab, above]{actuators} (air.east);
-\draw[arr] (rand.south west) to[out=-150, in=-30] (water.north east);
-\draw[arr, dashed] (inj.north) -- (ovr.south);
-\draw[arr, dashed] (inj.west) -- (rand.east);
-\draw[arr, dashed] (inj.south) -- (hist.north -| inj.south);
-\end{tikzpicture}}
-\caption{Inner/outer-space architecture of Virtual BAS. EnergyPlus (inner space) is advanced one BAS sample at a time;
-the outer space measures it through imperfect sensors, controls it through BAS sequences that only see observed
-values, and actuates it through actuator models. Faults and events modify sensors, controllers, actuators and the
-EnergyPlus physics; everything is recorded with ground-truth labels.}
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_architecture.pdf}
+\caption{Architecture of Virtual BAS. The inner space (left) is an EnergyPlus model advanced one 5-min BAS sample at a time. The outer space (centre) measures it through sensor models (truth $x_k$ $\rightarrow$ observed $y_k$), controls it with BAS sequences that see only observed values, resolves BACnet-like priority overrides ($u_k$) and actuates it through actuator models and local-loop emulation ($a_k$), while real-world randomness and the environment layer act on the physics ($w_k$). Fault and event injection (dashed red) modifies sensors, controllers, actuators and the EnergyPlus physics. Humans and AI agents (right) inject and override through five interfaces; the historian records observed values, truth, commands and labels.}
 \label{fig:architecture}
-\end{figure*}
+\end{figure}
 
 %==========================================================================================
 \section{Related work}
@@ -248,6 +224,7 @@ injection by humans and AI, and obtained automatically from existing EnergyPlus 
 \section{Methodology}
 \label{sec:method}
 
+\FloatBarrier
 \subsection{Inner and outer space}
 
 Let $\mathbf{x}_k$ be the physical state of the building at BAS sample $k$ as computed by EnergyPlus (the inner
@@ -266,6 +243,7 @@ emulation, $\mathcal{E}$ one EnergyPlus time step with weather and stochastic di
 $\boldsymbol{\theta}_E$ the physical fault parameters. The controller never sees $\mathbf{x}_k$. All quantities
 $(\mathbf{x}_k,\mathbf{y}_k,\mathbf{u}_k,\boldsymbol{\theta}(t_k))$ are recorded.
 
+\FloatBarrier
 \subsection{Step-wise co-simulation and time control}
 
 EnergyPlus runs in a worker thread. At the beginning of every zone time step (callback \emph{begin system time step
@@ -279,23 +257,45 @@ refer to the end of step $k-1$, which is the instant at which a BAS samples.
 The pace is set by a speed factor $s$ (simulated seconds per wall-clock second). With BAS interval $\Delta t$ the
 target wall-clock time of sample $k$ is $\tau_k = \tau_{k-1} + \Delta t / s$; the runner sleeps until $\tau_k$ in short
 slices so that speed changes, pause and single-step requests issued through the GUI or API take effect immediately.
-$s=\infty$ (``max'') runs as fast as possible.
+$s=\infty$ (``max'') runs as fast as possible. Fig.~\ref{fig:sequence} shows the resulting sequence of one sample:
+EnergyPlus pauses in the API callback (1), queued requests from the interfaces are applied (2), the truth is measured
+(3), the controllers act on present values (4), overrides are resolved (5) and commands are actuated with set-point
+translation (6); then everything is recorded (7), the clock is paced (8) and EnergyPlus advances by $\Delta t$ (9).
+Because requests are applied only at step 2, an injection or an override issued at any wall-clock time takes effect
+at a well-defined sample, which makes interactive sessions reproducible.
 
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_step_sequence.pdf}
+\caption{One BAS sample $k$ ($\Delta t$ = 5 min) as a sequence across the six layers of Virtual BAS. EnergyPlus is suspended (hatched bar) from the API callback (1) until the clock releases it (9); in between, queued requests are applied (2), the truth is measured (3), controllers act on present values (4), overrides are resolved (5), commands are actuated with set-point translation (6), everything is recorded (7) and the wall clock is paced to the speed factor $s$ (8).}
+\label{fig:sequence}
+\end{figure}
+
+\FloatBarrier
 \subsection{BAS-ization of an EnergyPlus model}
 \label{sec:bas-ization}
 
-A BAS-ready model is obtained from any EnergyPlus model by seven transformations (Table~\ref{tab:transformations}). The
+A BAS-ready model is obtained from any EnergyPlus model by seven generic stages (Fig.~\ref{fig:basization}) that apply
+the transformations of Table~\ref{tab:transformations}; the shaded strips of the figure give the results for the case
+study. The
 HVAC topology is discovered from EnergyPlus' own connection objects (\texttt{AirLoopHVAC}, branches, supply paths,
-zone splitters, \texttt{ZoneHVAC:EquipmentConnections}, plant and condenser loops), giving zones, terminal units, air
+zone splitters, \texttt{ZoneHVAC:}\allowbreak\texttt{EquipmentConnections}, plant and condenser loops), giving zones, terminal units, air
 handling units with their outdoor-air system, coils and fan, and plant loops with chillers, boilers, towers and pumps.
 Every quantity the BAS writes is bound to a dedicated \texttt{Schedule:Constant} (``command schedule''), e.g. a
-\texttt{SetpointManager:Scheduled} on each AHU supply-air node and plant supply node, the fan availability schedule,
+\texttt{SetpointManager:}\allowbreak\texttt{Scheduled} on each AHU supply-air node and plant supply node, the fan availability schedule,
 and the minimum-flow-fraction schedule of each VAV terminal (input method \emph{Scheduled}). Because the
 minimum-flow input method changes EnergyPlus' autosizing of reheat coils, terminals and reheat coils are first
 hard-sized with the values of a sizing run of the native configuration. Physical faults are hooked through EnergyPlus
 \texttt{FaultModel:Fouling:*} objects whose availability and severity schedules are again command schedules. Finally,
 the native schedules of fans, minimum outdoor air and thermostats are extracted so that the default BAS program
 reproduces the native operation of the source model.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_basization.pdf}
+\caption{BAS-ization of an EnergyPlus model (\texttt{vbas prepare}). Seven generic stages convert any EnergyPlus model and weather file into a BAS-ready emulator; tags T1--T7 refer to Table~\ref{tab:transformations}, and the shaded strips give the results for the DOE large office. The stacked bar in stage~7 shows the availability tiers of the \NumPoints{} points.}
+\label{fig:basization}
+\end{figure}
 
 \begin{table}[!htbp]
 \centering\small
@@ -335,6 +335,21 @@ mixing temperatures, Guideline~36 reset requests) are computed from \emph{observ
 into them as in a real BAS. A scenario can restrict the exposed and recorded points to a set of tiers, e.g. to emulate
 a typical BAS of today while keeping the full ground truth.
 
+Fig.~\ref{fig:points} breaks the point list of the case-study building down in this way. Zones and VAV terminals carry
+most points because they are numerous, but the composition differs: terminal points are mostly standard, whereas the
+zone points are dominated by next-generation sensing (comfort, particles, VOC, light, sound, people counts and
+feedback). Only \NumStdPts{} of the \NumPoints{} points (\NumStdPct\%) belong to the standard tier, i.e. a typical BAS
+of today would see less than half of what the emulator can expose; \NumBasSrcPts{} points are calculated by the BAS
+itself from observed values, and \NumModelPts{} take their true value from outer-space or surrogate models rather than
+from EnergyPlus (Fig.~\ref{fig:points}c).
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_points.pdf}
+\caption{BAS point list of the large office (\NumPoints{} points) coloured by availability tier: (a) per equipment class (number of units in brackets), (b) by kind and (c) by the source of the true value. A typical BAS of today exposes only the standard tier (\NumStdPct\%).}
+\label{fig:points}
+\end{figure}
+
 \begin{table}[!htbp]
 \centering\footnotesize
 \caption{BAS points generated for each equipment type (abbreviated); S = standard, A = advanced, N = next-generation tier.}
@@ -353,6 +368,7 @@ Meters, grid & \textbf{S}: building electricity and gas demand, water, totaliser
 \end{tabularx}
 \end{table}
 
+\FloatBarrier
 \subsection{Sensor model}
 
 For a physical quantity $x_k$ the recorded value is
@@ -375,12 +391,13 @@ faults share common random numbers. Fig.~\ref{fig:sensor} illustrates the model.
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=\linewidth]{fig_sensor_model.pdf}
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_sensor_model.pdf}
 \caption{Sensor model output for a zone temperature sensor: typical commercial sensor, drift fault, spikes with bursty
 missing data, and stuck sensor (dashed: EnergyPlus truth).}
 \label{fig:sensor}
 \end{figure}
 
+\FloatBarrier
 \subsection{Actuators and local-loop emulation}
 
 Explicit BAS outputs (VAV air-flow commands, outdoor-air damper position, fan start/stop) pass through actuator models
@@ -392,11 +409,19 @@ drift), the steady state of a loop with integral action satisfies $(1+g)x^*+b=r$
 \begin{equation}
 x^* = \frac{r-b}{1+g}. \label{eq:translation}
 \end{equation}
-Virtual BAS therefore hands $x^*$ instead of $r$ to the ideal EnergyPlus controller (\emph{set-point translation}).
+Virtual BAS therefore hands $x^*$ instead of $r$ to the ideal EnergyPlus controller (\emph{set-point translation},
+Fig.~\ref{fig:localloop}).
 If the reading is stuck or spoofed at value $v$, the integral action winds up and the actuator saturates:
 $x^*=x_{\max}$ if $v<r$ and $x_{\min}$ otherwise for a direct process, and the opposite for a reverse (cooling)
 process. If the reading is unavailable, the loop holds its last output. With Eq.~\eqref{eq:translation} every sensor
 fault propagates physically, including through loops that the BAS does not compute explicitly.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_local_loop.pdf}
+\caption{Local-loop emulation by set-point translation. (a) In a real building, a local loop with integral action drives the biased reading $y$ to the set point $r$, so the true value settles at $x=(r-b)/(1+g)$. (b) EnergyPlus solves the loop with an ideal controller on the true value; handing it the translated set point $x^*$ reproduces the same physical outcome, so sensor faults propagate into the physics.}
+\label{fig:localloop}
+\end{figure}
 
 The VAV terminals are controlled explicitly: the BAS computes an air-flow set point, the box flow loop is emulated
 through Eq.~\eqref{eq:translation} applied to the air-flow sensor, and the resulting flow fraction is written to the
@@ -404,6 +429,7 @@ terminal's minimum-flow schedule while the EnergyPlus cooling set point of the z
 delivers exactly the commanded flow. Reheat is supplied by the reheat local loop. The outdoor-air flow is written to
 the \texttt{Controller:OutdoorAir} actuator as the commanded outdoor-air fraction times the sum of commanded box flows.
 
+\FloatBarrier
 \subsection{Real-world randomness}
 
 \paragraph{Occupancy} Each zone with $N$ design occupants follows the inhomogeneous Markov model of Page et al.
@@ -416,11 +442,22 @@ n_{k+1}=\mathrm{Bin}(n_k,T_{11})+\mathrm{Bin}(N-n_k,T_{01}),
 \end{gather}
 with mobility $\mu$. The count is written to the EnergyPlus \emph{People} actuator, so occupants affect heat gains and
 CO$_2$; the BAS observes them only through PIR sensors with false-on/false-off rates (Fig.~\ref{fig:occupancy}).
+The daily attendance factor makes every day different (Saturday follows a reduced schedule), the PIR sensor reports
+the same state for five and for 130 people, and on Sunday it produces a few false-on readings although nobody is
+present.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_occupancy.pdf}
+\caption{Stochastic occupancy of zone Core\_mid during one summer week: number of occupants drawn by the Markov chain (truth, written to the EnergyPlus \emph{People} actuator) and the periods in which the zone's PIR sensor reports occupancy to the BAS. Attendance varies from day to day, and the binary sensor hides the head count.}
+\label{fig:occupancy}
+\end{figure}
 
 \paragraph{Events} Weather perturbations (heat waves, cold snaps, cloud cover) are applied to the EnergyPlus weather
 actuators as offsets/multipliers of the weather file; plug and lighting load changes, window opening (additional
 infiltration), meetings, holidays and outdoor CO$_2$ changes complete the event library.
 
+\FloatBarrier
 \subsection{Extended indoor and outdoor environment}
 \label{sec:environment}
 
@@ -440,7 +477,18 @@ materials, events), the AHU outdoor-air fraction $x_{OA}$ taken from EnergyPlus,
 Eq.~\eqref{eq:iaq} is integrated exactly over each step for PM2.5, the coarse fraction PM2.5--10 and TVOC (without
 filtration). Outdoor PM2.5 follows a log-normal Ornstein--Uhlenbeck process with a diurnal traffic cycle;
 \texttt{wildfire\_smoke}, \texttt{indoor\_pollutant\_source} and \texttt{filter\_bypass} injections act on $C_o$, $S$
-and $\eta$.
+and $\eta$. Fig.~\ref{fig:zoneenv} places the mass balance in its context: the supply concentration depends on the
+AHU's outdoor-air fraction and filter, the infiltration path bypasses the filter, and the same EnergyPlus state also
+drives the light, sound, comfort, feedback and occupancy channels described below. The badges give the BAS point that
+exposes each quantity and its tier; of the quantities shown, only the zone CO$_2$, the PIR occupancy sensor and the
+filter pressure drop belong to the standard tier.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_zone_env.pdf}
+\caption{Extended environment of one zone. Particles and TVOC follow a well-mixed mass balance driven by EnergyPlus air flows: supply air through the AHU's MERV filter, infiltration from outdoors (where wildfire smoke raises $C_o$), indoor sources and deposition. Illuminance, sound, comfort, occupant feedback and occupancy are derived from the same EnergyPlus state. Badges give the point identifier and its availability tier (S standard, A advanced, N next-generation, T ground truth only).}
+\label{fig:zoneenv}
+\end{figure}
 
 \paragraph{Light and sound} Work-plane illuminance combines the lumen method for electric light and the daylight-flux
 method, $E = E_d P_{light}/P_{light,d} + K_v U \Phi_{sol}/A$, with design illuminance $E_d$, luminous efficacy of
@@ -458,11 +506,34 @@ complaint counts are BAS points.
 deviation grows with lead time, $\sigma(h)=\sigma_0+\sigma_\infty(1-e^{-h/\tau})$, and that are AR(1)-correlated
 between issues. The grid interface provides a time-of-use tariff, a synthetic marginal carbon intensity (diurnal
 profile, solar dip and AR noise) and demand-response events with a requested shed; cost and carbon are accumulated as
-KPIs. The forecast is also available as an API call and an MCP tool.
+KPIs. The forecast is also available as an API call and an MCP tool. Fig.~\ref{fig:forecast} shows these signals for
+a July week: the forecast follows the weather file closely for the next hours and departs from it by more than 2~K
+after two days, and its root-mean-square error over 168 hourly issues reproduces the prescribed growth $\sigma(h)$
+(0.8~K at 6~h, 1.6~K at 24~h and 2.4~K at 48~h ahead). The tariff and the carbon intensity peak at different times of
+day, so that cost-optimal and carbon-optimal operation differ, as in real grids.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_forecast_grid.pdf}
+\caption{Outdoor and grid signals for a July week. (a) Outdoor temperature of the weather file (truth) and 48-h forecasts issued every two days (dots mark the issue times) with the $\pm\sigma(h)$ band; (b) root-mean-square forecast error of 168 hourly issues versus lead time against the model $\sigma(h)$; (c) time-of-use electricity price and (d) marginal grid carbon intensity, with a demand-response event shaded.}
+\label{fig:forecast}
+\end{figure}
 
 These models are deliberately simple, well documented and parameterised in the building configuration; they make the
-corresponding points behave plausibly and causally, not reproduce a particular building.
+corresponding points behave plausibly and causally, not reproduce a particular building. In the GUI every zone has an
+indoor-environment page, and a building heat-map switches between metrics (Fig.~\ref{fig:guienv}). The example, taken
+during the staged smoke episode, shows how the channels interact: the core zone of the middle floors is overcooled by
+the drifting thermostat, so that its PMV and PPD are poor and its occupants file cold complaints, while its PM2.5 is
+four times the WHO guideline although no standard BAS point would show it.
 
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_gui_environment.pdf}
+\caption{Indoor-environment pages of the GUI during the staged wildfire-smoke episode. (a) Building heat-map on the PM2.5 metric (1--3): every zone exceeds 35~$\mu$g/m$^3$. (b)--(e) Detail of zone Core\_mid: thermal comfort with the drift-affected temperature (4) and a PPD of 49\% (5), indoor air quality with a 24-h sparkline of the smoke onset (7) and the outdoor, indoor and supply-air concentrations (8), light and sound with the truth-only daylight share (6), and occupancy and feedback: a people counter with its own error against the true count (9), cold complaints (10) and the mean thermal-sensation vote (11).}
+\label{fig:guienv}
+\end{figure}
+
+\FloatBarrier
 \subsection{Faults and injections}
 
 All abnormal or random conditions are \emph{injections} of a registered type. An injection has a target (point,
@@ -471,32 +542,36 @@ equipment, zone or building), start $t_0$, optional end $t_1$ and a severity pro
 s(t)=\begin{cases}0 & t<t_0 \text{ or } t\ge t_1\\ 1 & \text{step}\\ \min\!\big(1,(t-t_0)/T_r\big) & \text{ramp (incipient)}\\
 \mathbb{1}\!\left[((t-t_0)\bmod P)<D\,P\right] & \text{intermittent}\end{cases}
 \end{equation}
-that modulates one parameter, $\theta(t)=\theta_0+s(t)\,\Delta\theta$. Table~\ref{tab:faults} lists the library.
+that modulates one parameter, $\theta(t)=\theta_0+s(t)\,\Delta\theta$ (Fig.~\ref{fig:faultlib}b).
+Fig.~\ref{fig:faultlib}a shows the library: sensor faults (bias, drift, gain error, noise, stuck value, spikes, dropout
+and spoofing) apply to any of the sensor points; actuator faults stick dampers and valves or fail the supply fan;
+equipment faults degrade chillers, boilers, towers, filters and fans or trip plant equipment; control faults corrupt
+schedules, tuning, economizer and reset logic or freeze a controller; network faults take a controller off-line or stop
+the historian. Events are not faults but the randomness of a real building---occupancy surges, meetings, holidays,
+weather changes, wildfire smoke, opened windows, load changes, pollutant sources, demand-response requests and price
+spikes. In the GUI (Fig.~\ref{fig:guifaults}) the catalogue is browsable with the defining equation of every type, and
+the injection form is generated from the type's parameter specification, so a new fault type needs no GUI code.
 Equipment faults act inside EnergyPlus: fouling factors of chillers, boilers and towers through the native fault
 models, filter loading through the fan pressure rise, fan degradation through the fan efficiency actuator, and trips
 and stuck-closed valves through plant supervisory overrides. New types are registered with a decorator and immediately
 appear in the GUI, the REST catalog and the MCP tools. A random fault generator draws arrivals from a Poisson process
 with rate $\lambda$ per week and samples type, target, magnitude and duration from configurable distributions.
 
-\begin{table*}[t]
-\centering\footnotesize
-\caption{Fault and event library (\NumFaultTypes{} types). Each type has a defining equation, typed parameters and a
-target type; all are labelled with source (human, AI, scenario, random).}
-\label{tab:faults}
-\begin{tabularx}{\textwidth}{llX}
-\toprule
-Layer & Target & Types (parameter) \\
-\midrule
-Sensor & any sensor point & bias ($b$), drift ($r$, $d_{\max}$), gain ($g$), noise ($\sigma$), stuck, spikes ($p,\sigma_s$), dropout ($p$), override/spoofing ($v$) \\
-Actuator & VAV, AHU & VAV damper stuck (position), reheat valve stuck closed/open, OA damper stuck, cooling/heating coil valve stuck closed, supply fan failure \\
-Equipment & chiller, boiler, tower, AHU, pump & chiller/boiler/tower fouling (ratio $r$), filter fouling ($\Delta p$), fan degradation ($\ell$), equipment trip \\
-Control & AHU, VAV, zone & schedule error (always on/off), PI mistuning (gain multiplier), economizer disabled/always on, SAT reset disabled, controller frozen, set-point override \\
-Network & any equipment, historian & communication loss (controller off-line, BAS holds last values), historian outage \\
-Events & zone, building & occupancy surge/vacancy, meeting, holiday, weather change ($\Delta T$, $\Delta\phi$, solar), window open (ACH), plug and lighting load change, outdoor CO$_2$ change \\
-\bottomrule
-\end{tabularx}
-\end{table*}
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_gui_faults.pdf}
+\caption{Fault and event injection console. (a) Injection log: humans, scenarios, the random generator (1) and AI agents (2) inject from the same catalogue, and every injection is logged with type, target, onset, end and severity profile (3) as a ground-truth label; events such as wildfire smoke are distinguished from faults (4). (b) Catalogue of the sensor layer with the defining equation of each type (6, 7). (c) Injection form generated from the parameter specification of the selected type (8--10).}
+\label{fig:guifaults}
+\end{figure}
 
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_fault_library.pdf}
+\caption{(a) Fault and event library: \NumFaultTypes{} registered injection types, 31 faults on five layers and 13 events, each with its target type. Every type has a defining equation and typed parameters (listed in the online fault catalog), and every injection is labelled with its source (human, AI, scenario, random). (b) Severity profiles $s(t)$ of an injection: step, ramp over $T_r$ (incipient faults) and intermittent with period $P$ and duty cycle $D$.}
+\label{fig:faultlib}
+\end{figure}
+
+\FloatBarrier
 \subsection{BAS control program}
 
 The BAS control program acts on present values only and comprises: occupancy scheduling and night-cycle operation;
@@ -514,39 +589,69 @@ BACnet-like 16-level priority array (operator default priority 8, AI agents 10, 
 engine raises alarms from observed values with on-delays, so that sensor faults can cause false alarms or mask real
 ones.
 
+\FloatBarrier
 \subsection{Labels and data products}
 
 A run produces synchronised tables of observed values (the BAS trend log with gaps), truth, commands and per-sample
 label bit masks (missing, stuck, spike, sensor fault active, communication loss, false binary reading, spoofed), a long
 table of the severity of every active injection at every sample, the full injection definitions, sensor installation
 parameters, alarm history and metadata (scenario, seed, realism, control configuration, EnergyPlus version). The exact
-sensor error of every sample is $y_k-x_k$.
+sensor error of every sample is $y_k-x_k$. Fig.~\ref{fig:labels} shows these products for the 12-week training run of
+Experiment~4. The random fault generator placed 32 injections of nine types on the four AHUs (a); the label masks (b)
+mark every affected sample of every point, next to the background imperfections that are present without any fault
+(isolated missing samples, spikes, false PIR readings); and the trend of a faulty sensor can be laid over its truth
+with the labelled interval (c, d). A drifting mixed-air sensor departs slowly from the truth, which makes it hard to
+detect, whereas a stuck supply-air sensor is obvious once the true temperature moves.
 
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_labels.pdf}
+\caption{Labelled data from a 12-week run with random faults (training set of Experiment~4). (a) The 32 fault injections, by type and target AHU; (b) per-sample label bit masks of 18 of the recorded sensor points (2-h bins, highest-priority bit shown); (c) drift of the AHU-2 mixed-air temperature sensor and (d) stuck AHU-4 supply-air temperature sensor: observed values and EnergyPlus truth with the labelled samples shaded.}
+\label{fig:labels}
+\end{figure}
+
+\FloatBarrier
 \subsection{Interfaces for humans and AI}
 
-The web GUI (Fig.~\ref{fig:gui}) mimics a commercial BAS front end with building overview, AHU, VAV and plant graphics,
+The web GUI (Figs.~\ref{fig:gui} and \ref{fig:guiops}) mimics a commercial BAS front end with building overview, AHU, VAV and plant graphics,
 zone indoor-environment pages with a heat-map, a weather/forecast/grid/energy page, trends, alarms, a point explorer with priority overrides and an injection console generated from the fault catalog. A
 global switch reveals the inner space (EnergyPlus truth) next to every observed value and highlights discrepancies.
+The screenshots were taken during a staged session on a Friday afternoon in July in which an operator and an AI agent
+had injected eleven faults and events (a thermostat drift, a supply-air sensor bias, a stuck damper, fouling,
+a fan trip, wildfire smoke and a demand-response request among them). The operator sees what a real operator would
+see---a busy alarm banner, plausible zone temperatures, a demand-response request---and only the truth layer reveals
+that the core zones of ten floors are overcooled by almost 4~K (Fig.~\ref{fig:gui}, callout 8) and that the AHU-1
+supply-air sensor reads 2.7~K high (callout 10). The alarm server (Fig.~\ref{fig:guiops}) shows the other side of the
+same coin: faults with an observable symptom raise alarms, the drifting thermostat does not.
 The same functions are available through a REST/WebSocket API with OpenAPI documentation, a dependency-free Python
 client, an MCP server exposing BAS tools (read points and trends, write set points, inspect the fault catalog, inject
 and clear faults, control the clock) to LLM agents \cite{mcp2024}, and an in-process Gymnasium environment
 \cite{towers2024gymnasium} whose agent writes set points at priority 10 and observes BAS values, with rewards computed
-from the truth.
+from the truth. Fig.~\ref{fig:interfaces} shows the five ways in with real snippets from the repository: a drift fault
+can be declared in a scenario file, posted to the REST API or chosen by an LLM agent through MCP tools, a learning
+agent writes set points through Gymnasium, and an operator acts in the GUI. All writes meet in one priority array, so that an operator at
+priority 8 always overrides an AI agent at priority 10, which in turn overrides the BAS program.
 
-\begin{figure*}[t]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.49\textwidth]{gui_overview.png}\hfill
-\includegraphics[width=0.49\textwidth]{gui_ahu.png}\\[2mm]
-\includegraphics[width=0.49\textwidth]{gui_vav.png}\hfill
-\includegraphics[width=0.49\textwidth]{gui_faults.png}\\[2mm]
-\includegraphics[width=0.49\textwidth]{gui_zone.png}\hfill
-\includegraphics[width=0.49\textwidth]{gui_weather.png}
-\caption{Web GUI of Virtual BAS with the ground-truth layer switched on: building overview (top left), AHU graphic
-(top right), VAV box with a drifting zone sensor (observed vs. EnergyPlus truth badge, middle left), fault and event
-injection console (middle right), zone indoor-environment page with a building heat-map (bottom left) and weather,
-forecast, grid and energy page (bottom right).}
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_interfaces.pdf}
+\caption{One building, five ways in. (a) Scenario file, (b) REST API, (c) an LLM agent through the MCP server (the first decision of the Experiment~5 agent expressed as MCP tool calls), (d) a Gymnasium control loop (abridged from \texttt{examples/04\_gym\_agent.py}) and (e) the web GUI all act on the same running emulator. Writes from any interface enter a BACnet-like priority array in which the lowest number wins (operator 8, AI agents 10, BAS program 16).}
+\label{fig:interfaces}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.72\textheight,keepaspectratio]{fig_gui_overview.pdf}
+\caption{The Virtual BAS operator workstation, with the ground-truth layer switched on. (a) Header with the simulation clock and time control (1--4) and the alarm banner and counters (5, 6); (b) building section with one tile per zone and floor; (c) KPI tiles for outdoor air, outdoor PM2.5, tariff, grid carbon and demand response; (d) AHU graphic with equipment-level points. Every observed value carries its EnergyPlus truth (E+) and a discrepancy badge when the two disagree: the drifting Core\_mid thermostat reads 24.1~$^\circ$C while the zone is at 20.3~$^\circ$C (8), and an AI-injected +2.5~K supply-air sensor bias is invisible to the controller but visible against the truth (10). Truth-only quantities have dashed boxes (11).}
 \label{fig:gui}
-\end{figure*}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_gui_operations.pdf}
+\caption{Alarm server and operator override. (a) Alarm rules evaluate observed values only (1), so the injected AHU-4 fan trip raises a critical alarm (3) and a consequential high zone temperature in the basement (2), and the smoke episode raises an outdoor-air-quality alarm (4), whereas the drifting thermostat raises none. (b) Point dialog of a software point with its BACnet-like 16-level priority array: an operator write of 23~$^\circ$C at priority 8 is active (6) and can be released (7).}
+\label{fig:guiops}
+\end{figure}
 
 %==========================================================================================
 \section{Case study}
@@ -563,11 +668,22 @@ points); \NumStdPts{} points are in the standard tier, \NumAdvPts{} advanced and
 \NumModelPts{} take their truth from outer-space or surrogate models. The model has 28 command schedules and 4
 physical fault hooks. The Chicago TMY3 weather file is used and all runs use the
 calendar year 2023. Experiments were run on a Windows 11 laptop with EnergyPlus 23.2 and Python 3.12.
+Fig.~\ref{fig:building} shows the model and the HVAC hierarchy that BAS-ization discovered without any
+building-specific input: four plant loops feed four AHUs, each AHU serves the VAV boxes of one floor, and every box
+serves one zone.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_building_model.pdf}
+\caption{Case-study building. (a) EnergyPlus geometry of the DOE reference large office (cut-away view, plenum roofs removed), zones coloured by the AHU that serves them; the middle floor is modelled once with zone multiplier 10 and represents floors 2--11. (b) HVAC hierarchy discovered automatically by BAS-ization: condenser, chilled-water, hot-water and service-hot-water loops, four VAV AHUs, 16 VAV terminals with hot-water reheat and 16 conditioned zones (C = core, P1--P4 = perimeter, B = basement).}
+\label{fig:building}
+\end{figure}
 
 %==========================================================================================
 \section{Experiments and results}
 \label{sec:results}
 
+\FloatBarrier
 \subsection{Experiment 1: verification against native EnergyPlus}
 
 The emulator must not distort the physics. A full year was simulated (i) natively in EnergyPlus with the original
@@ -592,14 +708,15 @@ year took \ValWallVBAS~s with Virtual BAS (105{,}120 BAS samples of \NumSensorPt
 \resizebox{\linewidth}{!}{\input{tables/validation_energy.tex}}
 \end{table}
 
-\begin{figure*}[t]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\textwidth]{fig_validation.pdf}
+\includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{fig_validation.pdf}
 \caption{Experiment 1: monthly electricity and natural gas (left, centre) and hourly zone temperatures of all 16
 zones (right) of native EnergyPlus and Virtual BAS with ideal sensors.}
 \label{fig:validation}
-\end{figure*}
+\end{figure}
 
+\FloatBarrier
 \subsection{Experiment 2: inner/outer-space coupling under sensor drift}
 
 The motivating example was simulated for one summer week with realistic sensors and stochastic occupancy: the zone
@@ -611,23 +728,27 @@ compensates the apparent overheating with more air: the mean discharge air flow 
 \DriftFlow\%, and the building's HVAC electricity increases by \DriftHVAC\%. None of this is visible to a BAS operator
 looking at the zone temperature trend. The run demonstrates the central mechanism of Virtual BAS: an outer-space
 imperfection produces a wrong control signal, the wrong signal changes the physics, and the change is labelled.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_drift_case.pdf}
-\caption{Experiment 2: drift of the zone temperature sensor of zone Core\_mid. (a) Observed and true zone temperature;
-(b) discharge air flow of the VAV box with and without drift; (c) HVAC electric demand.}
-\label{fig:drift}
-\end{figure*}
+Fig.~\ref{fig:guidrift} shows the same mechanism as an operator experiences it in the staged GUI session (a faster
+drift of 0.8~K/day from Monday): the VAV graphic and the terminal status report a zone at its 24~$^\circ$C set point,
+the trend of the observed temperature is flat, and only the truth overlay reveals the zone at 20.3~$^\circ$C and a PMV
+of $-1.6$ by Friday. No alarm fires, because no observed value leaves its band.
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=\linewidth]{fig_occupancy.pdf}
-\caption{Stochastic occupancy of zone Core\_mid (truth, written to EnergyPlus) and the corresponding PIR occupancy
-sensor seen by the BAS during one summer week.}
-\label{fig:occupancy}
+\includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{fig_drift_case.pdf}
+\caption{Experiment 2: drift of the zone temperature sensor of zone Core\_mid. (a) Observed and true zone temperature;
+(b) discharge air flow of the VAV box with and without drift; (c) HVAC electric demand.}
+\label{fig:drift}
 \end{figure}
 
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_gui_drift.pdf}
+\caption{The thermostat drift as seen in the GUI (staged session, 0.8~K/day from Monday 00:00). (a) Ground-truth switch (1); (b) VAV-Core\_mid graphic and (c) terminal status: observed 24.1~$^\circ$C against an EnergyPlus truth of 20.3~$^\circ$C (2, 3), with the truth-only occupant count and PMV (4); (d) 7-day trends: the observed temperature is held at the cooling set point (5) while the truth (dashed) falls to about 20~$^\circ$C (6) and PMV to about $-1.6$ (7).}
+\label{fig:guidrift}
+\end{figure}
+
+\FloatBarrier
 \subsection{Experiment 3: equipment-level fault impact matrix}
 
 Twenty-seven single-fault scenarios covering all layers were each simulated for a summer and a winter week with
@@ -650,18 +771,19 @@ reproduce: labels mark fault presence, while the twin comparison quantifies faul
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=\linewidth]{fig_fault_matrix.pdf}
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_fault_matrix.pdf}
 \caption{Experiment 3: change of electricity, natural gas and discomfort relative to the fault-free twin for 27
 single-fault scenarios (one week each, summer and winter). Colour: signed logarithmic scale.}
 \label{fig:faultmatrix}
 \end{figure}
 
+\FloatBarrier
 \subsection{Experiment 4: labelled data generation and an FDD benchmark}
 
 Two independent datasets were generated with the random fault generator restricted to nine AHU-level fault types
 (sensor bias, drift and stuck on AHU temperature sensors, stuck outdoor-air damper, stuck-closed chilled-water valve,
 filter fouling, fan degradation, disabled economizer, schedule error) at $\lambda=3$ per week: a training set
-(April--June) and a test set (July--August) with different seeds. Hourly features (means and standard deviations of 23
+(April--June, Fig.~\ref{fig:labels}) and a test set (July--August) with different seeds. Hourly features (means and standard deviations of 23
 quantities, e.g. supply-air temperature error, mixing-equation residual, outdoor-air damper command/feedback deviation,
 fan power per flow, filter pressure drop) were computed from the \emph{observed} trend logs only, and labels from the
 injection severity tables. A random forest \cite{breiman2001rf,pedregosa2011sklearn} trained on \FddTrainN{} AHU-hours
@@ -673,11 +795,12 @@ consistently labelled data with controllable difficulty, distribution shift and 
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.8\linewidth]{fig_fdd.pdf}
+\includegraphics[width=0.8\linewidth,height=0.78\textheight,keepaspectratio]{fig_fdd.pdf}
 \caption{Experiment 4: per-class F1 score of the AHU fault diagnosis benchmark on the test period.}
 \label{fig:fdd}
 \end{figure}
 
+\FloatBarrier
 \subsection{Experiment 5: AI agents in the loop}
 
 \paragraph{AI fault injection through the public API} An autonomous adversarial agent operated the building for six
@@ -701,13 +824,14 @@ must be understood before an AI controller is deployed, and they cannot be studi
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=\linewidth]{fig_ai_agent.pdf}
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_ai_agent.pdf}
 \caption{Experiment 5: electricity saving (left) and gas increase (right) of a supervisory AI controller relative to the
 baseline BAS program in three outer spaces (ideal sensors, realistic sensors, realistic sensors with a $+4$~K
 outdoor-air sensor bias).}
 \label{fig:ai}
 \end{figure}
 
+\FloatBarrier
 \subsection{Experiment 6: indoor environment under wildfire smoke}
 
 A summer week with a 30-h wildfire-smoke episode (outdoor PM2.5 up to \EnvPeakOut~$\mu$g/m$^3$) was simulated with
@@ -718,20 +842,45 @@ concentration peaks at \EnvPeakEight~$\mu$g/m$^3$ with MERV~8, \EnvPeakBypass~$\
 \EnvPeakLock~$\mu$g/m$^3$ with the economizer lock-out and \EnvPeakThirteen~$\mu$g/m$^3$ with MERV~13; occupied
 zone-hours above 35~$\mu$g/m$^3$ are \EnvHrsEight, \EnvHrsBypass, \EnvHrsLock{} and \EnvHrsThirteen. None of this is
 visible in the standard tier: a typical BAS of today has no particle sensor, the bypass fault has no pressure-drop
-symptom, and the lock-out decision requires the next-generation outdoor PM2.5 point. Figs.~\ref{fig:environment}b--d
+symptom, and the lock-out decision requires the next-generation outdoor PM2.5 point. Figs.~\ref{fig:environment}b--e
 show one day of the other environment points of a perimeter zone: illuminance with its daylight share and the
-photosensor reading, TVOC flushed by the morning ventilation and its noisy metal-oxide reading, sound level, and PMV
-with the sparse mean votes of the zone's occupants.
+photosensor reading, PMV with the sparse mean votes of the zone's occupants, TVOC flushed by the morning ventilation and
+its noisy metal-oxide reading, and the sound level of terminal noise and speech.
+
+Because every zone has its own mass balance, the episode can also be resolved in space (Fig.~\ref{fig:zonemaps}).
+During the day, with the economizers at 100\% outdoor air (instant A), the filter is the only barrier: all zones are
+near the zone mean of 93~$\mu$g/m$^3$ with MERV~8 and 38~$\mu$g/m$^3$ with MERV~13. At night, with the AHUs off
+(instant B), the pattern inverts: infiltration carries smoke into the perimeter zones (54--59~$\mu$g/m$^3$) regardless
+of the filter, while the core zones stay cleaner, so that a filter upgrade alone does not protect perimeter spaces
+during unoccupied hours. Such spatial patterns, and the zone-level sensors needed to see them, are exactly what the
+next-generation tier lets an analyst or an AI agent study. For the operator, the episode appears on the site page of
+the GUI (Fig.~\ref{fig:guiweather}) as an outdoor-air-quality alert with advice, next to the tariff, grid carbon
+intensity, an active demand-response request and the 48-h weather forecast.
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=\linewidth]{fig_environment.pdf}
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_environment.pdf}
 \caption{Experiment 6: (a) outdoor and mean indoor PM2.5 during a wildfire-smoke episode for four filter/control
-situations; (b)--(d) one summer day of illuminance, TVOC, sound and comfort points of a perimeter zone (truth and
-sensor readings).}
+situations; (b)--(e) one summer day of illuminance, comfort and occupant feedback, TVOC and sound in a perimeter zone
+(truth and sensor readings).}
 \label{fig:environment}
 \end{figure}
 
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_zone_maps.pdf}
+\caption{Experiment 6 in space. (a) Outdoor and zone-mean PM2.5 during the 30-h smoke episode with MERV~8 and MERV~13 filters; (b) zone PM2.5 (truth) on the floor plans of the EnergyPlus model at instant A (economizers at 100\% outdoor air) and instant B (night, AHUs off); perimeter values below each plan.}
+\label{fig:zonemaps}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_gui_weather.pdf}
+\caption{Site, utility and forecast page of the GUI during the staged smoke episode. (a) Event banners: a demand-response request of 300~kW (1) and an outdoor-air-quality alert with operator advice (2); (b) outdoor air quality with AQI category (3) and observed versus true PM2.5 and PM10 (4); (c) grid and tariff with the active demand-response event (5) and cost and emissions accounting (6); (d) 48-h forecast issued at the current hour (7) against the realised weather (8).}
+\label{fig:guiweather}
+\end{figure}
+
+\FloatBarrier
 \subsection{Experiment 7: time acceleration}
 
 The pacing accuracy was measured by setting target speed factors while running (Fig.~\ref{fig:speed}). The achieved
@@ -743,32 +892,36 @@ fast training of learning agents.
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.75\linewidth]{fig_speed.pdf}
+\includegraphics[width=0.75\linewidth,height=0.78\textheight,keepaspectratio]{fig_speed.pdf}
 \caption{Experiment 7: target versus achieved speed factor and maximum throughput.}
 \label{fig:speed}
 \end{figure}
 
+\FloatBarrier
 \subsection{Experiment 8: generality}
 
 The BAS-ization procedure was applied without any building-specific code to five DOE reference buildings
-(Table~\ref{tab:generality}). All models were converted and simulated for one week. Multi-zone VAV systems with
+(Fig.~\ref{fig:generality}). All models were converted and simulated for one week, from a single-storey
+small office with five packaged units to a hospital with 55 zones; the number of points grows with the number of
+zones and terminals, and the simulation speed decreases accordingly but remains far above real time. Multi-zone VAV systems with
 water-based plants (large office, hospital, secondary school) are fully BAS-controlled; the medium office (packaged VAV
 with DX cooling and electric reheat) and the small office (packaged single-zone units) are monitored completely and
 their terminals and thermostats are BAS-controlled while unsupported components keep their native local control. The
 hospital, with 55 zones and four 100\%-outdoor-air and mixed-air AHUs, yields \NumHospitalPts{} points on 128 pieces of
 equipment and runs at \HospitalSps{} samples per second.
 
-\begin{table}[!htbp]
-\centering\small
-\caption{Experiment 8: automatic BAS-ization of five DOE reference buildings (one-week runs).}
-\label{tab:generality}
-\resizebox{\linewidth}{!}{\input{tables/generality.tex}}
-\end{table}
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_generality.pdf}
+\caption{Experiment 8: five DOE reference buildings converted automatically (EnergyPlus geometry, not to scale; conditioned zones in blue, windows light) with key figures of the one-week runs.}
+\label{fig:generality}
+\end{figure}
 
 %==========================================================================================
 \section{Discussion}
 \label{sec:discussion}
 
+\FloatBarrier
 \subsection{Potential uses and impact}
 \label{sec:uses}
 
@@ -776,18 +929,25 @@ A real BAS is a poor place to learn, experiment or certify: faults cannot be sta
 unknown, every mistake affects occupants and equipment, a year of operation takes a year, and access is restricted by
 owners, vendors and cyber-security policies. Virtual BAS removes each of these barriers at once---it is safe to break,
 labelled, repeatable through seeded scenarios, faster than real time, free and open, and it can be generated for any
-EnergyPlus model. Table~\ref{tab:uses} lists eighteen uses that follow from these properties, grouped into four areas,
-together with the users, the enabling features and the evidence available in this paper. The table distinguishes uses
+EnergyPlus model. Fig.~\ref{fig:uses} maps eighteen uses that follow from these properties onto four areas, and
+Table~\ref{tab:uses} lists them with their users, the enabling features and the evidence available in this paper. The table distinguishes uses
 that the experiments demonstrate from uses for which the interfaces exist but no evaluation is reported here.
 
-\begin{table*}[p]
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{fig_uses.pdf}
+\caption{Eighteen uses of Virtual BAS in four areas, all following from five properties: safe to break, labelled, repeatable, fast, and open and generic. Filled dots mark uses demonstrated by the experiments of this paper (experiment numbers at right); open dots mark uses whose required functions are implemented but not evaluated here; the half-filled dot marks partial support (Table~\ref{tab:uses}).}
+\label{fig:uses}
+\end{figure}
+
+\begin{table}[!htbp]
 \centering
 \caption{Potential uses of Virtual BAS, with primary users in italics. Evidence: Exp.~$n$ = demonstrated in
 Experiment~$n$; \emph{interf.} = all required functions are implemented but not evaluated in this paper;
 \emph{partial} = some functions are missing (see Section~\ref{sec:limitations}).}
 \label{tab:uses}
 \scriptsize
-\renewcommand{\arraystretch}{1.08}
+\renewcommand{\arraystretch}{1.0}
 \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{50mm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{14mm}@{}}
 \toprule
 Use (\emph{users}) & What Virtual BAS provides & Evid. \\
@@ -816,7 +976,7 @@ Grid-interactive buildings (\emph{utilities, aggregators}) & Tariff, carbon inte
 Benchmarks, competitions, reproducibility (\emph{all}) & Seeded scenarios, open building models, common KPIs, public code & Exp.~1--8 \\
 \bottomrule
 \end{tabularx}
-\end{table*}
+\end{table}
 
 \paragraph{Research and development of building AI} Virtual BAS is first a proving ground for building AI. FDD
 developers obtain unlimited labelled data with controllable fault rates, severities, seasons and sensor quality and
@@ -862,6 +1022,7 @@ in which every participant faces the same faults, sensor errors and occupants, a
 exactly. This addresses a recurrent obstacle of FDD and building-AI research, in which methods are evaluated on
 private data that others cannot access \cite{katipamula2005review1,kim2018fddreview}.
 
+\FloatBarrier
 \subsection{Limitations and future work}
 \label{sec:limitations}
 

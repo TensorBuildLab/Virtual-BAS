@@ -1,0 +1,105 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>fig_uses</title>
+<style>html,body{margin:0;background:#fff} #fig{background:#fff}</style>
+</head><body><div id="fig"></div>
+<script src="diagram_lib.js"></script>
+<script>
+const {C} = D;
+const W = 520, H = 292;
+D.init(W, H);
+const LW = 193, CWd = 108, G = (W - 2 - 2 * LW - CWd) / 2;
+const XL = 1, XC = XL + LW + G, XR = XC + CWd + G;
+const HDR = 25, PAD = 6, CHIP = 17, RGAP = 4;
+
+// status: 'd' demonstrated, 'i' interfaces in place, 'p' partial
+const groups = {
+  ai: {title: 'Building AI research', icon: 'robot', color: C.ai, items: [
+    ['FDD development', 'd', 'Exp. 3, 4'], ['Supervisory, MPC, RL control', 'd', 'Exp. 5'],
+    ['Ambient-AI, LLM operators', 'd', 'Exp. 5'], ['Foundation-model data', 'd', 'Exp. 4, 8'],
+    ['Virtual sensing', 'd', 'Exp. 2'], ['Metadata inference', 'd', 'Exp. 8'],
+    ['Value of sensors', 'd', 'Exp. 6']]},
+  com: {title: 'Research community', icon: 'people', color: C.inner, items: [
+    ['Benchmarks, competitions,', 'd', 'Exp. 1–8'], ['reproducible studies', null, '']]},
+  edu: {title: 'Education and workforce', icon: 'cap', color: C.env, items: [
+    ['University courses', 'i'], ['Operator and FM training', 'i'], ['Commissioning practice', 'i'],
+    ['Emergency drills', 'd', 'Exp. 6'], ['Alarm management, HMI', 'i']]},
+  ind: {title: 'Industry practice', icon: 'factory', color: C.outer, items: [
+    ['Testing commercial FDD', 'd', 'Exp. 4'], ['Sequence verification', 'd', 'Exp. 2, 3'],
+    ['BAS and analytics software', 'i'], ['Cyber-physical security', 'p'], ['Grid-interactive buildings, DR', 'i']]},
+};
+
+function dot(x, y, st, color, parent) {
+  if (st === 'd') D.el('circle', {cx: x, cy: y, r: 3.3, fill: color, stroke: color, 'stroke-width': 1}, parent);
+  else if (st === 'i') D.el('circle', {cx: x, cy: y, r: 3.3, fill: '#fff', stroke: color, 'stroke-width': 1.2}, parent);
+  else if (st === 'p') {
+    D.el('circle', {cx: x, cy: y, r: 3.3, fill: '#fff', stroke: color, 'stroke-width': 1.2}, parent);
+    D.el('path', {d: `M${x},${y - 3.3} A3.3,3.3 0 0 0 ${x},${y + 3.3} Z`, fill: color}, parent);
+  }
+}
+function group(key, x, y, w, h, pitch) {
+  const g = groups[key];
+  const c = D.card({x, y, w, h, color: g.color, fill: '#fff', valign: 'top', pad: 7, ts: 10.5, title: g.title, tindent: 17, accent: true});
+  D.icon(g.icon, x + 6, y + 6.5, 13, g.color, c.g);
+  g.items.forEach(([label, st, ref], i) => {
+    const cy = y + HDR + 2 + i * pitch, cx = x + PAD, cw = w - 2 * PAD;
+    if (st !== null) D.el('rect', {x: cx, y: cy, width: cw, height: CHIP, rx: 3, fill: '#fff', stroke: C.grid, 'stroke-width': 0.9}, c.g);
+    if (st) dot(cx + 8, cy + CHIP / 2, st, g.color, c.g);
+    const t = D.text(cx + 16, cy + CHIP / 2 + 3.3 - (st === null ? 6 : 0), label, {size: 9.5, fill: C.ink, parent: c.g}); t.dataset.c = c.id;
+    if (ref) { const r = D.text(cx + cw - 5, cy + CHIP / 2 + 3.2, ref, {size: 9, fill: C.ink2, anchor: 'end', parent: c.g}); r.dataset.c = c.id; }
+  });
+  return c;
+}
+
+// right column: education + industry; left column: AI research + community (equal total height)
+const gapV = 10;
+const rh = (H - 2 - gapV) / 2;
+const rPitch = (rh - HDR - 2 - PAD - CHIP) / 4 ;
+const edu = group('edu', XR, 1, LW, rh, rPitch);
+const ind = group('ind', XR, 1 + rh + gapV, LW, rh, rPitch);
+const comH = HDR + 2 + 2 * 14 + PAD;
+const aiH = H - 2 - gapV - comH;
+const aiPitch = (aiH - HDR - 2 - PAD - CHIP) / 6;
+const ai = group('ai', XL, 1, LW, aiH, aiPitch);
+// community: one two-line chip
+{
+  const g = groups.com, y = 1 + aiH + gapV;
+  const c = D.card({x: XL, y, w: LW, h: comH, color: g.color, fill: '#fff', valign: 'top', pad: 7, ts: 10.5, title: g.title, tindent: 17, accent: true});
+  D.icon(g.icon, XL + 6, y + 6.5, 13, g.color, c.g);
+  const cy = y + HDR + 2, cx = XL + PAD, cw = LW - 2 * PAD, chh = 26;
+  D.el('rect', {x: cx, y: cy, width: cw, height: chh, rx: 3, fill: '#fff', stroke: C.grid, 'stroke-width': 0.9}, c.g);
+  dot(cx + 8, cy + 8.5, 'd', g.color, c.g);
+  [['Benchmarks, competitions,', 11.7], ['reproducible studies', 22.6]].forEach(([s, dy]) => { D.text(cx + 16, cy + dy, s, {size: 9.5, fill: C.ink, parent: c.g}).dataset.c = c.id; });
+  D.text(cx + cw - 5, cy + 11.5, 'Exp. 1–8', {size: 9, fill: C.ink2, anchor: 'end', parent: c.g}).dataset.c = c.id;
+}
+
+// ------------------------------------------------------------------ hub
+const hubY = 1, hubH = H - 2;
+const hub = D.card({x: XC, y: hubY, w: CWd, h: hubH, color: C.outer, fill: C.outerBg, valign: 'top', pad: 8, ts: 12, align: 'center', sw: 1.4,
+  title: 'Virtual BAS', container: true, lines: [{t: '18 uses, 4 areas', fill: C.ink2}], ls: 9.5, tgap: 4});
+const props = [['bolt', 'safe to break'], ['db', 'labelled'], ['loop', 'repeatable'], ['clock', 'fast'], ['building', 'open, generic']];
+props.forEach(([ic, s], i) => {
+  const y = hubY + 46 + i * 32, x = XC + 8, w = CWd - 16;
+  D.el('rect', {x, y, width: w, height: 22, rx: 11, fill: '#fff', stroke: C.outer, 'stroke-width': 1}, hub.g);
+  D.icon(ic, x + 7, y + 4.5, 13, C.outer, hub.g);
+  D.text(x + 25, y + 14.6, s, {size: 10, fill: C.ink, parent: hub.g}).dataset.c = hub.id;
+});
+// evidence legend inside the hub
+{
+  const y0 = hubY + 46 + 5 * 32 + 6, h = 66;
+  const lg = D.card({x: XC + 8, y: y0, w: CWd - 16, h, color: C.outer, fill: '#fff', valign: 'top', pad: 6, ts: 9.5, title: 'Evidence', sw: 0.9});
+  [['d', 'demonstrated'], ['i', 'implemented'], ['p', 'partial']].forEach(([st, s], i) => {
+    const y = y0 + 26 + i * 13;
+    dot(XC + 19, y - 3.3, st, C.ink2, lg.g);
+    D.text(XC + 27, y, s, {size: 9.5, fill: C.ink, parent: lg.g}).dataset.c = lg.id;
+  });
+}
+// ------------------------------------------------------------------ connectors hub -> groups
+const lc = {color: C.ink2, w: 1.2};
+const com = {cy: 1 + aiH + gapV + comH / 2};
+D.conn([[XC, ai.cy], [ai.r, ai.cy]], lc);
+D.conn([[XC, com.cy], [XL + LW, com.cy]], lc);
+D.conn([[XC + CWd, edu.cy], [edu.l, edu.cy]], lc);
+D.conn([[XC + CWd, ind.cy], [ind.l, ind.cy]], lc);
+D.finish();
+</script>
+</body></html>

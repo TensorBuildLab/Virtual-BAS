@@ -1,0 +1,72 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>fig_local_loop</title>
+<style>html,body{margin:0;background:#fff} #fig{background:#fff}</style>
+</head><body><div id="fig"></div>
+<script src="diagram_lib.js"></script>
+<script>
+const {C} = D;
+const W = 520, H = 247;
+D.init(W, H);
+const BH = 42;
+// common columns
+const X = {ctl: [62, 150], proc: [172, 270], sens: [300, 392], note: [418, 519]};
+const card = (x, yc, title, lines, color, o = {}) => D.card(Object.assign({x: x[0], y: yc - (o.h || BH) / 2, w: x[1] - x[0], h: o.h || BH,
+  color, title, lines, ts: 10, ls: 9.5, pad: 6, align: 'center', tgap: 2.5, lh: 1.25}, o));
+
+// ------------------------------------------------------------------ (a) real building
+const ya = 54;
+D.text(1, 12, '#(a) Real building:# the local controller drives the #measured# value to the set point', {size: 10.5});
+const sx = 36, sr = 8;
+D.el('circle', {cx: sx, cy: ya, r: sr, fill: '#fff', stroke: C.ink2, 'stroke-width': 1.2}, D.S.boxesL);
+D.text(sx - 13, ya - 6, '+', {size: 10, anchor: 'middle', fill: C.ink});
+D.text(sx - 9, ya + 18, '−', {size: 10, anchor: 'middle', fill: C.ink});
+D.text(4, ya - 5, '*r*', {size: 10.5});
+D.conn([[2, ya], [sx - sr, ya]], {color: C.ink2, w: 1.2});
+const ctlA = card(X.ctl, ya, 'Local PI loop', ['integral action'], C.outer);
+D.conn([[sx + sr, ya], [ctlA.l, ya]], {color: C.ink2, w: 1.2});
+D.pill((sx + sr + ctlA.l) / 2, ya - 8, '*e*', {size: 10});
+const procA = card(X.proc, ya, 'Actuator, process', ['valve, coil, zone'], C.inner);
+D.conn([[ctlA.r, ya], [procA.l, ya]], {color: C.ink2, w: 1.2});
+D.pill((ctlA.r + procA.l) / 2, ya - 8, '*u*', {size: 10});
+const sensA = card(X.sens, ya, 'Biased sensor', ['*y* = (1 + *g*)*x* + *b*'], C.outer);
+D.conn([[procA.r, ya], [sensA.l, ya]], {color: C.inner, w: 1.3});
+D.pill((procA.r + sensA.l) / 2, ya - 8, '*x*', {size: 10});
+// measured feedback
+const fbY = ya + BH / 2 + 15, jx = sensA.r + 10;
+D.conn([[sensA.r, ya], [X.note[0], ya]], {color: C.outer, w: 1.3});
+D.conn([[jx, ya], [jx, fbY], [sx, fbY], [sx, ya + sr]], {color: C.outer, w: 1.3});
+D.el('circle', {cx: jx, cy: ya, r: 2, fill: C.outer}, D.S.labelsL);
+D.pill(jx + 7, ya - 8, '*y*', {size: 10});
+D.text((ctlA.cx + procA.cx) / 2, fbY + 12, 'feedback of the measured value', {size: 9.5, fill: C.ink2, anchor: 'middle'});
+const noteA = D.card({x: X.note[0], y: ya - 26, w: X.note[1] - X.note[0], h: 52, color: C.outer, fill: C.outerBg, pad: 6,
+  title: 'Steady state', ts: 10, ls: 9.5, lh: 1.3, lines: [{t: '*y* = *r*, hence', fill: C.ink}, {t: '*x* = (*r* − *b*)/(1 + *g*)', fill: C.ink}]});
+
+// ------------------------------------------------------------------ (b) Virtual BAS
+D.el('line', {x1: 1, x2: W - 1, y1: 108, y2: 108, stroke: C.grid, 'stroke-width': 1}, D.S.panelsL);
+const yb = 170;
+D.text(1, 120, '#(b) Virtual BAS:# EnergyPlus closes the loop on the #true# value with an ideal controller', {size: 10.5});
+const tr = D.card({x: 22, y: yb - BH / 2, w: 120, h: BH, color: C.outer, title: 'Set-point translation', ts: 10, ls: 9.5,
+  pad: 6, align: 'center', tgap: 2.5, lines: [{t: '*x*^{\\*} = (*r* − *b*)/(1 + *g*)', fill: C.ink}]});
+D.text(4, yb - 5, '*r*', {size: 10.5});
+D.conn([[2, yb], [22, yb]], {color: C.ink2, w: 1.2});
+const epP = {x: X.proc[0] - 8, y: yb - BH / 2 - 8, w: X.proc[1] - X.proc[0] + 16, h: BH + 16};
+D.rect(epP.x, epP.y, epP.w, epP.h, {fill: C.innerBg, stroke: C.inner, sw: 1, rx: 5, dash: '3 2', parent: D.S.panelsL});
+const procB = card(X.proc, yb, 'Ideal controller', ['true *x* driven to *x*^{\\*}', 'in HVAC iterations'], C.inner, {h: BH + 2});
+D.text(epP.x + 3, epP.y - 3, 'EnergyPlus', {size: 9, fill: C.ink2, weight: 'bold'});
+D.conn([[tr.r, yb], [epP.x, yb]], {color: C.ink2, w: 1.2});
+D.pill((tr.r + epP.x) / 2, yb - 8, '*x*^{\\*}', {size: 10});
+const sensB = card(X.sens, yb, 'Sensor model', ['*y* = (1 + *g*)*x* + *b*'], C.outer);
+D.conn([[epP.x + epP.w, yb], [sensB.l, yb]], {color: C.inner, w: 1.3});
+D.pill((epP.x + epP.w + sensB.l) / 2, yb - 8, '*x*', {size: 10});
+D.conn([[sensB.r, yb], [X.note[0], yb]], {color: C.outer, w: 1.3});
+D.pill((sensB.r + X.note[0]) / 2, yb - 8, '*y*', {size: 10});
+// parameter link
+const pY = yb + BH / 2 + 15;
+D.conn([[sensB.cx, sensB.b], [sensB.cx, pY], [tr.cx, pY], [tr.cx, tr.b]], {color: C.outer, w: 1.1, dash: '3 2.2'});
+D.text((tr.cx + sensB.cx) / 2, pY + 12, 'sensor parameters *b* (bias + drift) and *g* known to the emulator', {size: 9.5, fill: C.ink2, anchor: 'middle'});
+const noteB = D.card({x: X.note[0], y: yb - 26, w: X.note[1] - X.note[0], h: 52, color: C.outer, fill: C.outerBg, pad: 6,
+  title: 'Same outcome', ts: 10, ls: 9.5, lh: 1.3, lines: [{t: '*x* = *x*^{\\*}, *y* = *r*: the error', fill: C.ink}, {t: 'acts on the physics', fill: C.ink}]});
+D.text(1, H - 4, 'Stuck or spoofed reading: integral wind-up, *x*^{\\*} = *x*_{max} or *x*_{min}.  Missing reading: last output held.', {size: 9.5, fill: C.ink2});
+D.finish();
+</script>
+</body></html>

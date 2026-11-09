@@ -1,0 +1,92 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>fig_step_sequence</title>
+<style>html,body{margin:0;background:#fff} #fig{background:#fff}</style>
+</head><body><div id="fig"></div>
+<script src="diagram_lib.js"></script>
+<script>
+const {C} = D;
+const W = 520;
+const lanes = [
+  {t: 'EnergyPlus', s: 'physics, truth', c: C.inner, bg: C.innerBg},
+  {t: 'Sensors', s: 'sensor models', c: C.outer, bg: C.outerBg},
+  {t: 'Controllers', s: 'and analytics', c: C.outer, bg: C.outerBg},
+  {t: 'Overrides', s: 'operator, AI', c: C.ai, bg: C.aiBg},
+  {t: 'Actuators', s: 'local loops', c: C.outer, bg: C.outerBg},
+  {t: 'Historian', s: 'and clock', c: C.ink2, bg: '#fff'},
+];
+const lw = (W - 2) / 6, lx = i => 1 + lw * (i + 0.5);
+const HDR = 34, Y0 = 50, P = 48, BH = 44;
+const row = i => Y0 + i * P;
+// [step, lane, row, x0, x1, title, lines, height]
+const spec = [
+  [1, 0, 0, 2, 104, 'Pause at step *k*', ['API callback reads', 'outputs and meters']],
+  [2, 3, 0, 244, 368, 'Apply requests', ['queued injections, writes,', 'random faults → θ(*t*_{k})']],
+  [3, 1, 1, 86, 202, 'Measure', ['*y*_{k} = S(*x*_{k}; θ_{S})', 'and label bits']],
+  [4, 2, 2, 166, 290, 'Control', ['sequences on present', 'values ŷ_{k}; analytics']],
+  [5, 3, 3, 250, 372, 'Priority array', ['operator 8, AI 10,', 'BAS program 16']],
+  [6, 4, 4, 330, 459, 'Actuate', ['actuator models;', 'set-point translation', '*x*^{\\*} = (*r* − *b*)/(1 + *g*)'], 56],
+  [7, 5, 5.35, 409, 519, 'Record', ['observed, truth,', 'commands, labels']],
+  [8, 5, 6.55, 409, 519, 'Pace', ['sleep until τ_{k} =', 'τ_{k−1} + Δ*t*/*s*']],
+  [9, 0, 7.4, 2, 120, 'Advance', ['EnergyPlus solves', 'Δ*t* = 5 min to *k*+1']],
+];
+const H = Math.ceil(row(7.4) + BH + 2);
+D.init(W, H);
+
+// lane headers and lifelines
+lanes.forEach((L, i) => {
+  const x = 1 + lw * i + 2, w = lw - 4;
+  D.card({x, y: 1, w, h: HDR, color: L.c, fill: L.bg, title: L.t, lines: [L.s], align: 'center', ts: 10, ls: 9, pad: 4, tgap: 2, lh: 1.2});
+  if (i > 0) D.el('line', {x1: lx(i), x2: lx(i), y1: HDR + 2, y2: H - 2, stroke: C.grid, 'stroke-width': 1, 'stroke-dasharray': '2 2.5'}, D.S.panelsL);
+});
+
+// EnergyPlus suspended bar (lane 0)
+const barX = 8, barTop = row(0) + BH, barBot = row(7.4);
+const pat = D.el('pattern', {id: 'hatch', width: 4, height: 4, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)'}, D.S.defs);
+D.el('rect', {width: 4, height: 4, fill: C.innerBg}, pat);
+D.el('line', {x1: 0, y1: 0, x2: 0, y2: 4, stroke: C.inner, 'stroke-width': 1.1, opacity: 0.55}, pat);
+D.el('rect', {x: barX, y: barTop, width: 8, height: barBot - barTop, fill: 'url(#hatch)', stroke: C.inner, 'stroke-width': 0.9}, D.S.panelsL);
+['EnergyPlus', 'suspended', 'while the BAS', 'computes'].forEach((s, i) =>
+  D.text(barX + 14, row(1) + 12 + i * 12, s, {size: 9.5, fill: C.ink2, italic: true}));
+
+// step boxes
+const B = {};
+spec.forEach(([n, lane, r, x0, x1, title, lines, h]) => {
+  const L = lanes[lane];
+  const y = row(r), bh = h || BH;
+  const c = D.card({x: x0, y, w: x1 - x0, h: bh, color: L.c, fill: '#fff', valign: 'top', pad: 6, ls: 9.5, lh: 1.3, tgap: 3,
+    title, tindent: 14, lines});
+  D.el('circle', {cx: x0 + 12, cy: y + 10.8, r: 6.6, fill: L.c}, c.g);
+  D.text(x0 + 12, y + 14.2, String(n), {size: 9.5, weight: 'bold', fill: '#fff', anchor: 'middle', parent: c.g, noqc: true});
+  B[n] = c;
+});
+
+// connectors: elbow from the right edge of box a to the lifeline of box b, then down into b
+const elbow = (a, b, xb, label, color, o = {}) => {
+  const ya = a.y + 15;
+  D.conn([[a.r, ya], [xb, ya], [xb, b.t]], Object.assign({color, w: 1.3}, o));
+  if (label) D.pill(xb + 4, (ya + b.t) / 2 + 1, label, {anchor: 'start', size: 10});
+};
+elbow(B[1], B[3], lx(1), '*x*_{k}', C.inner);
+elbow(B[3], B[4], lx(2), '*y*_{k}', C.outer);
+elbow(B[4], B[5], lx(3), '*u*_{k}', C.outer);
+elbow(B[5], B[6], lx(4), null, C.outer);
+elbow(B[6], B[7], lx(5), null, C.ink2, {dash: '3 2'});
+// a_k back to EnergyPlus
+const yA = B[6].y + 40;
+D.conn([[B[6].l, yA], [barX + 8, yA]], {color: C.outer, w: 1.3});
+D.pill((lx(1) + lx(2)) / 2, yA - 8, '*a*_{k} written to EnergyPlus actuators', {size: 9.5});
+// historian -> pace
+D.conn([[lx(5), B[7].b], [lx(5), B[8].t]], {color: C.ink2, w: 1.3});
+// pace -> resume EnergyPlus
+const yR = B[8].y + 31;
+D.conn([[B[8].l, yR], [B[9].r - 26, yR], [B[9].r - 26, B[9].t]], {color: C.ink2, w: 1.3});
+D.pill((lx(2) + lx(3)) / 2 + 6, yR - 8, 'resume (pause, step and speed changeable at run time)', {size: 9.5});
+
+// notes in the free corners
+const note = (x, y, w, lines) => D.card({x, y, w, h: 11 + lines.length * 12.2, color: C.grid, fill: '#fff', sw: 1, pad: 6, ls: 9.5, lh: 1.28,
+  lines: lines.map(t => ({t, fill: C.ink2}))});
+note(380, B[3].y + 6, 139, ['Data loss: a missing', 'sample is NaN in the trend', 'log; the BAS keeps the last', 'valid value as ŷ_{k}.']);
+note(28, yA + 15, 232, ['Wall-clock time per sample Δ*t*/*s*, with speed', 'factor *s* from 1× (real time) to about 92,000×.', 'Requests from the GUI, REST API, MCP and', 'Gymnasium are queued and applied at step 2.']);
+D.finish();
+</script>
+</body></html>

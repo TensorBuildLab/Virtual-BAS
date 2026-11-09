@@ -30,10 +30,10 @@ def main():
              f"(standard / advanced / next-gen)\nsensor errors and {len(REGISTRY)} fault & event types - controllers act "
              f"on what they see - humans & AI inject at run time, 1x ... {macros.get('SpeedMaxK', '90,000')}x real time",
              fontsize=19.5, linespacing=1.4, color="#52514e", family="DejaVu Sans")
-    ax1 = fig.add_axes([0.015, 0.0, 0.49, 0.80])
-    ax1.imshow(mpimg.imread(ROOT / "paper/figures/gui_zone.png"))
+    ax1 = fig.add_axes([0.015, 0.0, 0.47, 0.80])
+    ax1.imshow(mpimg.imread(ROOT / "paper/figures/fig_architecture.png"))
     ax1.axis("off")
-    ax2 = fig.add_axes([0.515, 0.0, 0.475, 0.80])
+    ax2 = fig.add_axes([0.505, 0.0, 0.485, 0.80])
     ax2.imshow(mpimg.imread(ROOT / "paper/figures/fig_drift_case.png"))
     ax2.axis("off")
     out = ROOT / "paper/submission/graphical_abstract.png"

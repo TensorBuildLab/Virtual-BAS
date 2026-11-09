@@ -730,6 +730,7 @@ body:not(.truth-on) .tier-sum { grid-template-columns: repeat(3, minmax(0, 1fr))
 .occ-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 6px; margin-bottom: 8px; }
 .otile { background: var(--bg-2); border-radius: 4px; padding: 5px 8px; display: flex; flex-direction: column; }
 .otile .pv .tv { display: block; margin-left: 0; }
+.otile .pv .tv:empty { display: none; }
 
 /* ================================================================== weather & energy */
 .wx-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }

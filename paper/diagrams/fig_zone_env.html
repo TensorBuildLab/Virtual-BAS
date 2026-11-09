@@ -1,0 +1,113 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>fig_zone_env</title>
+<style>html,body{margin:0;background:#fff} #fig{background:#fff}</style>
+</head><body><div id="fig"></div>
+<script src="diagram_lib.js"></script>
+<script>
+const {C} = D;
+const W = 520, H = 376;
+D.init(W, H);
+const LW = 306;                         // left schematic width
+const ENV = {color: C.env, w: 1.3};
+const Cbar = 'C̄';                 // C with macron
+const tag = (t, c) => { t.dataset.c = c.id; return t; };
+
+// ------------------------------------------------------------------ outdoors band
+const out = D.card({x: 1, y: 1, w: LW - 1, h: 44, color: C.env, fill: C.envBg, valign: 'top', pad: 6, ts: 10.5,
+  title: 'Outdoors', lines: ['*C*_{o}: PM2.5 and PM10, log-normal OU process with', 'a diurnal traffic cycle; wildfire smoke raises *C*_{o}']});
+D.icon('cloud', 74, 4, 14, C.env, out.g);
+D.badge(LW - 74, 6, 'N', 'OA-PM25', {parent: out.g});
+
+// ------------------------------------------------------------------ AHU
+const ahu = {x: 1, y: 64, w: 108, h: 204};
+const ahuC = D.card({x: ahu.x, y: ahu.y, w: ahu.w, h: ahu.h, color: C.inner, fill: C.innerBg, valign: 'top', pad: 6, ts: 10.5,
+  title: 'AHU', tindent: 28, container: true});
+const mixX = 21, mixY = ahu.y + 56, lx = 36;
+D.el('circle', {cx: mixX, cy: mixY, r: 6, fill: '#fff', stroke: C.ink2, 'stroke-width': 1.1}, D.S.topL);
+tag(D.text(lx, mixY + 17, 'mixing box', {size: 9.5, fill: C.ink2, parent: ahuC.g}), ahuC);
+const fy = ahu.y + 90;
+const pat = D.el('pattern', {id: 'fhatch', width: 3, height: 3, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)'}, D.S.defs);
+D.el('rect', {width: 3, height: 3, fill: '#fff'}, pat);
+D.el('line', {x1: 0, y1: 0, x2: 0, y2: 3, stroke: C.ink2, 'stroke-width': 0.9}, pat);
+D.el('rect', {x: mixX - 11, y: fy, width: 22, height: 12, fill: 'url(#fhatch)', stroke: C.ink2, 'stroke-width': 1}, D.S.topL);
+tag(D.text(lx, fy + 4, 'MERV filter', {size: 9.5, fill: C.ink, parent: ahuC.g}), ahuC);
+tag(D.text(lx, fy + 15.5, 'efficiency η', {size: 9.5, fill: C.ink2, parent: ahuC.g}), ahuC);
+D.badge(lx, fy + 22, 'S', 'FLT-DP', {parent: ahuC.g});
+const fanY = ahu.y + 148;
+D.icon('fan', mixX - 8, fanY - 8, 16, C.ink2, ahuC.g);
+tag(D.text(lx, fanY + 3.5, 'supply fan', {size: 9.5, fill: C.ink2, parent: ahuC.g}), ahuC);
+const ySup = ahu.y + 176;
+D.badge(lx, ySup + 9, 'T', 'SA-PM25', {parent: ahuC.g});
+D.conn([[mixX, mixY + 6], [mixX, fy]], {color: C.env, w: 1.2});
+D.conn([[mixX, fy + 12], [mixX, fanY - 8]], {color: C.env, w: 1.2});
+
+// ------------------------------------------------------------------ zone
+const zn = {x: 136, y: 64, w: LW - 136, h: 204};
+const zC = D.card({x: zn.x, y: zn.y, w: zn.w, h: zn.h, color: C.inner, fill: '#fff', valign: 'top', pad: 6, ts: 10.5,
+  title: 'Zone, volume *V*', container: true});
+const floorY = zn.y + zn.h - 22;
+D.el('line', {x1: zn.x + 1, x2: zn.x + zn.w - 1, y1: floorY, y2: floorY, stroke: C.grid, 'stroke-width': 1.2}, zC.g);
+tag(D.text(zn.x + 10, zn.y + 39, '*C*(*t*)', {size: 15, fill: C.ink, parent: zC.g}), zC);
+tag(D.text(zn.x + 46, zn.y + 39, 'well mixed', {size: 9.5, fill: C.ink2, parent: zC.g}), zC);
+// sensors in the zone
+[['N', 'ZN-PM25'], ['N', 'ZN-PM10'], ['N', 'ZN-TVOC'], ['S', 'ZN-CO2']].forEach(([t, s], i) =>
+  D.badge(zn.x + zn.w - 66, zn.y + 68 + i * 15, t, s, {parent: zC.g}));
+// outflow (left wall, return)
+tag(D.text(zn.x + 8, mixY + 3.5, 'outflow (*Q*_{s} + *Q*_{i}) *C*', {size: 9.5, fill: C.ink, parent: zC.g}), zC);
+// occupants and sources
+const sy = zn.y + 134;
+D.icon('people', zn.x + 9, sy, 18, C.ink2, zC.g);
+tag(D.text(zn.x + 32, sy + 8, '*S*: occupants, materials,', {size: 9.5, fill: C.ink, parent: zC.g}), zC);
+tag(D.text(zn.x + 32, sy + 20, 'cleaning or printing events', {size: 9.5, fill: C.ink2, parent: zC.g}), zC);
+// deposition
+D.conn([[zn.x + 22, floorY - 18], [zn.x + 22, floorY]], {color: C.env, w: 1.2});
+tag(D.text(zn.x + 32, floorY - 6, 'deposition, sink *kV C*', {size: 9.5, fill: C.ink2, parent: zC.g}), zC);
+tag(D.text(zn.x + zn.w / 2, floorY + 14, 'floor', {size: 9, fill: C.muted, anchor: 'middle', parent: zC.g}), zC);
+
+// ------------------------------------------------------------------ flows
+D.conn([[mixX, out.b], [mixX, mixY - 6]], ENV);
+D.pill(mixX + 5, (out.b + ahu.y) / 2 + 0.5, '*x*_{OA} *C*_{o}', {anchor: 'start', size: 9.5});
+const ix = zn.x + zn.w - 34;
+D.conn([[ix, out.b], [ix, zn.y + 20]], ENV);
+D.pill(ix - 5, (out.b + zn.y) / 2 + 0.5, 'infiltration *P Q*_{i} *C*_{o}', {anchor: 'end', size: 9.5});
+D.conn([[zn.x, mixY], [mixX + 6, mixY]], ENV);
+D.pill((ahu.x + ahu.w + zn.x) / 2, mixY - 9, Cbar + '_{ret}', {size: 10});
+D.conn([[mixX, fanY + 8], [mixX, ySup], [zn.x, ySup]], ENV);
+D.pill((ahu.x + ahu.w + zn.x) / 2, ySup - 9, '*Q*_{s} *C*_{s}', {size: 10});
+
+// ------------------------------------------------------------------ governing equations
+const eq = D.card({x: 1, y: 278, w: LW - 1, h: 74, color: C.env, fill: C.envBg, valign: 'top', pad: 7, ts: 10.5, ls: 10.5, lh: 1.42, tgap: 5,
+  title: 'Mass balance for PM2.5, PM2.5–10 and TVOC',
+  lines: [{t: '*V* d*C*/d*t* = *Q*_{s}*C*_{s} + *P Q*_{i}*C*_{o} + *S* − (*Q*_{s} + *Q*_{i} + *kV*) *C*', fill: C.ink},
+          {t: '*C*_{s} = (1 − η)(*x*_{OA}*C*_{o} + (1 − *x*_{OA}) ' + Cbar + '_{ret})', fill: C.ink},
+          {t: 'integrated exactly over each 5-min step', size: 9.5}]});
+// tier legend
+{
+  const y = H - 15;
+  D.text(2, y + 9.6, 'Tiers:', {size: 9.5, fill: C.ink2});
+  let x = 34;
+  [['S', 'standard'], ['A', 'advanced'], ['N', 'next-gen'], ['T', 'truth only']].forEach(([t, s]) => { x += D.badge(x, y, t, s, {sans: true}) + 5; });
+}
+
+// ------------------------------------------------------------------ other channels (right column)
+const RX = LW + 12, RW = W - 1 - RX;
+const chans = [
+  ['bulb', 'Illuminance', ['*E* = *E*_{d} *P*_{light}/*P*_{light,d} + *K*_{v} *U* Φ_{sol}/*A*', 'lumen method plus daylight flux'], [['A', 'ZN-LUX'], ['A', 'LIGHT-LVL']]],
+  ['speaker', 'Sound level', ['terminal noise *L*_{d} + 50 log_{10}(*V̇*/*V̇*_{max}),', 'speech of occupants, background'], [['N', 'ZN-DBA']]],
+  ['thermo', 'Thermal comfort', ['mean radiant and operative', 'temperature, PMV and PPD'], [['N', 'ZN-MRT'], ['N', 'ZN-OPT'], ['N', 'PMV']]],
+  ['chat', 'Occupant feedback', ['votes round(PMV + σ_{i}ε) at a Poisson', 'rate; hot or cold complaints ∝ *N* PPD'], [['N', 'TS-VOTE'], ['N', 'HOT-CALLS']]],
+  ['people', 'Occupancy', ['stochastic occupant count (truth)', 'seen by a counter and a PIR sensor'], [['N', 'OCC-COUNT'], ['S', 'ZN-OCC']]],
+];
+const TOPY = 18, ch = 68, gap = (H - 1 - TOPY - chans.length * ch) / (chans.length - 1);
+D.text(RX, 11, '#Other zone channels#', {size: 10.5});
+chans.forEach(([ic, title, lines, badges], i) => {
+  const y = TOPY + i * (ch + gap);
+  const c = D.card({x: RX, y, w: RW, h: ch, color: C.env, fill: '#fff', valign: 'top', pad: 6, ts: 10, ls: 9.5, lh: 1.36, tgap: 3,
+    title, tindent: 17, lines});
+  D.icon(ic, RX + 5, y + 4, 12, C.env, c.g);
+  let bx = RX + 6;
+  badges.forEach(([t, s]) => { bx += D.badge(bx, y + ch - 18, t, s, {parent: c.g}) + 5; });
+});
+D.finish();
+</script>
+</body></html>

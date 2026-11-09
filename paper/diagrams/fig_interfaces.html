@@ -1,0 +1,145 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>fig_interfaces</title>
+<style>html,body{margin:0;background:#fff} #fig{background:#fff}</style>
+</head><body><div id="fig"></div>
+<script src="diagram_lib.js"></script>
+<script>
+const {C} = D;
+const W = 520;
+const CW = 254, GX = 12, CH = 150, GY = 24, MH = 124;
+const X0 = 1, X1 = X0 + CW + GX;
+const Y0 = 1, YM = Y0 + CH + GY, Y2 = YM + MH + GY;
+const H = Y2 + CH + 1;
+D.init(W, H);
+
+// ------------------------------------------------------------------ syntax tinting (dark, ink-like shades)
+const TINT = {key: '#3f3291', str: '#17684c', num: '#1d5aa6', com: C.muted, kw: '#3f3291', plain: C.ink};
+function tokens(line, lang) {
+  const out = [];
+  const rx = lang === 'py'
+    ? /(#.*$)|("[^"]*"|'[^']*')|(\b\d+(?:\.\d+)?\b)|(\b(?:while|if|break|True)\b)|([^"'#\d]+?(?=["'#]|\b\d|\b(?:while|if|break|True)\b|$))|(.)/g
+    : lang === 'sh'
+    ? /(#.*$)|('[^']*'|"[^"]*")|(\$\w+)|(\bcurl\b|--json)|([^"'#$]+?(?=["'#$]|\bcurl\b|--json|$))|(.)/g
+    : /(#.*$)|("[^"]*"|'[^']*')|(\b\d[\d.:T-]*\b)|(^\s*-?\s*[A-Za-z_]+(?=:))|([^"'#\d]+?(?=["'#]|\b\d|$))|(.)/g;
+  let m;
+  while ((m = rx.exec(line)) !== null) {
+    if (m[0] === '') { rx.lastIndex++; continue; }
+    const k = m[1] ? 'com' : m[2] ? 'str' : m[3] ? 'num' : m[4] ? (lang === 'yaml' ? 'key' : 'kw') : 'plain';
+    out.push([m[0], k]);
+  }
+  return out;
+}
+function code(x, y, lines, lang, parent, cardId) {
+  lines.forEach((ln, i) => {
+    const t = D.el('text', {x, y: y + i * 11.5, 'font-size': 9, 'font-family': D.MONO, fill: C.ink}, parent);
+    t.style.whiteSpace = 'pre';
+    for (const [s, k] of tokens(ln, lang)) {
+      const ts = D.el('tspan', {fill: TINT[k], 'font-style': k === 'com' ? 'italic' : null}, t);
+      ts.textContent = s;
+    }
+    t.dataset.c = cardId;
+    D.S.texts.push(t);
+  });
+}
+function codeCard(x, y, letter, title, sub, lines, lang) {
+  const c = D.card({x, y, w: CW, h: CH, color: C.ai, fill: '#fff', valign: 'top', pad: 6, ts: 10, title: '(' + letter + ') ' + title});
+  D.el('rect', {x: x + 0.6, y: y + 21, width: CW - 1.2, height: CH - 21.6, rx: 0, fill: '#faf9fd'}, c.g);
+  D.el('line', {x1: x, x2: x + CW, y1: y + 21, y2: y + 21, stroke: C.grid, 'stroke-width': 1}, c.g);
+  if (sub) { const t = D.text(x + CW - 7, y + 14, sub, {size: 9, fill: C.ink2, anchor: 'end', parent: c.g}); t.dataset.c = c.id; }
+  code(x + 8, y + 36, lines, lang, c.g, c.id);
+  return c;
+}
+
+// ------------------------------------------------------------------ (a)-(d) code cards (real snippets from the repository)
+const A = codeCard(X0, Y0, 'a', 'Scenario file', 'scenarios/drift_example.yaml', [
+  'name: thermostat_drift',
+  'start: 2023-07-10',
+  'end: 2023-07-16',
+  'realism: 1.0',
+  'occupancy: {stochastic: true}',
+  'injections:',
+  '  - type: sensor_drift',
+  '    target: ZN-Core_mid/ZN-T',
+  '    start: 2023-07-11T00:00:00',
+  '    params: {rate_per_day: 0.5, max_abs: 4.0}',
+], 'yaml');
+const B = codeCard(X1, Y0, 'b', 'REST API', 'virtualbas/server/app.py', [
+  'B=http://127.0.0.1:8000',
+  'curl --json \'{"type": "sensor_bias",',
+  '  "target": "AHU-1/SA-T", "params": {"bias": 2},',
+  '  "duration": "1d", "source": "ai"}\' \\',
+  '  $B/api/injections',
+  '# observed value and EnergyPlus truth',
+  'curl "$B/api/read?points=AHU-1/SA-T&truth=true"',
+  '# operator override at priority 8',
+  'curl --json \'{"point": "AHU-1/SA-T-SP",',
+  '  "value": 14, "priority": 8}\' $B/api/write',
+], 'sh');
+const Cc = codeCard(X0, Y2, 'c', 'LLM agent via MCP', 'virtualbas/ai/mcp_server.py', [
+  '# agent decision of Experiment 5 as tool calls',
+  'read_points(points=["ZN-Core_bottom/ZN-T"])',
+  'inject(type="sensor_drift",',
+  '       target="ZN-Core_bottom/ZN-T",',
+  '       params={"rate_per_day": 0.8,',
+  '               "max_abs": 3},',
+  '       duration="2d",',
+  '       note="slow stealthy drift "',
+  '            "of a zone thermostat")',
+  '# -> {"id": "inj-0001", "source": "ai", ...}',
+], 'py');
+const Dd = codeCard(X1, Y2, 'd', 'Gymnasium', 'examples/04_gym_agent.py', [
+  'env = VirtualBASEnv("buildings/large_office",',
+  '        scenario=sc, decision_steps=3)',
+  'obs, info = env.reset(seed=0)',
+  'while True:',
+  '    oat = obs[env.obs_points.index("WX/OA-T")]',
+  '    sat = np.clip(16.5 - (oat - 15) * 0.4,',
+  '                  12.8, 16.5)',
+  '    obs, reward, terminated, truncated, info = \\',
+  '        env.step(np.array([sat] * 4 + [6.7]))',
+  '    if terminated: break',
+], 'py');
+
+// ------------------------------------------------------------------ (e) GUI thumbnail
+const gw = 172, iw = gw - 12, ih = iw * 1000 / 1600;
+const G = D.card({x: X0, y: YM, w: gw, h: MH, color: C.ai, fill: '#fff', valign: 'top', pad: 6, ts: 10, title: '(e) Web GUI'});
+D.el('image', {href: '../figures/gui_overview.png', x: X0 + 6, y: YM + 22, width: iw, height: ih, preserveAspectRatio: 'xMidYMid meet'}, G.g);
+D.el('rect', {x: X0 + 6, y: YM + 22, width: iw, height: ih, fill: 'none', stroke: C.grid, 'stroke-width': 0.8}, G.g);
+
+// ------------------------------------------------------------------ core with priority array
+const cx0 = X0 + gw + 24, cw = W - 1 - cx0;
+const core = D.card({x: cx0, y: YM, w: cw, h: MH, color: C.outer, fill: C.outerBg, valign: 'top', pad: 8, ts: 11.5, sw: 1.4, container: true,
+  title: 'Virtual BAS', lines: ['one running building:', 'point list, historian,', 'alarms, fault catalog,', 'clock 1× … max'], ls: 9.5, lh: 1.32, tgap: 5});
+{
+  const px = cx0 + 116, pw = cw - 116 - 8, py = YM + 8, ph = MH - 16;
+  const pc = D.card({x: px, y: py, w: pw, h: ph, color: C.outer, fill: '#fff', valign: 'top', pad: 6, ts: 10, title: 'Priority array'});
+  const st = D.text(px + pw - 7, py + 15, 'lowest number wins', {size: 9, fill: C.ink2, anchor: 'end', parent: pc.g}); st.dataset.c = pc.id;
+  const n = 16, cellW = (pw - 14) / n, cy = py + 27, ch = 13;
+  const hl = {8: [C.outer, 'operator 8'], 10: [C.ai, 'AI agent 10'], 16: [C.ink2, 'BAS program 16']};
+  for (let i = 1; i <= n; i++) {
+    const x = px + 7 + (i - 1) * cellW, h = hl[i];
+    D.el('rect', {x: x + 0.5, y: cy, width: cellW - 1, height: ch, rx: 1.5, fill: h ? h[0] : '#fff', stroke: h ? h[0] : C.grid, 'stroke-width': 0.8}, pc.g);
+  }
+  D.text(px + 7 + cellW / 2, cy + 9.3, '1', {size: 9, anchor: 'middle', fill: C.muted, parent: pc.g, noqc: true});
+  [8, 10, 16].forEach((i, j) => {
+    const x = px + 7 + (i - 0.5) * cellW, ly = cy + ch + 17 + j * 15;
+    D.el('path', {d: `M${x},${cy + ch + 1.5} V${ly - 3.2} H${px + 9 + D.width(hl[i][1], {size: 9.5}) + 4}`, fill: 'none', stroke: hl[i][0], 'stroke-width': 1}, pc.g);
+    const t = D.text(px + 9, ly, hl[i][1], {size: 9.5, fill: C.ink, parent: pc.g}); t.dataset.c = pc.id;
+  });
+}
+
+// ------------------------------------------------------------------ connectors into the core
+const ac = {color: C.ai, w: 1.3};
+const xa = cx0 + 34, xb = cx0 + cw - 34;
+D.conn([[xa, A.b], [xa, core.t]], ac);
+D.pill(xa - 6, (A.b + core.t) / 2, 'loaded as a session', {anchor: 'end', size: 9.5});
+D.conn([[xb, B.b], [xb, core.t]], ac);
+D.pill(xb - 6, (B.b + core.t) / 2, 'HTTP and WebSocket', {anchor: 'end', size: 9.5});
+D.conn([[xa, Cc.t], [xa, core.b]], ac);
+D.pill(xa - 6, (Cc.t + core.b) / 2, 'MCP server calls REST', {anchor: 'end', size: 9.5});
+D.conn([[xb, Dd.t], [xb, core.b]], ac);
+D.pill(xb - 6, (Dd.t + core.b) / 2, 'in-process, lock-step', {anchor: 'end', size: 9.5});
+D.conn([[G.r, YM + MH / 2], [core.l, YM + MH / 2]], Object.assign({head: 'both'}, ac));
+D.finish();
+</script>
+</body></html>

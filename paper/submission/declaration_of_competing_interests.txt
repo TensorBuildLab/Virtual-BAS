@@ -2,5 +2,5 @@ Declaration of interests
 
 [X] The author declares that he has no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
 
-Author: Liang Zhang, University of Arizona (liangzhang1@arizona.edu)
-Manuscript: Virtual BAS: a physics-grounded, real-world-like building automation system emulator with labelled faults, sensor imperfections and stochastic operation for developing and testing building AI
+Author: Liang Zhang, University of Arizona, Tucson, AZ, USA, and National Laboratory of the Rockies, Golden, CO, USA (liangzhang1@arizona.edu)
+Manuscript: EmuBAS: an open-source emulator of real-world building automation systems for testing building operation and artificial intelligence

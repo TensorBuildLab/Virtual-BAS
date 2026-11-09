@@ -1,42 +1,39 @@
 \documentclass[11pt]{letter}
 \usepackage[margin=1in]{geometry}
 \usepackage[hidelinks]{hyperref}
-\signature{Liang Zhang\\University of Arizona\\liangzhang1@arizona.edu}
+\signature{Liang Zhang\\University of Arizona, Tucson, AZ, USA\\National Laboratory of the Rockies, Golden, CO, USA\\liangzhang1@arizona.edu}
 \address{Liang Zhang\\University of Arizona\\Tucson, AZ, USA}
 \begin{document}
 \begin{letter}{Editors-in-Chief\\Energy and Buildings}
 \opening{Dear Editors,}
 
-I am pleased to submit the manuscript entitled \emph{``Virtual BAS: a physics-grounded, real-world-like building
-automation system emulator with labelled faults, sensor imperfections and stochastic operation for developing and
-testing building AI''} for consideration as a research article in \emph{Energy and Buildings}.
+I am pleased to submit the manuscript entitled \emph{``EmuBAS: an open-source emulator of real-world building
+automation systems for testing building operation and artificial intelligence''} for consideration as a research
+article in \emph{Energy and Buildings}.
 
-Artificial intelligence for building operation---fault detection and diagnosis, supervisory and reinforcement-learning
-control, and emerging ambient and large-language-model agents---must work on the data of real building automation
-systems, where sensors drift, data go missing, occupants behave randomly and equipment fails. Real BAS data rarely come
-with ground truth, while existing simulation test beds are mostly idealised. The manuscript presents an open-source
-framework that couples a step-wise EnergyPlus simulation (the physics) with an explicitly modelled and fully labelled
-real-world layer, in which BAS controllers act on imperfect observations so that the physical consequences of
-imperfection are simulated. Faults and events from a library of 44 mathematically defined types can be injected at run
-time by people and by AI agents, the clock runs from real time to tens of thousands of times faster, and any EnergyPlus
-model is converted automatically. Beyond the points of a typical BAS, the emulator exposes the complete indoor and
-outdoor environment---comfort indices, particles, VOC, light, sound, occupant counts and feedback, an extended weather
-station with forecasts, sub-meters and grid signals---with every point tagged as standard, advanced or
-next-generation instrumentation. Using the DOE reference large office, we verify the emulator against native
-EnergyPlus and demonstrate equipment-level fault impacts, labelled data generation for FDD, AI agents in the loop, indoor air quality under wildfire smoke,
-time-acceleration accuracy and generality across five reference buildings.
+New control sequences, fault detection and diagnosis, analytics and, increasingly, artificial intelligence agents, as
+well as the people who operate buildings, must ultimately perform in real buildings, where sensors drift, readings go
+missing, occupants behave randomly and equipment fails. Testing them in real buildings is slow, risky and without
+ground truth, while simulation test beds are usually idealised. The manuscript presents EmuBAS, an open-source
+emulator that couples a step-wise EnergyPlus simulation (the physics) with an explicitly modelled and fully labelled
+real-world layer in which the building automation system acts on imperfect observations, so that the physical
+consequences of imperfection are simulated. Faults and events from a library of 44 mathematically defined types can be
+injected at run time by people, scripts and AI agents; the clock runs from real time to 92,000 times real time; any
+EnergyPlus model is converted automatically; and the point list extends a typical building automation system with
+next-generation indoor-environment, weather and grid points. Using the DOE reference large office, the manuscript
+verifies the emulator against native EnergyPlus and demonstrates equipment-level fault impacts, labelled data for
+fault detection, AI agents in the loop, indoor air quality under wildfire smoke and the conversion of five reference
+buildings.
 
-To our knowledge no comparable open tool exists, and its value reaches beyond algorithm research. Aviation and
+To my knowledge no comparable open tool exists, and its value reaches beyond algorithm development. Aviation and
 nuclear power train their operators on simulators, and autonomous-driving AI is developed in open simulators before it
-reaches the road; building operation has had no realistic equivalent. Because Virtual BAS is safe to break, labelled,
-repeatable, fast and free, the manuscript identifies eighteen uses: training environments for ambient-AI and LLM
-operators, synthetic data for foundation models, university courses, troubleshooting drills for building operators
-and facility managers, commissioning practice, neutral testing of commercial analytics products, virtual
-commissioning of control sequences, cyber-physical security and grid-interaction studies, and shared benchmarks.
+reaches the road; building operation has had no realistic equivalent. Because EmuBAS is safe to break, labelled,
+repeatable, fast and open, the manuscript identifies eighteen uses, from testing control sequences and commercial
+analytics to university teaching, operator training, commissioning practice and shared benchmarks.
 
-We believe the work fits the scope of \emph{Energy and Buildings} on building energy systems, controls, automation and
-data-driven methods, and that the open software and tutorials
-(\url{https://github.com/TensorBuildLab/Virtual-BAS}) will be useful to the journal's readership.
+I believe the work fits the scope of \emph{Energy and Buildings} on building energy systems, controls, automation and
+data-driven methods, and that the open software and tutorials (\url{https://github.com/TensorBuildLab/Virtual-BAS})
+will be useful to the journal's readership.
 
 The manuscript is original, has not been published previously and is not under consideration elsewhere. The author
 declares no competing interests. The use of generative AI assistance is disclosed in the manuscript.

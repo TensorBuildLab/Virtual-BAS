@@ -1,4 +1,4 @@
-/* Shared drawing helpers for the Virtual BAS paper diagrams (inline SVG, no external resources).
+/* Shared drawing helpers for EmuBAS paper diagrams (inline SVG, no external resources).
  *
  * Every diagram page: <div id="fig"></div><script src="diagram_lib.js"></script><script> D.init(w,h); ... D.finish(); </script>
  * Units are printed CSS px (96 px = 1 in). Colours follow paper/figstyle.py.

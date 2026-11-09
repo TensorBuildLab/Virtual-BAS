@@ -24,7 +24,7 @@ def main():
             k = line.split("{")[1].strip("\\}")
             macros[k] = line.split("}{", 1)[1].rstrip("}").replace("{,}", ",")
     fig = plt.figure(figsize=(26.56, 10.62), dpi=100)
-    fig.text(0.015, 0.94, "Virtual BAS: EnergyPlus physics (inner space) + labelled real world (outer space)",
+    fig.text(0.015, 0.94, "EmuBAS: EnergyPlus physics (inner space) + labelled real world (outer space)",
              fontsize=34, weight="bold", family="DejaVu Sans")
     fig.text(0.015, 0.835, f"{len(cat.points):,} BAS points from equipment to indoor environment, weather and grid "
              f"(standard / advanced / next-gen)\nsensor errors and {len(REGISTRY)} fault & event types - controllers act "

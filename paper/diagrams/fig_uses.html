@@ -75,7 +75,7 @@ const ai = group('ai', XL, 1, LW, aiH, aiPitch);
 // ------------------------------------------------------------------ hub
 const hubY = 1, hubH = H - 2;
 const hub = D.card({x: XC, y: hubY, w: CWd, h: hubH, color: C.outer, fill: C.outerBg, valign: 'top', pad: 8, ts: 12, align: 'center', sw: 1.4,
-  title: 'Virtual BAS', container: true, lines: [{t: '18 uses, 4 areas', fill: C.ink2}], ls: 9.5, tgap: 4});
+  title: 'EmuBAS', container: true, lines: [{t: '18 uses, 4 areas', fill: C.ink2}], ls: 9.5, tgap: 4});
 const props = [['bolt', 'safe to break'], ['db', 'labelled'], ['loop', 'repeatable'], ['clock', 'fast'], ['building', 'open, generic']];
 props.forEach(([ic, s], i) => {
   const y = hubY + 46 + i * 32, x = XC + 8, w = CWd - 16;

@@ -1,6 +1,6 @@
 """Convert an arbitrary EnergyPlus model into a *BAS-ready* model.
 
-The preparation step is the generic part of the Virtual BAS methodology. It applies a small
+The preparation step is the generic part of EmuBAS methodology. It applies a small
 set of well-defined, reversible transformations to the original model:
 
 T1  Simulation control: run the weather-file run period only (sizing is still performed).

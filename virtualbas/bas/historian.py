@@ -134,7 +134,7 @@ class Historian:
 
 
 def load_dataset(path: str | Path) -> dict[str, Any]:
-    """Load a recorded Virtual BAS dataset into pandas DataFrames."""
+    """Load a recorded EmuBAS dataset into pandas DataFrames."""
     import pandas as pd
     p = Path(path)
     out: dict[str, Any] = {}

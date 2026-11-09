@@ -1,5 +1,5 @@
-Open-source BAS emulator couples step-wise EnergyPlus with a labelled real world
-Labelled sensor errors and 44 fault types propagate physically through control loops
-1,207 points cover equipment, indoor environment, weather and grid, tiered by rarity
-Humans and AI agents inject faults at run time via GUI, REST, MCP and Gymnasium
-Matches native EnergyPlus annual electricity within 0.5% with ideal sensors
+EmuBAS couples step-wise EnergyPlus physics with a labelled real-world layer
+BAS controllers act on drifting, noisy or missing readings, as in real buildings
+People, scripts and AI agents inject 44 fault and event types at run time
+Points span equipment, indoor environment, weather and grid, tiered by rarity
+Any EnergyPlus model converts automatically and runs up to 92,000 times real time

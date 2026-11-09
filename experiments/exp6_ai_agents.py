@@ -5,7 +5,7 @@ Part A  An autonomous "adversarial" AI agent injects faults through the public R
         and chooses the fault that is expected to be most disruptive for the current conditions.
 Part B  A supervisory AI controller (Gymnasium interface) is evaluated in three outer spaces:
         ideal sensors, realistic sensors, realistic sensors + outdoor-air sensor bias. This shows
-        the "simulation-to-reality gap" that Virtual BAS exposes before deployment.
+        the "simulation-to-reality gap" that EmuBAS exposes before deployment.
 """
 import argparse
 import json

@@ -1,4 +1,4 @@
-"""Model Context Protocol (MCP) server exposing a running Virtual BAS to LLM agents.
+"""Model Context Protocol (MCP) server exposing a running EmuBAS to LLM agents.
 
 Start the BAS (``vbas serve ...``), then register this server in an MCP-capable client
 (e.g. Claude Desktop / Claude Code)::

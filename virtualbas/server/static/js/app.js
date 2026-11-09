@@ -37,7 +37,7 @@ async function boot() {
       (S.pointsByEquip[p.equip] ||= []).push(p);
     }
   } catch (e) {
-    $('#main').innerHTML = `<div class="loading err">Cannot reach the Virtual BAS server: ${esc(e.message)}</div>`;
+    $('#main').innerHTML = `<div class="loading err">Cannot reach EmuBAS server: ${esc(e.message)}</div>`;
     setTimeout(boot, 3000);
     return;
   }

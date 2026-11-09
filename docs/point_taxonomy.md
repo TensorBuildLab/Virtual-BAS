@@ -1,6 +1,6 @@
 # Point taxonomy: what a BAS measures today, and what it should measure
 
-Virtual BAS exposes **1,207 points on 54 pieces of equipment** for the DOE large office:
+EmuBAS exposes **1,207 points on 54 pieces of equipment** for the DOE large office:
 
 | Tier | Points | Meaning |
 |---|---|---|
@@ -18,7 +18,7 @@ The full list is in [point_list_large_office.md](point_list_large_office.md). Ev
   - `bas`: calculated by the BAS from present values.
 - **`sensor_class`** — its data-sheet error model.
 
-Because Virtual BAS knows the truth of every point, it can quantify the **value of information** of a sensor package. For example, you can compare FDD accuracy with and without valve feedback or coil BTU meters. To do that, restrict the exposed points with `point_tiers` in the scenario or `building.yaml`:
+Because EmuBAS knows the truth of every point, it can quantify the **value of information** of a sensor package. For example, you can compare FDD accuracy with and without valve feedback or coil BTU meters. To do that, restrict the exposed points with `point_tiers` in the scenario or `building.yaml`:
 
 ```yaml
 point_tiers: [standard]            # emulate a typical BAS of today (truth is still recorded)
@@ -35,7 +35,7 @@ Field evidence shows that today's BAS have many temperatures and set points but 
 * **VAV airflow accuracy.** Measurement errors are ±8–40 % at low flow (Drexel dissertation, https://researchdiscovery.drexel.edu/esploro/outputs/doctoral/991014632200004721).
 * **FDD sensor requirements.** FDD tools often need add-on sensors that the BAS does not have (Granderson et al., LBNL 2017, https://eta-publications.lbl.gov/publications/characterization-and-survey-automated).
 * **DOE research priorities.** DOE BTO lists multi-function wireless sensors, sub-metering, occupant-centric sensing and virtual sensing as priorities (https://www.energy.gov/sites/prod/files/2019/04/f61/bto-sc-rdo-041519.pdf).
-* **Semantic-model gaps.** Brick 1.4 has classes for PM, TVOC, occupancy counts, vibration and thermal power. It still has none for sound level, mean radiant temperature, PMV/PPD, electricity price, grid carbon intensity, demand-response events or occupant complaints. In Virtual BAS these points have Haystack-style tags and an empty `brick` field.
+* **Semantic-model gaps.** Brick 1.4 has classes for PM, TVOC, occupancy counts, vibration and thermal power. It still has none for sound level, mean radiant temperature, PMV/PPD, electricity price, grid carbon intensity, demand-response events or occupant complaints. In EmuBAS these points have Haystack-style tags and an empty `brick` field.
 
 ## 2. What is modelled, by equipment
 

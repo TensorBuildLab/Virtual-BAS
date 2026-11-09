@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Virtual BAS - operator workstation (web GUI)
+  EmuBAS - operator workstation (web GUI)
   Vanilla HTML/CSS/JS, no build step, no external resources (works offline).
   The page talks to the FastAPI back end in virtualbas/server/app.py:
     /api/*  REST endpoints    /ws?truth=1  live snapshot push (1 s)
@@ -9,7 +9,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Virtual BAS</title>
+  <title>EmuBAS</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d3a5f'/%3E%3Cpath d='M6 24V12l10-6 10 6v12z' fill='none' stroke='%2373b4ff' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='17' r='3' fill='%2373b4ff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -20,7 +20,7 @@
       <div class="brand">
         <svg viewBox="0 0 32 32" class="logo" aria-hidden="true"><rect width="32" height="32" rx="6" fill="#1d3a5f"/><path d="M6 24V12l10-6 10 6v12z" fill="none" stroke="#73b4ff" stroke-width="2.5"/><circle cx="16" cy="17" r="3" fill="#73b4ff"/></svg>
         <div>
-          <div class="brand-name">Virtual BAS</div>
+          <div class="brand-name">EmuBAS</div>
           <div class="brand-bldg" id="h-bldg">-</div>
         </div>
       </div>
@@ -92,7 +92,7 @@
     </nav>
 
     <!-- ============================================================ page -->
-    <main id="main"><div class="loading">Connecting to Virtual BAS…</div></main>
+    <main id="main"><div class="loading">Connecting to EmuBAS…</div></main>
   </div>
 
   <!-- ============================================================ status bar -->

@@ -1,6 +1,6 @@
 cff-version: 1.2.0
-message: "If you use Virtual BAS, please cite the software and the accompanying article."
-title: "Virtual BAS: a physics-grounded, real-world-like building automation system emulator driven step-by-step by EnergyPlus"
+message: "If you use EmuBAS, please cite the software and the accompanying article."
+title: "EmuBAS: an open-source emulator of real-world building automation systems"
 authors:
   - family-names: Zhang
     given-names: Liang

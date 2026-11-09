@@ -1,4 +1,4 @@
-# Virtual BAS building configuration - DOE Commercial Reference Building "Large Office" (new construction, 90.1-2004), Chicago
+# EmuBAS building configuration - DOE Commercial Reference Building "Large Office" (new construction, 90.1-2004), Chicago
 name: DOE Reference Large Office (Chicago)
 description: >
   12-storey office (46,320 m2) modelled with 16 conditioned zones (basement, ground, middle (x10 multiplier) and top

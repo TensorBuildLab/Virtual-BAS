@@ -1,0 +1,6 @@
+model,zones,VAV,air loops,points,equipment,commands,fault hooks,prepare [s],steps/s,exit
+LargeOffice,16,16,4,1207,54,28,4,6.5,141,0
+MediumOffice,15,15,3,906,41,22,0,1.8,227,0
+SmallOffice,5,0,5,425,15,6,0,1.5,358,0
+Hospital,55,55,4,3244,128,67,3,6.5,60,0
+SecondarySchool,46,41,9,2828,107,57,2,10.6,70,0

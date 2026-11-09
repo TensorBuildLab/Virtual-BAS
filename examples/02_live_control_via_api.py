@@ -1,4 +1,4 @@
-"""Example 2 - interact with a running Virtual BAS over REST (human or AI client).
+"""Example 2 - interact with a running EmuBAS over REST (human or AI client).
 
 Start the server first:
     vbas serve --building buildings/large_office --scenario scenarios/demo_summer.yaml

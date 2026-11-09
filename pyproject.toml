@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "virtualbas"
 version = "0.1.0"
-description = "Virtual BAS: a physics-grounded, real-world-like Building Automation System emulator driven step-by-step by EnergyPlus"
+description = "EmuBAS: an open-source emulator of real-world building automation systems, driven step by step by EnergyPlus"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }

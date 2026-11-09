@@ -49,7 +49,7 @@ value to the set point r. For a sensor with deterministic map y = (1+g)x + b, th
 
     x* = (r - b) / (1 + g)
 
-so Virtual BAS hands x* (instead of r) to the ideal EnergyPlus controller. A stuck or spoofed reading makes the
+so EmuBAS hands x* (instead of r) to the ideal EnergyPlus controller. A stuck or spoofed reading makes the
 integral action wind up; the actuator then saturates (x* = upper or lower limit). An unavailable reading makes the
 controller hold its last output. This makes every sensor fault propagate physically, also through loops that
 EnergyPlus solves internally.

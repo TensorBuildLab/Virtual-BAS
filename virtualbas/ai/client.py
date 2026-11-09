@@ -1,4 +1,4 @@
-"""Minimal Python client for a running Virtual BAS server (``vbas serve``).
+"""Minimal Python client for a running EmuBAS server (``vbas serve``).
 
 Uses only the standard library so that any agent runtime can import it::
 

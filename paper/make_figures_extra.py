@@ -1,4 +1,4 @@
-"""Additional data/model figures for the Virtual BAS paper (model, points, faults, labels, forecasts, maps, generality).
+"""Additional data/model figures for EmuBAS paper (model, points, faults, labels, forecasts, maps, generality).
 
 Usage:
     python paper/make_figures_extra.py              # all figures

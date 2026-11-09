@@ -1,7 +1,7 @@
 """Experiment 1 - Verification of the BAS-ization methodology.
 
 Compares (a) the *native* EnergyPlus DOE large office (original controls, run as a batch
-simulation) with (b) the Virtual BAS driving the same model step by step with ideal sensors,
+simulation) with (b) EmuBAS driving the same model step by step with ideal sensors,
 deterministic occupancy and the 'baseline' control profile (BAS sequences re-implementing
 the native controls). Agreement demonstrates that the inner/outer coupling does not distort
 the physics.

@@ -1,6 +1,6 @@
 # Tutorial 3 - Connecting AI agents (ambient AI, FDD, RL, LLM operators)
 
-Virtual BAS offers four interfaces. All of them see the building **through the outer space** (observed values,
+EmuBAS offers four interfaces. All of them see the building **through the outer space** (observed values,
 missing data, faults) - exactly like an AI deployed in a real building would.
 
 ## 1. REST API (any language)

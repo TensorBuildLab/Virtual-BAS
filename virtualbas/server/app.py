@@ -95,7 +95,7 @@ class Session:
 
 def create_app(building_dir: str, scenario: dict[str, Any] | None = None, speed: Any = "60x",
                out_root: str | None = None) -> FastAPI:
-    app = FastAPI(title="Virtual BAS", version="0.1.0",
+    app = FastAPI(title="EmuBAS", version="0.1.0",
                   description="Real-world-like Building Automation System emulator driven by EnergyPlus. "
                               "Read points, trends and alarms; write set points; inject faults and events.")
     sess = Session(building_dir, out_root, scenario or {}, speed)
@@ -275,5 +275,5 @@ def serve(building_dir: str, scenario: dict[str, Any] | None = None, speed: Any 
           port: int = 8000, out_root: str | None = None) -> None:
     import uvicorn
     app = create_app(building_dir, scenario, speed, out_root)
-    print(f"Virtual BAS GUI: http://{host}:{port}   API docs: http://{host}:{port}/docs")
+    print(f"EmuBAS GUI: http://{host}:{port}   API docs: http://{host}:{port}/docs")
     uvicorn.run(app, host=host, port=port, log_level="warning")

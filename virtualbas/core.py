@@ -1,4 +1,4 @@
-"""Virtual BAS orchestrator: couples the inner space (EnergyPlus) with the outer space.
+"""EmuBAS orchestrator: couples the inner space (EnergyPlus) with the outer space.
 
 One BAS sample (= one EnergyPlus zone time step) executes the following pipeline::
 

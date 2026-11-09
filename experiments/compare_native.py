@@ -1,4 +1,4 @@
-"""Compare native EnergyPlus results with a Virtual BAS run (energy by end use and zone temperatures)."""
+"""Compare native EnergyPlus results with a EmuBAS run (energy by end use and zone temperatures)."""
 import sys
 from pathlib import Path
 

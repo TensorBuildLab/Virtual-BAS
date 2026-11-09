@@ -1,6 +1,6 @@
 # Installation
 
-Virtual BAS needs **Python ≥ 3.9** and **EnergyPlus ≥ 22.1** (tested with **23.2.0**, recommended).
+EmuBAS needs **Python ≥ 3.9** and **EnergyPlus ≥ 22.1** (tested with **23.2.0**, recommended).
 Everything else is installed with `pip`.
 
 ## 1. Install EnergyPlus 23.2
@@ -15,7 +15,7 @@ location:
 | Linux | `/usr/local/EnergyPlus-23-2-0` |
 | macOS | `/Applications/EnergyPlus-23-2-0` |
 
-If you install it elsewhere (or have several versions), point Virtual BAS to it:
+If you install it elsewhere (or have several versions), point EmuBAS to it:
 
 ```bash
 # Linux / macOS
@@ -24,12 +24,12 @@ export ENERGYPLUS_DIR=/opt/EnergyPlus-23-2-0
 $env:ENERGYPLUS_DIR = "D:\EnergyPlusV23-2-0"
 ```
 
-Virtual BAS uses the official EnergyPlus Python API (`pyenergyplus`) that ships with EnergyPlus; nothing else from
+EmuBAS uses the official EnergyPlus Python API (`pyenergyplus`) that ships with EnergyPlus; nothing else from
 EnergyPlus needs to be configured. The DOE large-office model shipped in `buildings/large_office/source/` was written
 for EnergyPlus 23.2. For other versions, transition the IDF with EnergyPlus' *IDFVersionUpdater* and re-run
 `vbas prepare`.
 
-## 2. Install Virtual BAS
+## 2. Install EmuBAS
 
 ```bash
 git clone https://github.com/TensorBuildLab/Virtual-BAS.git

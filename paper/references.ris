@@ -1,0 +1,746 @@
+TY  - JOUR
+ID  - crawley2001energyplus
+AU  - Crawley, Drury B.
+AU  - Lawrie, Linda K.
+AU  - Winkelmann, Frederick C.
+AU  - Buhl, W. F.
+AU  - Huang, Y. Joe
+AU  - Pedersen, Curtis O.
+AU  - Strand, Richard K.
+AU  - Liesen, Richard J.
+AU  - Fisher, Daniel E.
+AU  - Witte, Michael J.
+AU  - Glazer, Jason
+TI  - EnergyPlus: creating a new-generation building energy simulation program
+T2  - Energy and Buildings
+PY  - 2001
+VL  - 33
+IS  - 4
+DO  - 10.1016/S0378-7788(00)00114-6
+SP  - 319
+EP  - 331
+ER  - 
+
+TY  - RPRT
+ID  - deru2011reference
+AU  - Deru, Michael
+AU  - Field, Kristin
+AU  - Studer, Daniel
+AU  - Benne, Kyle
+AU  - Griffith, Brent
+AU  - Torcellini, Paul
+AU  - Liu, Bing
+AU  - Halverson, Mark
+AU  - Winiarski, Dave
+AU  - Rosenberg, Michael
+AU  - Yazdanian, Mehry
+AU  - Huang, Joe
+AU  - Crawley, Drury
+TI  - U.S. Department of Energy Commercial Reference Building Models of the National Building Stock
+PY  - 2011
+PB  - National Renewable Energy Laboratory
+CY  - Golden, CO
+M1  - NREL/TP-5500-46861
+ER  - 
+
+TY  - JOUR
+ID  - blum2021boptest
+AU  - Blum, David
+AU  - Arroyo, Javier
+AU  - Huang, Sen
+AU  - Drgo\vna, Ján
+AU  - Jorissen, Filip
+AU  - Walnum, Harald Taxt
+AU  - Chen, Yan
+AU  - Benne, Kyle
+AU  - Vrabie, Draguna
+AU  - Wetter, Michael
+AU  - Helsen, Lieve
+TI  - Building optimization testing framework (BOPTEST) for simulation-based benchmarking of control strategies in buildings
+T2  - Journal of Building Performance Simulation
+PY  - 2021
+VL  - 14
+IS  - 5
+DO  - 10.1080/19401493.2021.1986574
+SP  - 586
+EP  - 610
+ER  - 
+
+TY  - JOUR
+ID  - wetter2011bcvtb
+AU  - Wetter, Michael
+TI  - Co-simulation of building energy and control systems with the Building Controls Virtual Test Bed
+T2  - Journal of Building Performance Simulation
+PY  - 2011
+VL  - 4
+IS  - 3
+DO  - 10.1080/19401493.2010.518631
+SP  - 185
+EP  - 203
+ER  - 
+
+TY  - JOUR
+ID  - wetter2014modelica
+AU  - Wetter, Michael
+AU  - Zuo, Wangda
+AU  - Nouidui, Thierry S.
+AU  - Pang, Xiufeng
+TI  - Modelica Buildings library
+T2  - Journal of Building Performance Simulation
+PY  - 2014
+VL  - 7
+IS  - 4
+DO  - 10.1080/19401493.2013.765506
+SP  - 253
+EP  - 270
+ER  - 
+
+TY  - CPAPER
+ID  - jimenez2021sinergym
+AU  - Jiménez-Raboso, Javier
+AU  - Campoy-Nieves, Alejandro
+AU  - Manjavacas-Lucas, Antonio
+AU  - Gómez-Romero, Juan
+AU  - Molina-Solana, Miguel
+TI  - Sinergym: a building simulation and control framework for training reinforcement learning agents
+T2  - Proceedings of the 8th ACM International Conference on Systems for Energy-Efficient Buildings, Cities, and Transportation (BuildSys '21)
+PY  - 2021
+SP  - 319
+EP  - 323
+ER  - 
+
+TY  - CPAPER
+ID  - vazquez2019citylearn
+AU  - Vázquez-Canteli, José R.
+AU  - Kämpf, Jér\^ome
+AU  - Henze, Gregor
+AU  - Nagy, Zoltan
+TI  - CityLearn v1.0: An OpenAI Gym environment for demand response with deep reinforcement learning
+T2  - Proceedings of the 6th ACM International Conference on Systems for Energy-Efficient Buildings, Cities, and Transportation (BuildSys '19)
+PY  - 2019
+SP  - 356
+EP  - 357
+ER  - 
+
+TY  - JOUR
+ID  - marzullo2022actb
+AU  - Marzullo, Thibault
+AU  - Dey, Sourav
+AU  - Long, Nicholas
+AU  - Leiva Vilaplana, José
+AU  - Henze, Gregor
+TI  - A high-fidelity building performance simulation test bed for the development and evaluation of advanced controls
+T2  - Journal of Building Performance Simulation
+PY  - 2022
+VL  - 15
+IS  - 3
+DO  - 10.1080/19401493.2022.2058091
+SP  - 379
+EP  - 397
+ER  - 
+
+TY  - JOUR
+ID  - scharnhorst2021energym
+AU  - Scharnhorst, Paul
+AU  - Schubnel, Baptiste
+AU  - Fernández Bandera, Carlos
+AU  - Salom, Jaume
+AU  - Taddeo, Paolo
+AU  - Boegli, Max
+AU  - Gorecki, Tomasz
+AU  - Stauffer, Yves
+AU  - Peppas, Antonis
+AU  - Politi, Chrysa
+TI  - Energym: A building model library for controller benchmarking
+T2  - Applied Sciences
+PY  - 2021
+VL  - 11
+IS  - 8
+DO  - 10.3390/app11083518
+SP  - 3518
+ER  - 
+
+TY  - JOUR
+ID  - zhang2017faults
+AU  - Zhang, Rongpeng
+AU  - Hong, Tianzhen
+TI  - Modeling of HVAC operational faults in building performance simulation
+T2  - Applied Energy
+PY  - 2017
+VL  - 202
+SP  - 178
+EP  - 188
+ER  - 
+
+TY  - JOUR
+ID  - li2018faultreview
+AU  - Li, Yanfei
+AU  - O'Neill, Zheng
+TI  - A critical review of fault modeling of HVAC systems in buildings
+T2  - Building Simulation
+PY  - 2018
+VL  - 11
+IS  - 5
+DO  - 10.1007/s12273-018-0458-4
+SP  - 953
+EP  - 975
+ER  - 
+
+TY  - JOUR
+ID  - granderson2023dataset
+AU  - Granderson, Jessica
+AU  - Lin, Guanjing
+AU  - Chen, Yimin
+AU  - Casillas, Armando
+AU  - Wen, Jin
+AU  - Chen, Zhelun
+AU  - Im, Piljae
+AU  - Huang, Sen
+AU  - Ling, Jiazhen
+TI  - A labeled dataset for building HVAC systems operating in faulted and fault-free states
+T2  - Scientific Data
+PY  - 2023
+VL  - 10
+DO  - 10.1038/s41597-023-02197-w
+SP  - 342
+ER  - 
+
+TY  - JOUR
+ID  - chen2021taxonomy
+AU  - Chen, Yimin
+AU  - Lin, Guanjing
+AU  - Crowe, Eliot
+AU  - Granderson, Jessica
+TI  - Development of a unified taxonomy for HVAC system faults
+T2  - Energies
+PY  - 2021
+VL  - 14
+IS  - 17
+DO  - 10.3390/en14175581
+SP  - 5581
+ER  - 
+
+TY  - JOUR
+ID  - katipamula2005review1
+AU  - Katipamula, Srinivas
+AU  - Brambley, Michael R.
+TI  - Methods for fault detection, diagnostics, and prognostics for building systems–-a review, Part I
+T2  - HVAC&R Research
+PY  - 2005
+VL  - 11
+IS  - 1
+SP  - 3
+EP  - 25
+ER  - 
+
+TY  - JOUR
+ID  - kim2018fddreview
+AU  - Kim, Woohyun
+AU  - Katipamula, Srinivas
+TI  - A review of fault detection and diagnostics methods for building systems
+T2  - Science and Technology for the Built Environment
+PY  - 2018
+VL  - 24
+IS  - 1
+SP  - 3
+EP  - 21
+ER  - 
+
+TY  - RPRT
+ID  - wen2012rp1312
+AU  - Wen, Jin
+AU  - Li, Shun
+TI  - RP-1312 – Tools for evaluating fault detection and diagnostic methods for air-handling units
+PY  - 2012
+PB  - ASHRAE
+CY  - Atlanta, GA
+ER  - 
+
+TY  - JOUR
+ID  - page2008occupancy
+AU  - Page, Jessen
+AU  - Robinson, Darren
+AU  - Morel, Nicolas
+AU  - Scartezzini, Jean-Louis
+TI  - A generalised stochastic model for the simulation of occupant presence
+T2  - Energy and Buildings
+PY  - 2008
+VL  - 40
+IS  - 2
+SP  - 83
+EP  - 98
+ER  - 
+
+TY  - CPAPER
+ID  - balaji2016brick
+AU  - Balaji, Bharathan
+AU  - Bhattacharya, Arka
+AU  - Fierro, Gabriel
+AU  - Gao, Jingkun
+AU  - Gluck, Joshua
+AU  - Hong, Dezhi
+AU  - Johansen, Aslak
+AU  - Koh, Jason
+AU  - Ploennigs, Joern
+AU  - Agarwal, Yuvraj
+AU  - Bérges, Mario
+AU  - Culler, David
+AU  - Gupta, Rajesh
+AU  - Kj\aergaard, Mikkel Baun
+AU  - Srivastava, Mani
+AU  - Whitehouse, Kamin
+TI  - Brick: Towards a unified metadata schema for buildings
+T2  - Proceedings of the 3rd ACM International Conference on Systems for Energy-Efficient Built Environments (BuildSys '16)
+PY  - 2016
+DO  - 10.1145/2993422.2993577
+SP  - 41
+EP  - 50
+ER  - 
+
+TY  - GEN
+ID  - haystack
+AU  - Project Haystack
+TI  - Project Haystack: open source initiative to streamline working with data from the Internet of Things
+PY  - 2026
+UR  - https://project-haystack.org
+N1  - Accessed 8 November 2026
+ER  - 
+
+TY  - BOOK
+ID  - ashrae2021g36
+AU  - ASHRAE
+TI  - ASHRAE Guideline 36-2021: High-Performance Sequences of Operation for HVAC Systems
+PY  - 2021
+PB  - ASHRAE
+CY  - Atlanta, GA
+ER  - 
+
+TY  - BOOK
+ID  - ashrae2014g14
+AU  - ASHRAE
+TI  - ASHRAE Guideline 14-2014: Measurement of Energy, Demand, and Water Savings
+PY  - 2014
+PB  - ASHRAE
+CY  - Atlanta, GA
+ER  - 
+
+TY  - JOUR
+ID  - wang2020rlreview
+AU  - Wang, Zhe
+AU  - Hong, Tianzhen
+TI  - Reinforcement learning for building controls: The opportunities and challenges
+T2  - Applied Energy
+PY  - 2020
+VL  - 269
+DO  - 10.1016/j.apenergy.2020.115036
+SP  - 115036
+ER  - 
+
+TY  - CPAPER
+ID  - wei2017drl
+AU  - Wei, Tianshu
+AU  - Wang, Yanzhi
+AU  - Zhu, Qi
+TI  - Deep reinforcement learning for building HVAC control
+T2  - Proceedings of the 54th Annual Design Automation Conference (DAC '17)
+PY  - 2017
+SP  - 1
+EP  - 6
+ER  - 
+
+TY  - CPAPER
+ID  - zhang2018radiant
+AU  - Zhang, Zhiang
+AU  - Lam, Khee Poh
+TI  - Practical implementation and evaluation of deep reinforcement learning control for a radiant heating system
+T2  - Proceedings of the 5th Conference on Systems for Built Environments (BuildSys '18)
+PY  - 2018
+SP  - 148
+EP  - 157
+ER  - 
+
+TY  - JOUR
+ID  - nweye2022realworld
+AU  - Nweye, Kingsley
+AU  - Liu, Bo
+AU  - Stone, Peter
+AU  - Nagy, Zoltan
+TI  - Real-world challenges for multi-agent reinforcement learning in grid-interactive buildings
+T2  - Energy and AI
+PY  - 2022
+VL  - 10
+DO  - 10.1016/j.egyai.2022.100202
+SP  - 100202
+ER  - 
+
+TY  - JOUR
+ID  - dulacarnold2021challenges
+AU  - Dulac-Arnold, Gabriel
+AU  - Levine, Nir
+AU  - Mankowitz, Daniel J.
+AU  - Li, Jerry
+AU  - Paduraru, Cosmin
+AU  - Gowal, Sven
+AU  - Hester, Todd
+TI  - Challenges of real-world reinforcement learning: definitions, benchmarks and analysis
+T2  - Machine Learning
+PY  - 2021
+VL  - 110
+IS  - 9
+SP  - 2419
+EP  - 2468
+ER  - 
+
+TY  - JOUR
+ID  - uhlenbeck1930brownian
+AU  - Uhlenbeck, George E.
+AU  - Ornstein, Leonard S.
+TI  - On the theory of the Brownian motion
+T2  - Physical Review
+PY  - 1930
+VL  - 36
+IS  - 5
+DO  - 10.1103/PhysRev.36.823
+SP  - 823
+EP  - 841
+ER  - 
+
+TY  - JOUR
+ID  - gilbert1960burst
+AU  - Gilbert, Edgar N.
+TI  - Capacity of a burst-noise channel
+T2  - Bell System Technical Journal
+PY  - 1960
+VL  - 39
+IS  - 5
+DO  - 10.1002/j.1538-7305.1960.tb03959.x
+SP  - 1253
+EP  - 1265
+ER  - 
+
+TY  - JOUR
+ID  - elliott1963burst
+AU  - Elliott, E. O.
+TI  - Estimates of error rates for codes on burst-noise channels
+T2  - Bell System Technical Journal
+PY  - 1963
+VL  - 42
+IS  - 5
+DO  - 10.1002/j.1538-7305.1963.tb00955.x
+SP  - 1977
+EP  - 1997
+ER  - 
+
+TY  - JOUR
+ID  - breiman2001rf
+AU  - Breiman, Leo
+TI  - Random forests
+T2  - Machine Learning
+PY  - 2001
+VL  - 45
+IS  - 1
+DO  - 10.1023/A:1010933404324
+SP  - 5
+EP  - 32
+ER  - 
+
+TY  - JOUR
+ID  - pedregosa2011sklearn
+AU  - Pedregosa, Fabian
+AU  - Varoquaux, Ga\"el
+AU  - Gramfort, Alexandre
+AU  - Michel, Vincent
+AU  - Thirion, Bertrand
+AU  - Grisel, Olivier
+AU  - Blondel, Mathieu
+AU  - Prettenhofer, Peter
+AU  - Weiss, Ron
+AU  - Dubourg, Vincent
+AU  - Vanderplas, Jake
+AU  - Passos, Alexandre
+AU  - Cournapeau, David
+AU  - Brucher, Matthieu
+AU  - Perrot, Matthieu
+AU  - Duchesnay, \'Edouard
+TI  - Scikit-learn: Machine learning in Python
+T2  - Journal of Machine Learning Research
+PY  - 2011
+VL  - 12
+SP  - 2825
+EP  - 2830
+ER  - 
+
+TY  - GEN
+ID  - brockman2016gym
+AU  - Brockman, Greg
+AU  - Cheung, Vicki
+AU  - Pettersson, Ludwig
+AU  - Schneider, Jonas
+AU  - Schulman, John
+AU  - Tang, Jie
+AU  - Zaremba, Wojciech
+TI  - OpenAI Gym
+PY  - 2016
+PB  - arXiv:1606.01540
+ER  - 
+
+TY  - GEN
+ID  - towers2024gymnasium
+AU  - Towers, Mark
+AU  - Kwiatkowski, Ariel
+AU  - Terry, Jordan
+AU  - Balis, John U.
+AU  - De Cola, Gianluca
+AU  - Deleu, Tristan
+AU  - Goulão, Manuel
+AU  - Kallinteris, Andreas
+AU  - Krimmel, Markus
+AU  - KG, Arjun
+TI  - Gymnasium: A standard interface for reinforcement learning environments
+PY  - 2024
+PB  - arXiv:2407.17032
+ER  - 
+
+TY  - GEN
+ID  - mcp2024
+AU  - Anthropic
+TI  - Model Context Protocol specification
+PY  - 2024
+UR  - https://modelcontextprotocol.io
+N1  - Accessed 8 November 2026
+ER  - 
+
+TY  - GEN
+ID  - energyplusapi
+AU  - U.S. Department of Energy
+TI  - EnergyPlus Python API documentation (version 23.2)
+PY  - 2023
+UR  - https://energyplus.readthedocs.io/en/latest/api.html
+N1  - Accessed 8 November 2026
+ER  - 
+
+TY  - JOUR
+ID  - fierro2019mortar
+AU  - Fierro, Gabe
+AU  - Pritoni, Marco
+AU  - AbdelBaky, Moustafa
+AU  - Raftery, Paul
+AU  - Peffer, Therese
+AU  - Thomson, Greg
+AU  - Culler, David E.
+TI  - Mortar: An Open Testbed for Portable Building Analytics
+T2  - ACM Transactions on Sensor Networks
+PY  - 2019
+VL  - 16
+IS  - 1
+ER  - 
+
+TY  - RPRT
+ID  - fisk2010co2
+AU  - Fisk, William J.
+AU  - Sullivan, Douglas P.
+AU  - Faulkner, David
+AU  - Eliseeva, Ekaterina
+TI  - CO2 Monitoring for Demand Controlled Ventilation in Commercial Buildings
+PY  - 2010
+PB  - Lawrence Berkeley National Laboratory
+M1  - LBNL-3279E
+ER  - 
+
+TY  - GEN
+ID  - wellv2
+AU  - International WELL Building Institute
+TI  - WELL Building Standard, version 2
+PY  - 2020
+UR  - https://v2.wellcertified.com
+ER  - 
+
+TY  - GEN
+ID  - iso7730
+AU  - ISO
+TI  - ISO 7730:2005 Ergonomics of the thermal environment – Analytical determination and interpretation of thermal comfort using calculation of the PMV and PPD indices and local thermal comfort criteria
+PY  - 2005
+PB  - International Organization for Standardization, Geneva
+ER  - 
+
+TY  - GEN
+ID  - ashrae522
+AU  - ASHRAE
+TI  - ANSI/ASHRAE Standard 52.2-2017: Method of Testing General Ventilation Air-Cleaning Devices for Removal Efficiency by Particle Size
+PY  - 2017
+PB  - ASHRAE, Atlanta
+ER  - 
+
+TY  - JOUR
+ID  - mills2011commissioning
+AU  - Mills, Evan
+TI  - Building commissioning: a golden opportunity for reducing energy costs and greenhouse gas emissions in the United States
+T2  - Energy Efficiency
+PY  - 2011
+VL  - 4
+IS  - 2
+DO  - 10.1007/s12053-011-9116-8
+SP  - 145
+EP  - 173
+ER  - 
+
+TY  - RPRT
+ID  - fernandez2017controls
+AU  - Fernandez, Nick
+AU  - Katipamula, Srinivas
+AU  - Wang, Weimin
+AU  - Xie, Yulong
+AU  - Zhao, Mingjie
+AU  - Corbin, Charles
+TI  - Impacts of Commercial Building Controls on Energy Savings and Peak Load Reduction
+PY  - 2017
+PB  - Pacific Northwest National Laboratory
+CY  - Richland, WA
+M1  - PNNL-25985
+ER  - 
+
+TY  - CPAPER
+ID  - xu2004training
+AU  - Xu, Peng
+AU  - Haves, Philip
+AU  - Deringer, Joseph J.
+TI  - A simulation-based testing and training environment for building controls
+T2  - Proceedings of SimBuild 2004, IBPSA-USA National Conference
+PY  - 2004
+CY  - Boulder, CO
+ER  - 
+
+TY  - CPAPER
+ID  - johra2020geenie
+AU  - Johra, Hicham
+AU  - Rohde, Lasse
+AU  - Petrova, Ekaterina
+TI  - Video game-based learning for teaching building thermodynamics and control of HVAC systems
+T2  - Proceedings of BuildSim-Nordic 2020
+PY  - 2020
+CY  - Oslo, Norway
+ER  - 
+
+TY  - GEN
+ID  - ans35
+AU  - American Nuclear Society
+TI  - ANSI/ANS-3.5-2018 (R2024): Nuclear Power Plant Simulators for Use in Operator Training and Examination
+PY  - 2018
+PB  - American Nuclear Society, La Grange Park, IL
+ER  - 
+
+TY  - CPAPER
+ID  - dosovitskiy2017carla
+AU  - Dosovitskiy, Alexey
+AU  - Ros, German
+AU  - Codevilla, Felipe
+AU  - Lopez, Antonio
+AU  - Koltun, Vladlen
+TI  - CARLA: An open urban driving simulator
+T2  - Proceedings of the 1st Annual Conference on Robot Learning (CoRL)
+PY  - 2017
+VL  - 78
+SP  - 1
+EP  - 16
+ER  - 
+
+TY  - CPAPER
+ID  - emami2023buildingsbench
+AU  - Emami, Patrick
+AU  - Sahu, Abhijeet
+AU  - Graf, Peter
+TI  - BuildingsBench: A large-scale dataset of 900K buildings and benchmark for short-term load forecasting
+T2  - Advances in Neural Information Processing Systems 36 (NeurIPS 2023), Datasets and Benchmarks Track
+PY  - 2023
+ER  - 
+
+TY  - JOUR
+ID  - zhang2024llmbem
+AU  - Zhang, Liang
+AU  - Chen, Zhelun
+AU  - Ford, Vitaly
+TI  - Advancing building energy modeling with large language models: Exploration and case studies
+T2  - Energy and Buildings
+PY  - 2024
+VL  - 323
+DO  - 10.1016/j.enbuild.2024.114788
+SP  - 114788
+ER  - 
+
+TY  - JOUR
+ID  - zhang2024llmcontrol
+AU  - Zhang, Liang
+AU  - Chen, Zhelun
+TI  - Large language model-based interpretable machine learning control in building energy systems
+T2  - Energy and Buildings
+PY  - 2024
+VL  - 313
+DO  - 10.1016/j.enbuild.2024.114278
+SP  - 114278
+ER  - 
+
+TY  - JOUR
+ID  - wetter2022obc
+AU  - Wetter, Michael
+AU  - Ehrlich, Paul
+AU  - Gautier, Antoine
+AU  - Grahovac, Milica
+AU  - Haves, Philip
+AU  - Hu, Jianjun
+AU  - Prakash, Anand
+AU  - Robin, Dave
+AU  - Zhang, Kun
+TI  - OpenBuildingControl: Digitizing the control delivery from building energy modeling to specification, implementation and formal verification
+T2  - Energy
+PY  - 2022
+VL  - 238
+DO  - 10.1016/j.energy.2021.121501
+SP  - 121501
+ER  - 
+
+TY  - CPAPER
+ID  - gao2015metadata
+AU  - Gao, Jingkun
+AU  - Ploennigs, Joern
+AU  - Bergés, Mario
+TI  - A data-driven meta-data inference framework for building automation systems
+T2  - Proceedings of the 2nd ACM International Conference on Embedded Systems for Energy-Efficient Built Environments (BuildSys)
+PY  - 2015
+DO  - 10.1145/2821650.2821670
+SP  - 23
+EP  - 32
+ER  - 
+
+TY  - JOUR
+ID  - granzer2010security
+AU  - Granzer, Wolfgang
+AU  - Praus, Fritz
+AU  - Kastner, Wolfgang
+TI  - Security in building automation systems
+T2  - IEEE Transactions on Industrial Electronics
+PY  - 2010
+VL  - 57
+IS  - 11
+DO  - 10.1109/TIE.2009.2036033
+SP  - 3622
+EP  - 3630
+ER  - 
+
+TY  - GEN
+ID  - isa182
+AU  - International Society of Automation
+TI  - ANSI/ISA-18.2-2016: Management of Alarm Systems for the Process Industries
+PY  - 2016
+PB  - ISA, Research Triangle Park, NC
+ER  - 
+
+TY  - RPRT
+ID  - neukomm2019geb
+AU  - Neukomm, Monica
+AU  - Nubbe, Valerie
+AU  - Fares, Robert
+TI  - Grid-interactive Efficient Buildings Technical Report Series: Overview of Research Challenges and Gaps
+PY  - 2019
+PB  - U.S. Department of Energy, Office of Energy Efficiency and Renewable Energy
+CY  - Washington, DC
+ER  - 

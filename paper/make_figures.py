@@ -106,7 +106,7 @@ def fig_validation():
         v = (vb.loc[idx, pid] / 1000).groupby(idx.month).sum()
         w = 0.4
         ax.bar(n.index - w / 2, n.values, w * 0.95, color=INNER, label="native EnergyPlus")
-        ax.bar(v.index + w / 2, v.values, w * 0.95, color=OUTER, label="Virtual BAS, ideal sensors")
+        ax.bar(v.index + w / 2, v.values, w * 0.95, color=OUTER, label="EmuBAS, ideal sensors")
         ax.set_xticks(range(1, 13))
         ax.set_xticklabels("JFMAMJJASOND")
         ax.set_ylabel("MWh per month")
@@ -129,7 +129,7 @@ def fig_validation():
     ax.set_ylim(12, 32)
     ax.set_aspect("equal")
     ax.set_xlabel("native [°C]")
-    ax.set_ylabel("Virtual BAS [°C]")
+    ax.set_ylabel("EmuBAS [°C]")
     mae = np.nanmean(np.abs(xs - ys))
     ax.text(31.5, 13, f"MAE {mae:.2f} K", ha="right", va="bottom", fontsize=7.5, color=INK)
     panel(ax, "c", "hourly zone temperature")
@@ -465,7 +465,7 @@ def latex_outputs():
              "HeatRejection:Electricity": "Heat rejection", "Heating:NaturalGas": "Heating (boiler)",
              "InteriorLights:Electricity": "Interior lighting", "InteriorEquipment:Electricity": "Interior equipment"}
     rows = [r"\begin{tabular}{lrrrr}", r"\toprule",
-            r"End use & Native [MWh] & Virtual BAS [MWh] & Diff. [\%] & CV(RMSE)$_h$ [\%] \\", r"\midrule"]
+            r"End use & Native [MWh] & EmuBAS [MWh] & Diff. [\%] & CV(RMSE)$_h$ [\%] \\", r"\midrule"]
     for m, r in e.iterrows():
         rows.append(f"{names.get(m, m)} & {r['native_MWh']:,.0f} & {r['vbas_MWh']:,.0f} & {r['diff_%']:+.1f} & {r['CVRMSE_%']:.1f} " + r"\\")
     rows += [r"\midrule",

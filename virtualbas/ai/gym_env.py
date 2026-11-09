@@ -1,4 +1,4 @@
-"""Gymnasium environment wrapping the Virtual BAS (in-process, fastest for training).
+"""Gymnasium environment wrapping EmuBAS (in-process, fastest for training).
 
 The agent acts as a *supervisory* controller: every ``decision_steps`` BAS samples it writes
 set points at BACnet priority 10 (above the BAS programs) and observes **BAS-observed**

@@ -35,7 +35,7 @@ The speed can be changed at any time with the buttons in the header (or `POST /a
 ## 3. Turn on "ground truth"
 
 The *Show ground truth (inner space)* toggle shows the EnergyPlus truth next to every observed value. Differences
-are what a real BAS would never see - and exactly what Virtual BAS labels.
+are what a real BAS would never see - and exactly what EmuBAS labels.
 
 ## 4. Inject a fault
 

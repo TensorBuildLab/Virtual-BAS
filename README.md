@@ -1,18 +1,22 @@
-# Virtual BAS
+# EmuBAS
 
-**A physics-grounded, real-world-like Building Automation System (BAS) emulator, driven step by step by EnergyPlus -
-with labelled sensor drift, noise, data loss, stochastic occupancy and equipment/control faults that humans and AI
+**An open-source emulator of real-world building automation systems (BAS), driven step by step by EnergyPlus - with
+labelled sensor drift, noise, data loss, stochastic occupancy and equipment/control faults that people, scripts and AI
 agents can inject at run time.**
+
+> EmuBAS (emulated BAS) was called *Virtual BAS* until November 2026. The Python package (`virtualbas`), the command
+> line (`vbas`) and this repository's URL keep their names, so existing installs and scripts work unchanged.
 
 [![CI](https://github.com/TensorBuildLab/Virtual-BAS/actions/workflows/ci.yml/badge.svg)](https://github.com/TensorBuildLab/Virtual-BAS/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.9%2B-blue) ![EnergyPlus](https://img.shields.io/badge/EnergyPlus-23.2-orange) ![license](https://img.shields.io/badge/license-MIT-green)
 
-![Virtual BAS - AHU graphic with ground truth overlay](paper/figures/gui_ahu.png)
+![EmuBAS - AHU graphic with ground truth overlay](paper/figures/gui_ahu.png)
 
 Real buildings are messy: sensors drift, controllers act on wrong readings, occupants behave randomly, equipment
-degrades and data go missing. AI for buildings (fault detection, supervisory control, ambient/LLM operators) must be
-developed and tested in such conditions - but real BAS data are scarce and never come with ground truth.
-Virtual BAS provides that environment:
+degrades and data go missing. Everything meant to improve building operation - control sequences, fault detection,
+analytics, model predictive and learning-based control, AI agents, and the people who run buildings - must work in
+such conditions, but testing in real buildings is slow, risky and without ground truth.
+EmuBAS provides that environment:
 
 * **Inner space** - EnergyPlus is the physics. It is advanced one BAS sample (default 5 min) at a time through the
   EnergyPlus Python API and suspended while the BAS computes.
@@ -39,7 +43,7 @@ Virtual BAS provides that environment:
 ## Who is it for?
 
 A real BAS is a poor place to learn or experiment: you cannot stage faults, you never know the true state, mistakes
-affect occupants, and access is restricted. Virtual BAS is **safe to break, labelled, repeatable, fast and open**, so it
+affect occupants, and access is restricted. EmuBAS is **safe to break, labelled, repeatable, fast and open**, so it
 serves far more than algorithm research:
 
 | Area | Uses |
@@ -50,7 +54,7 @@ serves far more than algorithm research:
 | **Research community** | shared benchmarks, competitions and exactly reproducible studies |
 
 Aviation and nuclear power train their operators on simulators, and self-driving AI is developed in open simulators
-before it reaches the road. Virtual BAS aims to be that simulator for buildings, for both their people and their AI.
+before it reaches the road. EmuBAS aims to be that simulator for buildings, for both their people and their AI.
 See [docs/use_cases.md](docs/use_cases.md) for all 18 uses, how far each is supported today, and recipes (teaching a
 lab, running an operator drill with [`scenarios/training_drill.yaml`](scenarios/training_drill.yaml), testing an
 analytics product, quantifying the value of a sensor).
@@ -59,7 +63,7 @@ analytics product, quantifying the value of a sensor).
 
 ```bash
 # 1. EnergyPlus 23.2: https://github.com/NREL/EnergyPlus/releases/tag/v23.2.0
-# 2. Virtual BAS
+# 2. EmuBAS
 git clone https://github.com/TensorBuildLab/Virtual-BAS.git && cd Virtual-BAS
 python -m venv .venv && source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -e ".[all]"
@@ -77,7 +81,7 @@ See [docs/installation.md](docs/installation.md) for details and troubleshooting
 ## The idea in one example
 
 A zone temperature sensor drifts by +0.5 K/day. The VAV controller does not know; it keeps the *observed* temperature
-at 24 °C, commands more air flow to EnergyPlus, and the *true* zone gets colder every day. Virtual BAS records both
+at 24 °C, commands more air flow to EnergyPlus, and the *true* zone gets colder every day. EmuBAS records both
 trajectories, the commands, and the label "`sensor_drift` on `ZN-Core_mid/ZN-T`, rate 0.5 K/day, since t0".
 
 ```yaml
@@ -98,7 +102,7 @@ injections:
 
 ## Architecture
 
-![Virtual BAS architecture: inner space, outer space, humans and AI](paper/figures/fig_architecture.png)
+![EmuBAS architecture: inner space, outer space, humans and AI](paper/figures/fig_architecture.png)
 
 The same loop as a flow chart:
 
@@ -147,16 +151,17 @@ flowchart LR
 
 ## Verification (summary)
 
-With ideal sensors and the baseline BAS program, a full year of the DOE large office driven by Virtual BAS reproduces
+With ideal sensors and the baseline BAS program, a full year of the DOE large office driven by EmuBAS reproduces
 the native EnergyPlus simulation within 0.5 % for electricity, 5 % for gas and 0.03 K mean absolute zone-temperature
 difference (details in the paper and `experiments/exp1_validation.py`).
 
 ## Citing
 
-If you use Virtual BAS, please cite the software (see [CITATION.cff](CITATION.cff)) and the accompanying article
-(*Energy and Buildings*, under review). The manuscript is in [`paper/`](paper) as LaTeX/PDF and as a Word document
-(`paper/manuscript.docx`); every figure is generated from code - see
-[paper/submission/README.md](paper/submission/README.md) for the build steps.
+If you use EmuBAS, please cite the software (see [CITATION.cff](CITATION.cff)) and the accompanying article
+(*Energy and Buildings*, under review). The manuscript text is [`paper/manuscript.md`](paper/manuscript.md), built into
+a Word manuscript (`paper/manuscript.docx`, PDF alongside) with the author's manuscript template; every figure is
+generated from code. See [paper/submission/README.md](paper/submission/README.md) for the build steps,
+[paper/revisions/](paper/revisions) for review rounds and [paper/archive/](paper/archive) for earlier versions.
 
 ## License
 

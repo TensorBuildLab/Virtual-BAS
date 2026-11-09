@@ -3,7 +3,7 @@
 Two independent multi-week runs (train / test: different seeds and periods) are generated with
 the random fault generator restricted to AHU-level faults. Hourly features are computed from
 *observed* BAS trend data only and a random-forest detector is trained on the ground-truth labels.
-This demonstrates that Virtual BAS produces ML-ready, correctly labelled data.
+This demonstrates that EmuBAS produces ML-ready, correctly labelled data.
 """
 import argparse
 import json

@@ -97,7 +97,7 @@ def cmd_points(a) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="vbas", description="Virtual BAS - real-world-like BAS emulator on EnergyPlus")
+    ap = argparse.ArgumentParser(prog="vbas", description="EmuBAS - real-world-like BAS emulator on EnergyPlus")
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("doctor", help="check the EnergyPlus installation")
     s.set_defaults(fn=cmd_doctor)

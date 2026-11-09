@@ -23,3 +23,5 @@ paper/submission/*.out
 results_v1_backup/
 paper/ms_build.*
 paper/word/manuscript_word.tex
+paper/build/
+paper/_*_expanded.md

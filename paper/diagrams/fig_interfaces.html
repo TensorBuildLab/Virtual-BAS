@@ -109,7 +109,7 @@ D.el('rect', {x: X0 + 6, y: YM + 22, width: iw, height: ih, fill: 'none', stroke
 // ------------------------------------------------------------------ core with priority array
 const cx0 = X0 + gw + 24, cw = W - 1 - cx0;
 const core = D.card({x: cx0, y: YM, w: cw, h: MH, color: C.outer, fill: C.outerBg, valign: 'top', pad: 8, ts: 11.5, sw: 1.4, container: true,
-  title: 'Virtual BAS', lines: ['one running building:', 'point list, historian,', 'alarms, fault catalog,', 'clock 1× … max'], ls: 9.5, lh: 1.32, tgap: 5});
+  title: 'EmuBAS', lines: ['one running building:', 'point list, historian,', 'alarms, fault catalog,', 'clock 1× … max'], ls: 9.5, lh: 1.32, tgap: 5});
 {
   const px = cx0 + 116, pw = cw - 116 - 8, py = YM + 8, ph = MH - 16;
   const pc = D.card({x: px, y: py, w: pw, h: ph, color: C.outer, fill: '#fff', valign: 'top', pad: 6, ts: 10, title: 'Priority array'});

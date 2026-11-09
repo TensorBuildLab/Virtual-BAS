@@ -1,8 +1,8 @@
-# Who is Virtual BAS for? - 18 uses
+# Who is EmuBAS for? - 18 uses
 
 A real BAS is a poor place to learn, experiment or certify. Faults cannot be staged on demand, and the true state is
 unknown. Every mistake affects occupants and equipment, a year of operation takes a year, and access is restricted by
-owners, vendors and IT security. Virtual BAS removes these barriers:
+owners, vendors and IT security. EmuBAS removes these barriers:
 
 * **safe to break** - stuck dampers, tripped chillers and drifting sensors harm nobody
 * **labelled** - every fault and imperfection has a defining equation and a ground-truth record
@@ -82,5 +82,5 @@ examples.
 ## Status and contributions
 
 Uses marked *interfaces* or *partial* have not yet been evaluated with users (for example, with students in a course).
-If you use Virtual BAS for teaching, training, product testing or a competition, please open an issue or a pull request
+If you use EmuBAS for teaching, training, product testing or a competition, please open an issue or a pull request
 with your course module, drill or benchmark, so others can build on it.

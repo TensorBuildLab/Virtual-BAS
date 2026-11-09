@@ -2,7 +2,7 @@
 
 | File | What it is |
 |---|---|
-| `manuscript_v1_LZ comments_with responses.docx` | the reviewed version 1: every comment answered in its thread, every tracked edit accepted or rejected, with a comment on each decision |
+| `manuscript_v1_LZ comments_with responses.docx` | the reviewed version 1: every comment answered in its thread, every tracked edit accepted, with a comment on each decision |
 | `manuscript_v2_clean.docx` | version 2, clean (built from `paper/manuscript.md` with the manuscript template) |
 | `manuscript_v2_tracked changes.docx` | version 2 compared with version 1 (edits resolved) in Word: all text changes as tracked changes, formatting changes not shown |
 | `respond_review.py`, `fix_comment_authors.py` | the scripts that wrote the replies and the comparison (Microsoft Word through COM), and set the author of the replies to "Claude (AI assistant)" |
@@ -32,5 +32,5 @@ The original reviewed file is archived in `paper/archive/v1_2026-11-08_latex/`.
 | Two affiliations (University of Arizona; National Laboratory of the Rockies) and corresponding-author line | Accepted |
 | CRediT statement deleted | Accepted (entered in the submission system for a single author) |
 | Competing-interest statement replaced by the NSF acknowledgement (Award No. 2623038) | Accepted; the declaration of interests remains a separate submission file, as Elsevier requires |
-| Generative-AI declaration deleted | **Not accepted**: Elsevier requires authors to disclose AI use in the writing process at the end of the manuscript, before the references. Kept under Elsevier's heading; delete it in `manuscript.md` if you decide otherwise |
+| Generative-AI declaration deleted | Accepted at your decision, after I first kept it (Elsevier's policy asks for this declaration at the end of the manuscript); the cover letter no longer mentions it |
 | Formatting of the title block (superscripts, spacing) | Accepted; the template now formats the title block |

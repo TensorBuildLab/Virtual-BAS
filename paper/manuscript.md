@@ -236,10 +236,6 @@ EmuBAS is a real-world building automation system emulator that separates the ph
 
 This material is based upon work supported by the National Science Foundation under Award No. 2623038. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.
 
-# Declaration of generative AI and AI-assisted technologies in the writing process {-}
-
-During the preparation of this work the author used Claude (Anthropic) to assist with software implementation, running the experiments and drafting the manuscript text. After using this tool, the author reviewed and edited the content as needed and takes full responsibility for the content of the published article.
-
 # BAS-ization details {.appendix #sec:appA}
 
 The HVAC topology is discovered from EnergyPlus' own connection objects (*AirLoopHVAC*, branches, supply paths, zone splitters, *ZoneHVAC:EquipmentConnections*, plant and condenser loops). Every quantity the BAS writes is bound to a dedicated *Schedule:Constant* (a command schedule), for example a *SetpointManager:Scheduled* on each AHU supply-air node and plant supply node, the fan availability schedule and the minimum-flow-fraction schedule of each VAV terminal (input method *Scheduled*). Because this input method changes EnergyPlus' autosizing of reheat coils, terminals and reheat coils are first hard-sized with the values of a sizing run of the native configuration. Physical faults are hooked through *FaultModel:Fouling* objects whose availability and severity schedules are again command schedules. Finally, the native schedules of fans, minimum outdoor air and thermostats are extracted so that the default BAS program reproduces the native operation (@tbl:transformations). @tbl:points lists the points generated per equipment type, and @fig:sequence shows the sequence of one BAS sample.

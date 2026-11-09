@@ -4,7 +4,8 @@
 
 Uses Microsoft Word through COM (Windows). Steps:
 1. open 'manuscript_LZ comments and edits.docx' (archived in paper/archive/v1_2026-11-08_latex/);
-2. resolve the author's tracked edits: accept all, except the deletion of the generative-AI declaration (rejected);
+2. resolve the author's tracked edits: accept all (the deletion of the generative-AI declaration was first rejected
+   and then accepted at the author's decision);
 3. reply to each of the author's comments in its thread, and add one comment per edit decision;
 4. save 'manuscript_v1_LZ comments_with responses.docx';
 5. compare that file (edits resolved) with the clean version 2 and save 'manuscript_v2_tracked changes.docx'.
@@ -79,12 +80,9 @@ DECISIONS = [
      "for a single-author paper), and the NSF acknowledgement (Award No. 2623038) replaces the competing-interest "
      "statement, verbatim, under the template heading 'Acknowledgements'. The declaration of competing interests "
      "remains a separate submission file (paper/submission/declaration_of_competing_interests.txt), as Elsevier "
-     "requires it at submission."),
-    ("Declaration of generative AI", "Deletion not accepted (kept): Elsevier's policy on generative AI requires "
-     "authors who used AI tools in the writing process to disclose it in a statement at the end of the manuscript, "
-     "before the references; AI assisted with drafting this manuscript. Version 2 keeps the statement under "
-     "Elsevier's heading 'Declaration of generative AI and AI-assisted technologies in the writing process'. If you "
-     "decide otherwise, please delete it in manuscript.md."),
+     "requires it at submission. The deletion of the generative-AI declaration was also accepted, at the author's "
+     "decision after discussion (Elsevier's policy asks for this declaration at the end of the manuscript, before "
+     "the references; the cover letter no longer mentions it)."),
 ]
 
 
@@ -111,12 +109,12 @@ def main():
         doc = word.Documents.Open(str(work))
         doc.TrackRevisions = False
         # 2. resolve tracked edits
-        keep_ai = ("During the preparation of this work", "Declaration of generative AI")
+        reject = ()            # texts of deletions to reject; empty: every edit of the author is accepted
         acc = rej = 0
         for i in range(doc.Revisions.Count, 0, -1):
             rev = doc.Revisions(i)
             text = rev.Range.Text
-            if rev.Type == 2 and any(k in text for k in keep_ai):      # wdRevisionDelete of the AI declaration
+            if rev.Type == 2 and any(k in text for k in reject):      # wdRevisionDelete to keep
                 rev.Reject()
                 rej += 1
             else:
@@ -160,7 +158,7 @@ def main():
             d.Close(False)
     finally:
         word.UserName, word.UserInitials = old_user, old_ini
-        word.Quit()
+        word.Quit(0)                     # wdDoNotSaveChanges: never wait on a hidden save dialog
         work.unlink(missing_ok=True)
     print("written:", RESPONSES.name, "and", TRACKED.name)
 

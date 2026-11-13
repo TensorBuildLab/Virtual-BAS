@@ -84,6 +84,11 @@ SENSOR_CLASSES: dict[str, SensorSpec] = {
     "occupancy": SensorSpec(binary=True, p_false_on=0.01, p_false_off=0.05, p_gb=0.0005, p_bg=0.3),
     "energy": SensorSpec(gain_std=0.005, resolution=0.01, lo=0, hi=1e12, p_gb=0.0002, p_bg=0.5),
     "ideal": SensorSpec(),
+    # small-building electrical points (kW-scale CT / revenue meters, BMS state of charge)
+    "power_small": SensorSpec(noise_std=0.003, gain_std=0.01, resolution=0.001, lo=0, hi=1e9, p_gb=0.0005, p_bg=0.3),
+    "thermal_power_small": SensorSpec(noise_std=0.01, gain_std=0.03, resolution=0.001, tau_s=20, lo=0, hi=1e9,
+                                      p_gb=0.0005, p_bg=0.3),
+    "soc": SensorSpec(noise_std=0.002, bias_std=0.01, resolution=0.001, lo=0, hi=1, p_gb=0.0005, p_bg=0.3),
     # ---- extended instrumentation (data-sheet values, see docs/point_taxonomy.md for sources)
     # outdoor T/RH transmitter +/-2-3 %RH, drift ~1 %RH/yr
     "outdoor_humidity": SensorSpec(noise_std=0.8, bias_std=2.5, resolution=0.1, tau_s=60, lo=0, hi=100,

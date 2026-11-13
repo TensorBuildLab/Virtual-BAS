@@ -30,6 +30,28 @@ PUMP_TYPES = ["Pump:VariableSpeed", "Pump:ConstantSpeed", "HeaderedPumps:Variabl
 FAN_TYPES = ["Fan:VariableVolume", "Fan:ConstantVolume", "Fan:SystemModel", "Fan:OnOff"]
 CCOIL_TYPES = ["Coil:Cooling:Water", "Coil:Cooling:Water:DetailedGeometry"]
 HCOIL_TYPES = ["Coil:Heating:Water", "Coil:Heating:Electric", "Coil:Heating:Fuel"]
+# zone (forced-air or radiant) equipment listed in ZoneHVAC:EquipmentList -> kind
+ZONE_EQUIP_KINDS = {
+    "ZoneHVAC:PackagedTerminalHeatPump": "heat_pump",
+    "ZoneHVAC:PackagedTerminalAirConditioner": "ptac",
+    "ZoneHVAC:WaterToAirHeatPump": "heat_pump",
+    "ZoneHVAC:EnergyRecoveryVentilator": "erv",
+    "ZoneHVAC:Baseboard:Convective:Electric": "baseboard",
+    "ZoneHVAC:Baseboard:RadiantConvective:Electric": "baseboard",
+    "ZoneHVAC:IdealLoadsAirSystem": "ideal_loads",
+}
+# E+ output-variable prefix of the unit-level reports ("<prefix> Electricity Rate", "... Total Heating Rate")
+ZONE_EQUIP_REPORT = {
+    "ZoneHVAC:PackagedTerminalHeatPump": "Zone Packaged Terminal Heat Pump",
+    "ZoneHVAC:PackagedTerminalAirConditioner": "Zone Packaged Terminal Air Conditioner",
+    "ZoneHVAC:WaterToAirHeatPump": "Zone Water to Air Heat Pump",
+}
+PV_TYPES = ["Generator:PVWatts", "Generator:Photovoltaic"]
+STORAGE_TYPES = ["ElectricLoadCenter:Storage:Simple", "ElectricLoadCenter:Storage:Battery",
+                 "ElectricLoadCenter:Storage:LiIonNMCBattery"]
+INVERTER_TYPES = ["ElectricLoadCenter:Inverter:PVWatts", "ElectricLoadCenter:Inverter:Simple",
+                  "ElectricLoadCenter:Inverter:FunctionOfPower", "ElectricLoadCenter:Inverter:LookUpTable"]
+WATER_HEATER_TYPES = ["WaterHeater:Mixed", "WaterHeater:Stratified"]
 
 
 @dataclass
@@ -55,7 +77,53 @@ class Zone:
     people: list[str] = field(default_factory=list)
     lights: list[str] = field(default_factory=list)
     equipment: list[str] = field(default_factory=list)
-    infiltration: list[str] = field(default_factory=list)
+    infiltration: list[str] = field(default_factory=list)        # actuatable ZoneInfiltration:DesignFlowRate objects
+    zone_equipment: list[str] = field(default_factory=list)      # ZoneHVAC:* units (see Topology.zone_equipment)
+    infiltration_other: list[str] = field(default_factory=list)  # leakage-area / flow-coefficient infiltration
+    infiltration_window: str | None = None                       # zero-flow DesignFlowRate added by prepare (events)
+
+
+@dataclass
+class ZoneEquipment:
+    """A zone-level HVAC unit from ZoneHVAC:EquipmentList (heat pump, PTAC, ERV, baseboard, ideal loads)."""
+    name: str
+    type: str
+    kind: str                      # heat_pump | ptac | erv | baseboard | ideal_loads
+    zone: str
+    inlet: str | None = None
+    outlet: str | None = None
+    availability_schedule: str | None = None
+    fan: Component | None = None
+    cooling_coil: Component | None = None
+    heating_coil: Component | None = None
+    supp_coil: Component | None = None
+    sequence: int = 1
+    extra: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class LoadCenter:
+    """ElectricLoadCenter:Distribution with its generators, inverter and electrical storage."""
+    name: str
+    buss_type: str = ""
+    generator_scheme: str = ""
+    storage_scheme: str = ""
+    generators: list[Component] = field(default_factory=list)
+    inverter: Component | None = None
+    storage: Component | None = None
+    min_soc: float = 0.0
+    max_soc: float = 1.0
+
+
+@dataclass
+class WaterHeater:
+    name: str
+    type: str
+    fuel: str = "NaturalGas"
+    setpoint_schedule: str | None = None
+    capacity_w: float | None = None
+    volume_m3: float | None = None
+    standalone: bool = True        # True if not connected to a plant loop (no use-side nodes)
 
 
 @dataclass
@@ -113,6 +181,9 @@ class Topology:
     air_loops: dict[str, AirLoop] = field(default_factory=dict)
     plant_loops: dict[str, PlantLoop] = field(default_factory=dict)
     setpoint_managers: list[dict[str, Any]] = field(default_factory=list)
+    zone_equipment: dict[str, ZoneEquipment] = field(default_factory=dict)
+    load_centers: dict[str, LoadCenter] = field(default_factory=dict)
+    water_heaters: dict[str, WaterHeater] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -141,6 +212,18 @@ class Topology:
                 v[key] = [comp(c) for c in v.get(key, [])]
             t.plant_loops[k] = PlantLoop(**v)
         t.setpoint_managers = d.get("setpoint_managers", [])
+        for k, v in d.get("zone_equipment", {}).items():
+            v = dict(v)
+            for key in ("fan", "cooling_coil", "heating_coil", "supp_coil"):
+                v[key] = comp(v.get(key))
+            t.zone_equipment[k] = ZoneEquipment(**v)
+        for k, v in d.get("load_centers", {}).items():
+            v = dict(v)
+            v["generators"] = [comp(c) for c in v.get("generators", [])]
+            v["inverter"], v["storage"] = comp(v.get("inverter")), comp(v.get("storage"))
+            t.load_centers[k] = LoadCenter(**v)
+        for k, v in d.get("water_heaters", {}).items():
+            t.water_heaters[k] = WaterHeater(**v)
         return t
 
     # convenience -------------------------------------------------------------
@@ -149,6 +232,10 @@ class Topology:
 
     def loops_of_kind(self, kind: str) -> list[PlantLoop]:
         return [p for p in self.plant_loops.values() if p.kind == kind]
+
+    def zone_equipment_of(self, zone: str, kinds: tuple[str, ...] | None = None) -> list[ZoneEquipment]:
+        out = [self.zone_equipment[n] for n in self.zones[zone].zone_equipment if n in self.zone_equipment]
+        return [e for e in out if kinds is None or e.kind in kinds]
 
 
 def _u(s: str | None) -> str:
@@ -197,9 +284,11 @@ def discover(model: EpJSON) -> Topology:
             topo.zones[zk].thermostat = tname
 
     for objtype, attr in [("People", "people"), ("Lights", "lights"), ("ElectricEquipment", "equipment"),
-                          ("ZoneInfiltration:DesignFlowRate", "infiltration")]:
+                          ("ZoneInfiltration:DesignFlowRate", "infiltration"),
+                          ("ZoneInfiltration:EffectiveLeakageArea", "infiltration_other"),
+                          ("ZoneInfiltration:FlowCoefficient", "infiltration_other")]:
         for oname, o in model.get(objtype, {}).items():
-            zk = zkey(o.get("zone_or_zonelist_or_space_or_spacelist_name", ""))
+            zk = zkey(o.get("zone_or_zonelist_or_space_or_spacelist_name", "") or o.get("zone_or_space_name", ""))
             if zk:
                 getattr(topo.zones[zk], attr).append(oname)
 
@@ -217,6 +306,12 @@ def discover(model: EpJSON) -> Topology:
         for eq in el.get("equipment", []):
             if eq.get("zone_equipment_object_type") == "ZoneHVAC:AirDistributionUnit":
                 adu_to_zone[_u(eq["zone_equipment_name"])] = zk
+            elif eq.get("zone_equipment_object_type") in ZONE_EQUIP_KINDS:
+                ze = _zone_equipment(model, eq["zone_equipment_object_type"], eq["zone_equipment_name"], zk,
+                                     int(eq.get("zone_equipment_cooling_sequence", 1) or 1))
+                if ze is not None:
+                    topo.zone_equipment[ze.name] = ze
+                    topo.zones[zk].zone_equipment.append(ze.name)
 
     inlet_to_zone: dict[str, str] = {}   # inlet node of ANY air terminal -> zone (for AHU zone lists)
     for aname, adu in model.get("ZoneHVAC:AirDistributionUnit", {}).items():
@@ -350,6 +445,55 @@ def discover(model: EpJSON) -> Topology:
     for n, o in model.get("CondenserLoop", {}).items():
         topo.plant_loops[n] = build_plant(n, o, condenser=True)
 
+    # ---- electric load centres (PV, inverter, storage) and water heaters ---------------------------
+    for dname, d in model.get("ElectricLoadCenter:Distribution", {}).items():
+        lc = LoadCenter(name=dname, buss_type=d.get("electrical_buss_type", "AlternatingCurrent"),
+                        generator_scheme=d.get("generator_operation_scheme_type", "Baseload"),
+                        storage_scheme=d.get("storage_operation_scheme", "TrackFacilityElectricDemandStoreExcessOnSite"),
+                        min_soc=float(d.get("minimum_storage_state_of_charge_fraction", 0.0) or 0.0),
+                        max_soc=float(d.get("maximum_storage_state_of_charge_fraction", 1.0) or 1.0))
+        gl = find_object(model, "ElectricLoadCenter:Generators", d.get("generator_list_name", "") or "") or {}
+        for g in gl.get("generator_outputs", []):
+            gtype, gname = g.get("generator_object_type", ""), g.get("generator_name", "")
+            go = find_object(model, gtype, gname) or {}
+            lc.generators.append(Component(type=gtype, name=gname, extra={
+                "rated_w": g.get("generator_rated_electric_power_output"),
+                "dc_capacity_w": go.get("dc_system_capacity"),
+                "availability_schedule": g.get("generator_availability_schedule_name")}))
+        inv = d.get("inverter_name")
+        if inv:
+            itype = next((t for t in INVERTER_TYPES if find_object(model, t, inv) is not None), None)
+            if itype:
+                io = find_object(model, itype, inv) or {}
+                eff = io.get("inverter_efficiency")
+                lc.inverter = Component(type=itype, name=inv, extra={
+                    "efficiency": eff if isinstance(eff, (int, float)) else 0.96,
+                    "dc_to_ac_ratio": io.get("dc_to_ac_size_ratio")})
+        sto = d.get("electrical_storage_object_name")
+        if sto:
+            stype = next((t for t in STORAGE_TYPES if find_object(model, t, sto) is not None), None)
+            if stype:
+                so = find_object(model, stype, sto) or {}
+                lc.storage = Component(type=stype, name=sto, extra={
+                    "capacity_j": so.get("maximum_storage_capacity"),
+                    "max_charge_w": so.get("maximum_power_for_charging") or d.get("design_storage_control_charge_power"),
+                    "max_discharge_w": so.get("maximum_power_for_discharging") or d.get("design_storage_control_discharge_power"),
+                    "eff_charge": so.get("nominal_energetic_efficiency_for_charging"),
+                    "eff_discharge": so.get("nominal_discharging_energetic_efficiency"),
+                    "zone": so.get("zone_name")})
+        topo.load_centers[dname] = lc
+
+    for wtype in WATER_HEATER_TYPES:
+        for wname, w in model.get(wtype, {}).items():
+            sp = w.get("setpoint_temperature_schedule_name") or w.get("heater_1_setpoint_temperature_schedule_name")
+            cap = w.get("heater_maximum_capacity", w.get("heater_1_capacity"))
+            vol = w.get("tank_volume")
+            topo.water_heaters[wname] = WaterHeater(
+                name=wname, type=wtype, fuel=w.get("heater_fuel_type", "NaturalGas"), setpoint_schedule=sp,
+                capacity_w=float(cap) if isinstance(cap, (int, float)) else None,
+                volume_m3=float(vol) if isinstance(vol, (int, float)) else None,
+                standalone=not w.get("use_side_inlet_node_name"))
+
     # ---- setpoint managers --------------------------------------------------------
     for t, objs in model.items():
         if not t.startswith("SetpointManager:"):
@@ -359,3 +503,74 @@ def discover(model: EpJSON) -> Topology:
             topo.setpoint_managers.append({"type": t, "name": n, "nodes": node_list(model, node) if node else [],
                                            "schedule": o.get("schedule_name"), "control_variable": o.get("control_variable")})
     return topo
+
+
+def _num(v: Any) -> float | None:
+    return float(v) if isinstance(v, (int, float)) else None
+
+
+def _zone_equipment(model: EpJSON, etype: str, ename: str, zone: str, seq: int) -> ZoneEquipment | None:
+    """Describe one ZoneHVAC unit; returns None if the object is missing."""
+    o = find_object(model, etype, ename)
+    if o is None:
+        return None
+    kind = ZONE_EQUIP_KINDS[etype]
+    ze = ZoneEquipment(name=ename, type=etype, kind=kind, zone=zone, sequence=seq,
+                       availability_schedule=o.get("availability_schedule_name"),
+                       inlet=o.get("air_inlet_node_name"), outlet=o.get("air_outlet_node_name"))
+
+    def comp(t_key: str, n_key: str) -> Component | None:
+        t, n = o.get(t_key), o.get(n_key)
+        if not t or not n:
+            return None
+        co = find_object(model, t, n) or {}
+        return Component(type=t, name=n, inlet=co.get("air_inlet_node_name") or co.get("inlet_node_name"),
+                         outlet=co.get("air_outlet_node_name") or co.get("outlet_node_name"))
+
+    if kind in ("heat_pump", "ptac"):
+        ze.fan = comp("supply_air_fan_object_type", "supply_air_fan_name")
+        ze.cooling_coil = comp("cooling_coil_object_type", "cooling_coil_name")
+        ze.heating_coil = comp("heating_coil_object_type", "heating_coil_name")
+        ze.supp_coil = comp("supplemental_heating_coil_object_type", "supplemental_heating_coil_name")
+        oa = [v for v in (_num(o.get("cooling_outdoor_air_flow_rate")), _num(o.get("heating_outdoor_air_flow_rate")))
+              if v is not None]
+        ze.extra = {"cooling_flow_m3s": _num(o.get("cooling_supply_air_flow_rate")),
+                    "heating_flow_m3s": _num(o.get("heating_supply_air_flow_rate")),
+                    "oa_flow_m3s": max(oa or [0.0]),
+                    "oa_mixer": o.get("outdoor_air_mixer_name"),
+                    "fan_mode_schedule": o.get("supply_air_fan_operating_mode_schedule_name"),
+                    "report": ZONE_EQUIP_REPORT.get(etype)}
+    elif kind == "erv":
+        hx_name = o.get("heat_exchanger_name") or ""
+        hx_type = next((t for t in ("HeatExchanger:AirToAir:SensibleAndLatent", "HeatExchanger:AirToAir:FlatPlate",
+                                    "HeatExchanger:Desiccant:BalancedFlow") if find_object(model, t, hx_name)), None)
+        hx = (find_object(model, hx_type, hx_name) if hx_type else None) or {}
+        sup_fan, exh_fan = o.get("supply_air_fan_name"), o.get("exhaust_air_fan_name")
+
+        def fan_type(n):
+            return next((t for t in FAN_TYPES if find_object(model, t, n or "")), "Fan:OnOff")
+        sfo = find_object(model, fan_type(sup_fan), sup_fan or "") or {}
+        efo = find_object(model, fan_type(exh_fan), exh_fan or "") or {}
+        ze.fan = Component(type=fan_type(sup_fan), name=sup_fan, inlet=sfo.get("air_inlet_node_name"),
+                           outlet=sfo.get("air_outlet_node_name")) if sup_fan else None
+        ze.inlet = hx.get("supply_air_inlet_node_name")
+        ze.outlet = sfo.get("air_outlet_node_name") or hx.get("supply_air_outlet_node_name")
+        ze.extra = {"hx": hx_name or None, "hx_type": hx_type,
+                    "hx_supply_inlet": hx.get("supply_air_inlet_node_name"),
+                    "hx_supply_outlet": hx.get("supply_air_outlet_node_name"),
+                    "hx_exhaust_inlet": hx.get("exhaust_air_inlet_node_name"),
+                    "hx_exhaust_outlet": hx.get("exhaust_air_outlet_node_name"),
+                    "hx_kind": hx.get("heat_exchanger_type", "Plate"),
+                    "hx_temp_control": hx.get("supply_air_outlet_temperature_control", "No"),
+                    "hx_availability_schedule": hx.get("availability_schedule_name"),
+                    "eps_sens_heating": _num(hx.get("sensible_effectiveness_at_100_heating_air_flow")),
+                    "eps_sens_cooling": _num(hx.get("sensible_effectiveness_at_100_cooling_air_flow")),
+                    "supply_fan": sup_fan, "supply_fan_type": fan_type(sup_fan) if sup_fan else None,
+                    "exhaust_fan": exh_fan, "exhaust_fan_type": fan_type(exh_fan) if exh_fan else None,
+                    "exhaust_fan_outlet": efo.get("air_outlet_node_name"),
+                    "supply_flow_m3s": _num(o.get("supply_air_flow_rate")),
+                    "exhaust_flow_m3s": _num(o.get("exhaust_air_flow_rate")),
+                    "controller": o.get("controller_name")}
+    else:
+        ze.extra = {"capacity_w": o.get("heating_design_capacity")}
+    return ze

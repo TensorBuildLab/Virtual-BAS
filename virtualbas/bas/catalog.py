@@ -9,7 +9,9 @@ Each BAS point has:
 * a sensor class that determines its real-world imperfections.
 
 Equipment covered: zones, VAV terminal units, air handling units (economizer, coils, fan,
-filter), chillers, boilers, cooling towers, pumps, plant loops, weather station and meters.
+filter), chillers, boilers, cooling towers, pumps, plant loops, weather station and meters, and
+for small all-electric buildings: zone heat pumps / PTACs, energy-recovery ventilators, electric
+baseboards, PV systems (arrays + inverter), electrical storage, grid import/export and water heaters.
 """
 from __future__ import annotations
 
@@ -374,8 +376,8 @@ def build_catalog(man: Manifest) -> Catalog:
                "Electric_Power_Sensor", kind="meter", tier="next_gen")
         # physics ground truth useful for research (not measurable by a BAS)
         for nm, var, sc, unit, desc in ([
-                ("INFIL-ACH", "Zone Infiltration Air Change Rate", 1.0, "1/h", "Infiltration air-change rate")] if z.infiltration
-                else []) + [
+                ("INFIL-ACH", "Zone Infiltration Air Change Rate", 1.0, "1/h", "Infiltration air-change rate")]
+                if (z.infiltration or z.infiltration_other) else []) + [
                 ("WIN-SOL-KW", "Zone Windows Total Transmitted Solar Radiation Rate", 0.001, "kW", "Transmitted solar gain"),
                 ("WIN-Q-KW", "Zone Windows Total Heat Gain Rate", 0.001, "kW", "Window heat gain"),
                 ("INT-GAIN-KW", "Zone Total Internal Total Heating Rate", 0.001, "kW", "Total internal heat gain"),
@@ -408,6 +410,11 @@ def build_catalog(man: Manifest) -> Catalog:
             cat.actuator("ElectricEquipment", "Electricity Rate", e)
         for inf in z.infiltration:
             cat.actuator("Zone Infiltration", "Air Exchange Flow Rate", inf)
+        if z.infiltration_window:
+            cat.actuator("Zone Infiltration", "Air Exchange Flow Rate", z.infiltration_window)
+        if z.zone_equipment and not z.terminal:
+            # outdoor air delivered by zone equipment (ERV, PTAC/PTHP outdoor-air mixer) for the IAQ model
+            cat.variables[f"ZMECHVENT|{zn}".upper()] = ("Zone Mechanical Ventilation Current Density Volume Flow Rate", zn)
 
         # terminal unit
         if not z.terminal or z.terminal not in topo.terminals:
@@ -856,9 +863,34 @@ def build_catalog(man: Manifest) -> Catalog:
                 cat.schedule_actuator(f["value_schedule"])
 
     # ---------------------------------------------------------------- domestic hot water heaters
-    whs = [n for t_, objs in (man.design or {}).items() if t_.upper() == "WATERHEATER:MIXED" for n in objs]
-    for i, wname in enumerate(sorted(set(whs)), start=1):
+    whs = sorted({n for t_, objs in (man.design or {}).items() if t_.upper() == "WATERHEATER:MIXED" for n in objs})
+    wh_topo = {k.upper(): v for k, v in topo.water_heaters.items() if v.type == "WaterHeater:Mixed"}
+    whs += sorted(v.name for k, v in wh_topo.items() if k not in whs)
+    for i, wname in enumerate(whs, start=1):
         did = f"DHW-{i}"
+        wh = wh_topo.get(wname.upper())
+        if wh is not None and wh.fuel.lower() == "electricity":
+            cat.add_equip(Equipment(did, "WaterHeater", wh.name, "Domestic (service) hot-water heater, electric",
+                                    meta={"fuel": wh.fuel, "capacity_kw": (wh.capacity_w or 0) / 1000.0 or None,
+                                          "volume_m3": wh.volume_m3,
+                                          "sp_schedule": man.commands.get(f"{wh.name} SP", {}).get("schedule")}))
+            sensor(did, "WaterHeater", "TANK-T", "Tank water temperature", "degC", "water_temperature",
+                   raw(cat.var("Water Heater Tank Temperature", wh.name)), ["domestic", "water", "temp", "sensor"],
+                   "Hot_Water_Supply_Temperature_Sensor", tier="advanced")
+            pa = cat.var("Water Heater Electricity Rate", wh.name)
+            sensor(did, "WaterHeater", "STS", "Element status", "-", "binary", lambda v, dt, a=pa: 1.0 if v.get(a, 0.0) > 1.0 else 0.0,
+                   ["domestic", "water", "run", "sensor"], "Run_Status", tier="advanced")
+            sensor(did, "WaterHeater", "ELEC-PWR", "Water heater electric power", "kW", "power_small", raw(pa, 0.001),
+                   ["domestic", "elec", "power", "sensor"], "Electric_Power_Sensor", tier="advanced")
+            sensor(did, "WaterHeater", "USE-F", "Hot-water draw (flow meter)", "L/s", "water_flow",
+                   raw(cat.var("Water Heater Use Side Mass Flow Rate", wh.name), 1000.0 / RHO_WATER),
+                   ["domestic", "water", "flow", "sensor"], "Water_Flow_Sensor", tier="next_gen")
+            sp = man.commands.get(f"{wh.name} SP", {}).get("schedule")
+            if sp:
+                soft(did, "WaterHeater", "TANK-SP", "Tank set point", "degC", "setpoint", ["domestic", "water", "temp", "sp"],
+                     "Hot_Water_Supply_Temperature_Setpoint", tier="advanced")
+                cat.schedule_actuator(sp)
+            continue
         cat.add_equip(Equipment(did, "WaterHeater", wname, "Domestic (service) hot-water heater, gas fired"))
         sensor(did, "WaterHeater", "TANK-T", "Tank water temperature", "degC", "water_temperature",
                raw(cat.var("Water Heater Tank Temperature", wname)), ["domestic", "water", "temp", "sensor"],
@@ -871,6 +903,9 @@ def build_catalog(man: Manifest) -> Catalog:
         sensor(did, "WaterHeater", "USE-F", "Hot-water draw (flow meter)", "L/s", "water_flow",
                raw(cat.var("Water Heater Use Side Mass Flow Rate", wname), 1000.0 / RHO_WATER),
                ["domestic", "water", "flow", "sensor"], "Water_Flow_Sensor", tier="next_gen")
+
+    _zone_equipment_points(cat, man, sensor, soft, calc, raw)
+    _der_points(cat, man, sensor, soft, calc, raw)
 
     # ---------------------------------------------------------------- return plenums
     for z in topo.zones.values():
@@ -885,7 +920,7 @@ def build_catalog(man: Manifest) -> Catalog:
     # ---------------------------------------------------------------- run-hours / starts of every status point
     for p in list(cat.points.values()):
         if p.kind == "sensor" and p.sensor_class == "binary" and p.name.endswith("STS") and \
-                p.equip_type in ("AHU", "Pump", "Chiller", "Boiler", "CoolingTower"):
+                p.equip_type in ("AHU", "Pump", "Chiller", "Boiler", "CoolingTower", "HeatPump", "PTAC", "ERV"):
             pre = p.name[:-3]
             calc(p.equip, p.equip_type, f"{pre}RUNHRS", f"Run-hours ({p.description.lower()})", "h", ["runtime"],
                  "Run_Time_Sensor")
@@ -911,3 +946,329 @@ def build_catalog(man: Manifest) -> Catalog:
     for c in ["Outdoor Dry Bulb", "Outdoor Relative Humidity", "Direct Solar", "Diffuse Solar", "Wind Speed", "Outdoor Dew Point"]:
         cat.actuator("Weather Data", c, "Environment")
     return cat
+
+
+ZONE_EQUIP_PREFIX = {"heat_pump": ("HP", "HeatPump"), "ptac": ("PTAC", "PTAC"), "erv": ("ERV", "ERV"),
+                     "baseboard": ("BB", "Baseboard"), "ideal_loads": ("IDL", "IdealLoads")}
+
+
+def _zone_equipment_points(cat: Catalog, man: Manifest, sensor, soft, calc, raw) -> None:
+    """Zone heat pumps / PTACs / ERVs / baseboards / ideal loads (ZoneHVAC:EquipmentList units)."""
+    topo = man.topo
+    for zid, zname in list(cat.zone_of_equip.items()):
+        z = topo.zones[zname]
+        ids = []
+        for ze in topo.zone_equipment_of(zname):
+            pre, etype = ZONE_EQUIP_PREFIX[ze.kind]
+            eid, n = f"{pre}-{_id_safe(zname)}", 2
+            while eid in cat.equipment:
+                eid, n = f"{pre}-{_id_safe(zname)}-{n}", n + 1
+            en = man.commands.get(f"{ze.name} ENABLE", {})
+            deg = man.faults.get(f"{ze.name} DEGRADE")
+            hx = man.faults.get(f"{ze.name} HX")
+            x = ze.extra
+            meta = {"zone": zname, "zone_equip": zid, "eplus_type": ze.type, "kind": ze.kind,
+                    "enable_schedule": en.get("schedule"), "enable_default": en.get("default", 1.0),
+                    "degrade_fault": f"{ze.name} DEGRADE" if deg else None, "hx_fault": f"{ze.name} HX" if hx else None}
+            if ze.kind in ("heat_pump", "ptac"):
+                meta.update({"fan": ze.fan.name if ze.fan else None,
+                             "design_flow_m3s": x.get("cooling_flow_m3s") or x.get("heating_flow_m3s"),
+                             "cooling_coil": ze.cooling_coil.name if ze.cooling_coil else None,
+                             "heating_coil": ze.heating_coil.name if ze.heating_coil else None,
+                             "supp_coil": ze.supp_coil.name if ze.supp_coil else None,
+                             "cooling_capacity_w": man.design_value(ze.cooling_coil.type, ze.cooling_coil.name,
+                                                                    "Gross Rated Total Cooling Capacity", None) if ze.cooling_coil else None})
+            elif ze.kind == "erv":
+                meta.update({"supply_fan": x.get("supply_fan"), "exhaust_fan": x.get("exhaust_fan"), "hx": x.get("hx"),
+                             "design_flow_m3s": x.get("supply_flow_m3s"), "eps_sens": x.get("eps_sens_heating")})
+            desc = {"heat_pump": f"Zone heat pump ({ze.type.split(':')[-1]}) serving {zname}",
+                    "ptac": f"Packaged terminal air conditioner serving {zname}",
+                    "erv": f"Energy-recovery ventilator serving {zname}",
+                    "baseboard": f"Electric baseboard heater in {zname}",
+                    "ideal_loads": f"Ideal loads air system serving {zname} (idealised HVAC)"}[ze.kind]
+            cat.add_equip(Equipment(eid, etype, ze.name, desc, meta=meta))
+            ids.append(eid)
+            if en.get("schedule"):
+                soft(eid, etype, "ENABLE", "Unit enable command (BAS start/stop)", "-", "command", ["enable", "cmd"],
+                     "Enable_Command", writable=True)
+                cat.schedule_actuator(en["schedule"])
+            if ze.kind in ("heat_pump", "ptac"):
+                _heat_pump_points(cat, eid, etype, ze, man, sensor, soft, calc, raw, deg)
+            elif ze.kind == "erv":
+                _erv_points(cat, eid, ze, sensor, soft, calc, raw, hx)
+            elif ze.kind == "baseboard":
+                sensor(eid, etype, "ELEC-PWR", "Baseboard electric power", "kW", "power_small",
+                       raw(cat.var("Baseboard Electricity Rate", ze.name), 0.001), ["heating", "elec", "power", "sensor"],
+                       "Electric_Power_Sensor", tier="advanced")
+            else:
+                sensor(eid, etype, "HTG-Q", "Ideal loads sensible heating rate", "kW", "ideal",
+                       raw(cat.var("Zone Ideal Loads Supply Air Sensible Heating Rate", ze.name), 0.001), ["heating", "power"],
+                       "", kind="truth")
+                sensor(eid, etype, "CLG-Q", "Ideal loads sensible cooling rate", "kW", "ideal",
+                       raw(cat.var("Zone Ideal Loads Supply Air Sensible Cooling Rate", ze.name), 0.001), ["cooling", "power"],
+                       "", kind="truth")
+        if ids:
+            e = cat.equipment[zid]
+            e.meta["zone_equipment"] = ids
+            primary = next((i for i in ids if cat.equipment[i].type in ("HeatPump", "PTAC", "Baseboard", "IdealLoads")), None)
+            if e.parent is None and primary:
+                e.parent = primary      # the room thermostat is wired to the unit controller
+            e.meta["hvac"] = primary
+
+
+def _heat_pump_points(cat, eid, etype, ze, man, sensor, soft, calc, raw, deg) -> None:
+    rep = ze.extra.get("report") or "Zone Packaged Terminal Heat Pump"
+    fan = ze.fan.name if ze.fan else None
+    if fan:
+        fp = cat.var("Fan Electricity Rate", fan)
+        sensor(eid, etype, "STS", "Unit run status (fan current switch)", "-", "binary",
+               lambda v, dt, a=fp: 1.0 if v.get(a, 0.0) > 1.0 else 0.0, ["fan", "run", "sensor"], "Run_Status")
+        sensor(eid, etype, "FAN-PWR", "Supply fan power", "kW", "power_small", raw(fp, 0.001), ["fan", "power", "sensor"],
+               "Electric_Power_Sensor", tier="advanced")
+    sensor(eid, etype, "ELEC-PWR", "Unit electric power (compressor + fan + supplemental heat)", "kW", "power_small",
+           raw(cat.var(f"{rep} Electricity Rate", ze.name), 0.001), ["elec", "power", "sensor"], "Electric_Power_Sensor")
+    qc, qh = cat.var(f"{rep} Total Cooling Rate", ze.name), cat.var(f"{rep} Total Heating Rate", ze.name)
+    sensor(eid, etype, "CLG-Q", "Total cooling rate delivered (refrigerant-side BTU estimate)", "kW", "thermal_power_small",
+           raw(qc, 0.001), ["cooling", "power", "sensor"], "Thermal_Power_Sensor", tier="next_gen")
+    sensor(eid, etype, "HTG-Q", "Total heating rate delivered (refrigerant-side BTU estimate)", "kW", "thermal_power_small",
+           raw(qh, 0.001), ["heating", "power", "sensor"], "Thermal_Power_Sensor", tier="next_gen")
+    pa = cat.var(f"{rep} Electricity Rate", ze.name)
+    sensor(eid, etype, "COP", "Unit coefficient of performance (ground truth)", "-", "ideal",
+           lambda v, dt, a=qc, b=qh, c=pa: (v.get(a, 0.0) + v.get(b, 0.0)) / v.get(c, 0.0) if v.get(c, 0.0) > 50.0 else float("nan"),
+           ["cop"], "", kind="truth")
+    sensor(eid, etype, "COMP-PLR", "Compressor part-load ratio (ground truth)", "-", "ideal",
+           raw(cat.var(f"{rep} Compressor Part Load Ratio", ze.name)), ["compressor", "plr"], "", kind="truth")
+    if ze.outlet:
+        sensor(eid, etype, "SA-T", "Supply (discharge) air temperature", "degC", "air_temperature",
+               raw(cat.var("System Node Temperature", ze.outlet)), ["discharge", "air", "temp", "sensor"],
+               "Discharge_Air_Temperature_Sensor")
+        sensor(eid, etype, "SA-F", "Supply air flow", "m3/s", "air_flow",
+               raw(cat.var("System Node Mass Flow Rate", ze.outlet), 1 / RHO_AIR), ["discharge", "air", "flow", "sensor"],
+               "Discharge_Air_Flow_Sensor", tier="advanced")
+    if ze.inlet:
+        sensor(eid, etype, "RA-T", "Return (entering) air temperature", "degC", "air_temperature",
+               raw(cat.var("System Node Temperature", ze.inlet)), ["return", "air", "temp", "sensor"],
+               "Return_Air_Temperature_Sensor", tier="advanced")
+    hc = ze.heating_coil
+    if hc and hc.type.startswith("Coil:Heating:DX"):
+        da = cat.var("Heating Coil Defrost Electricity Rate", hc.name)
+        sensor(eid, etype, "DEFROST", "Defrost cycle active", "-", "binary", lambda v, dt, a=da: 1.0 if v.get(a, 0.0) > 1.0 else 0.0,
+               ["defrost", "sensor"], "Defrost_Status", tier="advanced")
+        sensor(eid, etype, "DEFROST-PWR", "Defrost electric power", "kW", "power_small", raw(da, 0.001), ["defrost", "power", "sensor"],
+               "Electric_Power_Sensor", tier="next_gen")
+    sc = ze.supp_coil
+    if sc and sc.type == "Coil:Heating:Electric":
+        sensor(eid, etype, "SUPP-PWR", "Supplemental (auxiliary) electric heat power", "kW", "power_small",
+               raw(cat.var("Heating Coil Electricity Rate", sc.name), 0.001), ["heating", "aux", "power", "sensor"],
+               "Electric_Power_Sensor", tier="advanced")
+    if ze.cooling_coil:
+        sensor(eid, etype, "CLG-COIL-PWR", "Cooling compressor power", "kW", "power_small",
+               raw(cat.var("Cooling Coil Electricity Rate", ze.cooling_coil.name), 0.001), ["cooling", "compressor", "power",
+                                                                                         "sensor"],
+               "Electric_Power_Sensor", tier="next_gen")
+    sensor(eid, etype, "ALM", "Unit lock-out / trip alarm", "-", "binary", None, ["alarm", "sensor"], "Alarm")
+    soft(eid, etype, "MODE", "Unit operating mode (0 idle, 1 cooling, 2 heating, -1 disabled)", "-", "status",
+         ["mode"], "Mode_Status", writable=False)
+    if deg:
+        for k in ("active_schedule", "value_schedule", "cop_schedule"):
+            cat.schedule_actuator(deg[k])
+
+
+def _erv_points(cat, eid, ze, sensor, soft, calc, raw, hx) -> None:
+    x = ze.extra
+    T = "ERV"
+    vd = x.get("supply_flow_m3s") or 0.05
+    if x.get("supply_fan"):
+        sm = cat.var("Fan Air Mass Flow Rate", x["supply_fan"])
+        sensor(eid, T, "SA-F", "Supply (outdoor) air flow", "m3/s", "air_flow", raw(sm, 1 / RHO_AIR),
+               ["discharge", "air", "flow", "sensor"], "Supply_Air_Flow_Sensor", tier="advanced")
+        sensor(eid, T, "STS", "Supply fan status (current switch)", "-", "binary",
+               lambda v, dt, a=sm, d=vd: 1.0 if v.get(a, 0.0) / RHO_AIR > 0.1 * d else 0.0, ["fan", "run", "sensor"], "Fan_Status")
+        sensor(eid, T, "SF-PWR", "Supply fan power", "kW", "power_small", raw(cat.var("Fan Electricity Rate", x["supply_fan"]), 0.001),
+               ["discharge", "fan", "power", "sensor"], "Electric_Power_Sensor", tier="advanced")
+        cat.actuator("Fan", "Fan Air Mass Flow Rate", x["supply_fan"])
+    if x.get("exhaust_fan"):
+        em = cat.var("Fan Air Mass Flow Rate", x["exhaust_fan"])
+        sensor(eid, T, "EA-F", "Exhaust air flow", "m3/s", "air_flow", raw(em, 1 / RHO_AIR),
+               ["exhaust", "air", "flow", "sensor"], "Exhaust_Air_Flow_Sensor", tier="advanced")
+        sensor(eid, T, "EF-STS", "Exhaust fan status (current switch)", "-", "binary",
+               lambda v, dt, a=em, d=vd: 1.0 if v.get(a, 0.0) / RHO_AIR > 0.1 * d else 0.0, ["exhaust", "fan", "run", "sensor"],
+               "Fan_Status")
+        sensor(eid, T, "EF-PWR", "Exhaust fan power", "kW", "power_small", raw(cat.var("Fan Electricity Rate", x["exhaust_fan"]), 0.001),
+               ["exhaust", "fan", "power", "sensor"], "Electric_Power_Sensor", tier="advanced")
+        cat.actuator("Fan", "Fan Air Mass Flow Rate", x["exhaust_fan"])
+    if ze.outlet:
+        sensor(eid, T, "SA-T", "Supply air temperature (to the room)", "degC", "air_temperature",
+               raw(cat.var("System Node Temperature", ze.outlet)), ["discharge", "air", "temp", "sensor"],
+               "Supply_Air_Temperature_Sensor")
+    to = x.get("hx_supply_inlet")
+    tl = x.get("hx_supply_outlet")
+    te = x.get("hx_exhaust_inlet")
+    if to:
+        sensor(eid, T, "OA-T", "Outdoor air temperature at the ERV intake", "degC", "outdoor_temperature",
+               raw(cat.var("System Node Temperature", to)), ["outside", "air", "temp", "sensor"], "Outside_Air_Temperature_Sensor",
+               tier="advanced")
+    if te:
+        sensor(eid, T, "RA-T", "Return (room exhaust) air temperature entering the ERV", "degC", "air_temperature",
+               raw(cat.var("System Node Temperature", te)), ["return", "air", "temp", "sensor"], "Return_Air_Temperature_Sensor",
+               tier="advanced")
+    if x.get("hx_exhaust_outlet"):
+        sensor(eid, T, "EA-T", "Exhaust air temperature leaving the ERV core", "degC", "air_temperature",
+               raw(cat.var("System Node Temperature", x["hx_exhaust_outlet"])), ["exhaust", "air", "temp", "sensor"],
+               "Exhaust_Air_Temperature_Sensor", tier="next_gen")
+    if to and tl and te:
+        a_o, a_l, a_e = (cat.var("System Node Temperature", n) for n in (to, tl, te))
+        a_f = cat.var("Fan Air Mass Flow Rate", x["supply_fan"]) if x.get("supply_fan") else None
+
+        def eff(v, dt, a_o=a_o, a_l=a_l, a_e=a_e, a_f=a_f):
+            d = v.get(a_e, 0.0) - v.get(a_o, 0.0)
+            if abs(d) < 2.0 or (a_f and v.get(a_f, 0.0) < 1e-4):
+                return float("nan")
+            return max(0.0, min(1.2, (v.get(a_l, 0.0) - v.get(a_o, 0.0)) / d))
+        sensor(eid, T, "HX-EFF", "Heat-recovery sensible effectiveness (from ERV controller temperatures)", "-", "ideal", eff,
+               ["heatRecovery", "effectiveness", "sensor"], "", tier="next_gen")
+        sensor(eid, T, "HX-LAT", "Supply air temperature leaving the heat-recovery core", "degC", "air_temperature",
+               raw(a_l), ["heatRecovery", "leaving", "air", "temp", "sensor"], "Air_Temperature_Sensor", tier="next_gen")
+    sensor(eid, T, "ALM", "ERV fan failure / filter alarm", "-", "binary", None, ["alarm", "sensor"], "Alarm")
+    if hx:
+        cat.schedule_actuator(hx["active_schedule"])
+        cat.schedule_actuator(hx["value_schedule"])
+
+
+def _der_points(cat: Catalog, man: Manifest, sensor, soft, calc, raw) -> None:
+    """PV systems, electrical storage and grid import/export of ElectricLoadCenter:Distribution objects."""
+    topo = man.topo
+    lcs = [lc for lc in topo.load_centers.values() if lc.generators or lc.storage]
+    if not lcs:
+        return
+    loss_vars = []
+    n_pv = n_ess = 0
+    for lc in lcs:
+        pvs = [g for g in lc.generators if g.type.startswith("Generator:P")]
+        loss = man.faults.get(f"{lc.name} PV LOSS")
+        la = cat.var("Electric Equipment Electricity Rate", loss["loss_object"]) if loss else None
+        if la:
+            loss_vars.append((la, loss.get("host_zone")))
+            cat.actuator("ElectricEquipment", "Electricity Rate", loss["loss_object"])
+        eta = float((lc.inverter.extra.get("efficiency") if lc.inverter else None) or 1.0)
+        if pvs:
+            n_pv += 1
+            pid = "PV" if n_pv == 1 else f"PV-{n_pv}"
+            dc_cap = sum(float(g.extra.get("dc_capacity_w") or g.extra.get("rated_w") or 0.0) for g in pvs)
+            cat.add_equip(Equipment(pid, "PVSystem", lc.name, f"Photovoltaic system ({len(pvs)} array(s), "
+                                    f"{dc_cap / 1000.0:.1f} kWp DC) on load centre {lc.name}",
+                                    meta={"load_center": lc.name, "dc_capacity_kw": dc_cap / 1000.0,
+                                          "inverter": lc.inverter.name if lc.inverter else None, "inverter_eff": eta,
+                                          "arrays": [g.name for g in pvs], "buss_type": lc.buss_type,
+                                          "loss_fault": f"{lc.name} PV LOSS" if loss else None}))
+            dcs = [cat.var("Generator Produced DC Electricity Rate", g.name) for g in pvs]
+
+            def dc_total(v, dt, dcs=tuple(dcs), la=la, eta=eta):
+                tot = sum(v.get(a, 0.0) for a in dcs)
+                lost = v.get(la, 0.0) / max(eta, 1e-3) if la else 0.0
+                return max(0.0, tot - lost) / 1000.0
+            sensor(pid, "PVSystem", "DC-PWR", "PV DC power (all arrays)", "kW", "power_small", dc_total,
+                   ["solar", "dc", "power", "sensor"], "PV_Generation_Sensor")
+            if lc.inverter:
+                ia = cat.var("Inverter AC Output Electricity Rate", lc.inverter.name)
+                sensor(pid, "PVSystem", "AC-PWR", "Inverter AC output" + (" (PV + DC-coupled battery)"
+                                                                          if "DCStorage" in lc.buss_type else ""),
+                       "kW", "power_small", lambda v, dt, a=ia, la=la: max(0.0, v.get(a, 0.0) - (v.get(la, 0.0) if la else 0.0)) / 1000.0,
+                       ["solar", "ac", "power", "sensor"], "Electric_Power_Sensor")
+                sensor(pid, "PVSystem", "INV-STS", "Inverter status (1 = exporting AC)", "-", "binary",
+                       lambda v, dt, a=ia, la=la: 1.0 if v.get(a, 0.0) - (v.get(la, 0.0) if la else 0.0) > 10.0 else 0.0,
+                       ["inverter", "run", "sensor"], "Run_Status", tier="advanced")
+                sensor(pid, "PVSystem", "INV-EFF", "Inverter DC-to-AC efficiency (ground truth)", "-", "ideal",
+                       raw(cat.var("Inverter DC to AC Efficiency", lc.inverter.name)), ["inverter", "efficiency"], "", kind="truth")
+            if la:
+                sensor(pid, "PVSystem", "LOSS-KW", "Lost PV AC output due to soiling / trips / curtailment (ground truth)",
+                       "kW", "ideal", raw(la, 0.001), ["solar", "loss"], "", kind="truth")
+            sensor(pid, "PVSystem", "ALM", "Inverter fault / ground-fault alarm", "-", "binary", None, ["inverter", "alarm", "sensor"],
+                   "Alarm", tier="advanced")
+            for g in pvs:
+                aid = f"PVA-{_id_safe(g.name)}"
+                cap = float(g.extra.get("dc_capacity_w") or g.extra.get("rated_w") or 0.0)
+                cat.add_equip(Equipment(aid, "PVArray", g.name, f"PV array {g.name} ({cap / 1000.0:.2f} kWp, {g.type})",
+                                        parent=pid, meta={"dc_capacity_kw": cap / 1000.0, "type": g.type}))
+                ga = cat.var("Generator Produced DC Electricity Rate", g.name)
+
+                def dc_one(v, dt, ga=ga, dcs=tuple(dcs), la=la, eta=eta):
+                    tot = sum(v.get(a, 0.0) for a in dcs)
+                    lost = v.get(la, 0.0) / max(eta, 1e-3) if la else 0.0
+                    f = max(0.0, 1.0 - lost / tot) if tot > 1.0 else 1.0
+                    return v.get(ga, 0.0) * f / 1000.0
+                sensor(aid, "PVArray", "DC-PWR", "Array DC power (string monitor)", "kW", "power_small", dc_one,
+                       ["solar", "dc", "power", "sensor"], "PV_Generation_Sensor", tier="advanced")
+                sensor(aid, "PVArray", "CELL-T", "PV module (back-of-module) temperature", "degC", "outdoor_temperature",
+                       raw(cat.var("Generator PV Cell Temperature", g.name)), ["solar", "module", "temp", "sensor"],
+                       "PV_Panel_Temperature_Sensor", tier="next_gen")
+        st = lc.storage
+        if st:
+            n_ess += 1
+            sid = "ESS" if n_ess == 1 else f"ESS-{n_ess}"
+            cap_j = float(st.extra.get("capacity_j") or 0.0)
+            pch = float(st.extra.get("max_charge_w") or 0.0)
+            pdis = float(st.extra.get("max_discharge_w") or 0.0)
+            cat.add_equip(Equipment(sid, "Battery", st.name, f"Electrical energy storage {st.name} ({st.type.split(':')[-1]}"
+                                    + (f", {cap_j / 3.6e6:.1f} kWh" if cap_j else "") + ")",
+                                    meta={"load_center": lc.name, "storage_type": st.type, "capacity_kwh": cap_j / 3.6e6 or None,
+                                          "max_charge_kw": pch / 1000.0 or None, "max_discharge_kw": pdis / 1000.0 or None,
+                                          "min_soc": lc.min_soc, "max_soc": lc.max_soc, "storage_scheme": lc.storage_scheme,
+                                          "eff_charge": st.extra.get("eff_charge"), "eff_discharge": st.extra.get("eff_discharge")}))
+            if st.type.endswith("Storage:Simple") and cap_j > 0:
+                sa = cat.var("Electric Storage Simple Charge State", st.name)
+                sensor(sid, "Battery", "SOC", "State of charge (BMS)", "-", "soc", raw(sa, 1.0 / cap_j),
+                       ["battery", "soc", "sensor"], "Battery_State_Of_Charge_Sensor")
+                sensor(sid, "Battery", "SOC-KWH", "Stored energy (BMS)", "kWh", "energy", raw(sa, 1.0 / 3.6e6),
+                       ["battery", "energy", "sensor"], "Battery_Energy_Sensor", tier="advanced")
+            else:
+                sensor(sid, "Battery", "SOC", "State of charge (BMS)", "-", "soc",
+                       raw(cat.var("Electric Storage Charge Fraction", st.name)), ["battery", "soc", "sensor"],
+                       "Battery_State_Of_Charge_Sensor")
+            ca = cat.var("Electric Storage Charge Power", st.name)
+            da = cat.var("Electric Storage Discharge Power", st.name)
+            sensor(sid, "Battery", "CHG-PWR", "Charge power", "kW", "power_small", raw(ca, 0.001), ["battery", "charge", "power", "sensor"],
+                   "Electric_Power_Sensor")
+            sensor(sid, "Battery", "DCHG-PWR", "Discharge power", "kW", "power_small", raw(da, 0.001),
+                   ["battery", "discharge", "power", "sensor"], "Electric_Power_Sensor")
+            sensor(sid, "Battery", "STS", "Battery state (1 charging, 0 idle, -1 discharging)", "-", "ideal",
+                   lambda v, dt, a=ca, b=da: 1.0 if v.get(a, 0.0) > 10.0 else (-1.0 if v.get(b, 0.0) > 10.0 else 0.0),
+                   ["battery", "mode", "sensor"], "Mode_Status", tier="advanced")
+            sensor(sid, "Battery", "ALM", "BMS fault alarm", "-", "binary", None, ["battery", "alarm", "sensor"], "Alarm",
+                   tier="advanced")
+            soft(sid, "Battery", "CHG-CMD", "Charge power command (blank = native storage scheme)", "kW", "command",
+                 ["battery", "charge", "power", "cmd"], "Power_Command", writable=True)
+            soft(sid, "Battery", "DCHG-CMD", "Discharge power command (blank = native storage scheme)", "kW", "command",
+                 ["battery", "discharge", "power", "cmd"], "Power_Command", writable=True)
+            soft(sid, "Battery", "RESERVE-SP", "Backup reserve (minimum state of charge for dispatch)", "-", "setpoint",
+                 ["battery", "soc", "sp"], "Battery_Energy_Setpoint", writable=True)
+            soft(sid, "Battery", "MODE", "Dispatch mode (0 native storage scheme, 1 BAS dispatch)", "-", "status",
+                 ["battery", "mode"], "Mode_Status", writable=False)
+            cat.actuator("Electrical Storage", "Power Draw Rate", lc.name)
+            cat.actuator("Electrical Storage", "Power Charge Rate", lc.name)
+    # ---- grid connection (utility meter with net metering)
+    if "GRID" in cat.equipment:
+        G = "Grid"
+        for nm, var, desc, brick in [("IMPORT-PWR", "Facility Total Purchased Electricity Rate", "Grid import power", "Electric_Power_Sensor"),
+                                     ("EXPORT-PWR", "Facility Total Surplus Electricity Rate", "Grid export power", "Electric_Power_Sensor"),
+                                     ("NET-PWR", "Facility Net Purchased Electricity Rate", "Net grid power (import - export)",
+                                      "Electric_Power_Sensor")]:
+            sensor("GRID", G, nm, desc + " (revenue meter)", "kW", "power_small", raw(cat.var(var, "Whole Building"), 0.001),
+                   ["elec", "grid", "power", "sensor"], brick, kind="meter")
+        sensor("GRID", G, "OUTAGE", "Utility grid outage (1 = grid down)", "-", "binary", None, ["grid", "outage", "sensor"], "",
+               tier="advanced")
+        sensor("GRID", G, "UNSERVED-KW", "Load not served by on-site sources during a grid outage (ground truth)", "kW",
+               "ideal", None, ["grid", "unserved"], "", kind="truth")
+    # ---- the lost-PV load is not a building load: remove it from the facility, plug-load and zone sub-meters
+    if loss_vars:
+        allv = tuple(a for a, _ in loss_vars)
+        targets = {"MTR/BLDG-ELEC-KW": allv, "MTR/PLUG-KW": allv}
+        for a, zone in loss_vars:
+            if zone:
+                targets.setdefault(f"ZN-{_id_safe(zone)}/PLUG-KW", ())
+                targets[f"ZN-{_id_safe(zone)}/PLUG-KW"] += (a,)
+        for pid, las in targets.items():
+            fn = cat.truth.get(pid)
+            if fn is not None and las:
+                cat.truth[pid] = lambda v, dt, fn=fn, la=las: fn(v, dt) - sum(v.get(a, 0.0) for a in la) / 1000.0
+

@@ -24,6 +24,7 @@ model parameter as theta(t) = theta_0 + s(t) * delta_theta. All injections are r
 | Type | Target | Description | Equation | Parameters |
 |---|---|---|---|---|
 | `demand_response` | `building` | Utility demand-response event (OpenADR signal): the BAS receives a load-shed request; the response is left to the control program / AI agent. | $\text{DR}=1,\ P_{shed}=s(t)\,P$ | `shed_kw`=300.0 kW - requested shed P |
+| `grid_outage` | `building` | Utility grid outage. With backup (PV + battery behind a backup gateway) the building islands: loads are served from PV and storage, PV export is curtailed, and the building goes dark when storage reaches its minimum state of charge. Without backup all loads drop and PV stops (anti-islanding). | $\text{grid}=0;\ P_{load}=0 \text{ if no backup or } SOC \le SOC_{min}$ | `backup`=1 - - 1 = PV + storage backup (islanding), 0 = no backup |
 | `price_spike` | `building` | Real-time price / carbon spike (grid emergency, scarcity pricing). | $\pi' = (1 + s(m-1))\,\pi,\ CI' = CI + s\,\Delta CI$ | `multiplier`=5.0 - - price multiplier m<br>`carbon_add`=0.2 kgCO2/kWh - carbon offset |
 
 ## Events - iaq layer
@@ -59,6 +60,7 @@ model parameter as theta(t) = theta_0 + s(t) * delta_theta. All injections are r
 | `cooling_coil_valve_stuck_closed` | `equip:AHU` | AHU chilled-water valve stuck closed. | $\dot m_{w,cc}=0$ | - |
 | `heating_coil_valve_stuck_closed` | `equip:AHU` | AHU preheat hot-water valve stuck closed. | $\dot m_{w,hc}=0$ | - |
 | `supply_fan_failure` | `equip:AHU` | Supply fan trips (VFD fault / belt failure). | $\dot V_{SA}=0$ | - |
+| `erv_fan_failure` | `equip:ERV` | ERV fan failure (motor / belt / ECM drive): the failed fan moves no air while the BAS still commands it on. EnergyPlus: EMS 'Fan Air Mass Flow Rate' = 0 on the failed fan(s). | $\dot m_{fan} = 0$ | `fan`=supply - - failed fan: supply | exhaust | both |
 
 ## Faults - control layer
 
@@ -82,6 +84,11 @@ model parameter as theta(t) = theta_0 + s(t) * delta_theta. All injections are r
 | `filter_fouling` | `equip:AHU` | Air filter loading: additional pressure drop raises fan pressure rise and power. | $\Delta p_{fan} = \Delta p_{fan,0} + s(t)\,\Delta p_{add};\ \Delta p_{flt} = (\Delta p_{clean}+s\Delta p_{add})(\dot V/\dot V_d)^2$ | `dp_add`=250.0 Pa - additional filter pressure drop at design flow |
 | `fan_degradation` | `equip:AHU` | Fan/motor efficiency degradation (bearing wear, belt slip). | $\eta_{fan} = \eta_{fan,0}\,(1 - s(t)\,\ell)$ | `loss`=0.25 - - relative efficiency loss l |
 | `equipment_trip` | `equip:Chiller / Boiler / CoolingTower / Pump` | Primary plant equipment trip (safety lock-out). | $\text{available}=0$ | - |
+| `hp_capacity_degradation` | `equip:HeatPump / PTAC` | Heat-pump / PTAC capacity and efficiency degradation (coil fouling, refrigerant undercharge). EnergyPlus: per-coil copies of the DX capacity and EIR f(T) curves whose result is overridden by EMS. | $Q^{f} = \big(1 - s(1-r_Q)\big)\,Q(T),\ COP^{f} = \big(1 - s(1-r_{COP})\big)\,COP(T)$ | `capacity_ratio`=0.7 - - capacity ratio r_Q at full severity<br>`cop_ratio`=0.8 - - COP ratio r_COP at full severity |
+| `hp_trip` | `equip:HeatPump / PTAC / Baseboard` | Zone heat pump trips (compressor high-pressure / low-pressure lock-out, breaker): the unit is unavailable regardless of the BAS enable command. EnergyPlus: unit availability schedule = 0. | $\text{available}=0$ | - |
+| `erv_hx_degradation` | `equip:ERV` | Heat-recovery core degradation (fouled plate, internal leakage, stopped wheel): sensible and latent recovery drop. EnergyPlus: supply-air bypass around the core to an EMS temperature set point. | $\varepsilon' = \big(1 - s(1-r)\big)\,\varepsilon$ | `ratio`=0.3 - - remaining effectiveness fraction r at full severity (0 = no recovery) |
+| `pv_soiling` | `equip:PVSystem` | PV soiling / snow / partial shading: a fraction of the array output is lost. EnergyPlus: the lost AC power is drawn by a non-thermal electric load (Generator:PVWatts cannot be curtailed). | $P_{PV}' = \big(1 - s(t)\,\ell\big)\,P_{PV}$ | `loss`=0.25 - - lost fraction l at full severity |
+| `inverter_trip` | `equip:PVSystem` | PV / battery inverter trip (ground fault, grid-voltage excursion): no AC output, the DC-coupled battery idles. | $P_{AC} = 0$ | - |
 | `filter_bypass` | `equip:AHU` | Filter rack gaps / missing filter: air bypasses the media, particle removal drops (no pressure-drop symptom). | $\eta' = (1 - s(t)\,\beta)\,\eta$ | `bypass`=0.6 - - bypass fraction beta |
 
 ## Faults - network layer
@@ -103,3 +110,4 @@ model parameter as theta(t) = theta_0 + s(t) * delta_theta. All injections are r
 | `sensor_spikes` | `point:sensor` | Random outlier spikes. | $y_k = y_k^{0} + B_k\,\sigma_s\,\eta_k,\ B_k\sim\mathrm{Bern}(p)$ | `prob`=0.05 - - spike probability p per sample<br>`std`=5.0 point unit - sigma_s |
 | `sensor_dropout` | `point:sensor` | Intermittent or complete loss of samples (failing transmitter). | $P(\text{missing}_k)=s(t)\,p$ | `prob`=1.0 - - loss probability p (1 = offline) |
 | `sensor_override` | `point:sensor` | Spoofed / overwritten value (cyber-physical attack or wiring swap). | $y_k = v$ | `value`=20.0 point unit - reported value v |
+| `battery_soc_sensor_drift` | `equip:Battery` | Battery-management-system state-of-charge estimate drifts (coulomb-counting error); the BAS dispatches on the wrong SOC. Equivalent to sensor_drift on <ESS>/SOC. | $\widehat{SOC} = SOC + \mathrm{sat}_{\pm d_{max}}\big(r\,(t-t_0)\big)$ | `rate_per_day`=0.03 1/day - drift rate r (fraction of capacity per day)<br>`max_abs`=0.25 - - d_max |

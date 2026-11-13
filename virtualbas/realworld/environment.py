@@ -246,6 +246,7 @@ class _Zone:
     pm25: float = 6.0
     pm10: float = 4.0            # coarse fraction PM2.5-10 (PM10 = pm25 + pm10)
     tvoc: float = 150.0
+    ervs: list[str] = field(default_factory=list)   # ERV equipment ids serving the zone
     votes: deque = field(default_factory=deque)
     hot_calls: int = 0
     cold_calls: int = 0
@@ -272,7 +273,8 @@ class OuterEnvironment:
             vav = e.parent if e.parent and e.parent in self.cat.equipment and self.cat.equipment[e.parent].type == "VAV" else None
             self.zones[zid] = _Zone(zid, zname, vav, e.meta.get("ahu"), float(e.meta.get("multiplier", 1) or 1),
                                     self.cat.equipment[vav].meta["vmax_m3s"] if vav else 0.0,
-                                    list(topo.zones[zname].lights))
+                                    list(topo.zones[zname].lights),
+                                    ervs=[i for i in e.meta.get("zone_equipment", []) if self.cat.equipment[i].type == "ERV"])
         try:
             self.wf = WeatherFile(bas.b.weather_path, bas.b.year)
             self.forecast = WeatherForecast(self.wf, self.cfg, np.random.default_rng([seed, 3, 4]))
@@ -344,6 +346,14 @@ class OuterEnvironment:
             qi = f(raw.get(f"INFIL|{zn}".upper()))
             npl = f(truth.get(f"{zid}/OCCUPANTS"))
             cs = sup.get(z.ahu, (pm25_o, pm10_o, tvoc_o)) if qs > 0 else (0.0, 0.0, 0.0)
+            if not z.vav:
+                # zone equipment (ERV, PTAC/PTHP outdoor-air mixer): 100 % outdoor air through the unit filter,
+                # balanced by exhaust / exfiltration (EnergyPlus "Zone Mechanical Ventilation" flow)
+                # ERV zones: the measured supply-fan flow (EnergyPlus' "Zone Mechanical Ventilation" keeps reporting the
+                # nominal ERV flow when a fan fails, and is not reported during warm-up); other units: mechanical OA
+                qs = (sum(f(truth.get(f"{e}/SA-F")) for e in z.ervs) if z.ervs
+                      else f(raw.get(f"ZMECHVENT|{zn}".upper())))
+                cs = ((1 - self.eta25) * pm25_o, (1 - self.eta10) * pm10_o, tvoc_o) if qs > 0 else (0.0, 0.0, 0.0)
             ex = src.get(zn, {})
             S = (npl * c.pm25_per_person_mg_h + ex.get("pm25", 0.0),
                  npl * c.pm10_per_person_mg_h + max(0.0, ex.get("pm10", 0.0) - ex.get("pm25", 0.0)),
@@ -423,6 +433,8 @@ class OuterEnvironment:
         # ---------------- totalisers, cost and carbon (utility meters)
         if not warm:
             ekw = max(0.0, f(truth.get("MTR/BLDG-ELEC-KW")))
+            if "GRID/IMPORT-PWR" in truth:      # on-site generation / storage: cost and carbon of the grid import
+                ekw = max(0.0, f(truth.get("GRID/IMPORT-PWR")))
             gkw = max(0.0, f(truth.get("MTR/BLDG-GAS-KW")))
             self.tot["elec_kwh"] += ekw * hrs
             self.tot["gas_kwh"] += gkw * hrs

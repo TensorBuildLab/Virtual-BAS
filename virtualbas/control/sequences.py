@@ -11,6 +11,13 @@ stale or missing) - never on the EnergyPlus truth. Two profiles are provided:
     Advanced sequences inspired by ASHRAE Guideline 36: trim-and-respond resets of supply air
     temperature, duct static pressure and chilled-water temperature, outdoor-air reset of
     hot-water temperature and a condenser-water approach set point.
+``geb``
+    Grid-interactive efficient building: the ``baseline`` sequences plus (i) pre-cooling of the
+    zones before the on-peak tariff window and a set-point relaxation during it, (ii) battery
+    dispatch from the TOU / demand-response signals through the EnergyPlus storage actuators
+    (hold in the hours before on-peak while storing the PV surplus, optional off-peak grid
+    charging, native load following down to a reserve otherwise, load following during DR events) and (iii) load shedding on a
+    ``demand_response`` event (zone set-point relaxation, optional disabling of listed units).
 """
 from __future__ import annotations
 
@@ -71,6 +78,18 @@ class ControlConfig:
     cw_min: float = 5.0
     cw_max: float = 80.0
     cw_approach_g36: float = 3.9
+    # grid-interactive (profile "geb")
+    geb_precool_k: float = 1.5           # cooling set point lowered by this before the on-peak window
+    geb_precool_h: float = 2.0           # pre-cooling duration before on-peak start [h]
+    geb_precool_min_oat: float = 22.0    # pre-cool only if the observed / forecast outdoor temperature exceeds this
+    geb_onpeak_offset_k: float = 1.0     # cooling set point raised (heating lowered) during on-peak
+    geb_dr_offset_k: float = 2.0         # additional relaxation during a demand-response event
+    geb_dr_disable: str = ""             # comma separated zone-equipment ids switched off during DR (e.g. "HP-ZONE1")
+    ess_reserve: float = 0.3             # battery backup reserve (fraction); never dispatched below
+    ess_offpeak_hold: bool = True        # no discharge in the hours before on-peak (PV surplus is still stored)
+    ess_hold_h: float = 6.0              # length of that hold window before the on-peak start [h]
+    ess_grid_charge: bool = False        # charge from the grid off-peak up to ess_target_soc
+    ess_target_soc: float = 0.95
 
     @staticmethod
     def from_dict(d: dict[str, Any] | None) -> "ControlConfig":
@@ -297,3 +316,60 @@ class PlantController:
             cw = min(c.cw_max, max(c.cw_min, wb + c.cw_offset)) if _ok(wb) else self.out.get("CW-ST-SP", 25.0)
         self.out = {"CHW-ST-SP": chw, "HW-ST-SP": hw, "CW-ST-SP": cw}
         return self.out
+
+
+# ----------------------------------------------------------------------------- grid-interactive building
+def onpeak_window(tou: dict[str, Any], t: dt.datetime, dow: int, holiday: bool = False) -> tuple[float, float] | None:
+    """(start, end) hour of today's on-peak window, or None (weekend / holiday tariff). ``dow``: 1 = Sunday."""
+    if dow in (1, 7) or holiday:
+        return None
+    lo, hi = tou.get("on_peak_hours", [12, 18])
+    return float(lo), float(hi)
+
+
+def geb_zone_offsets(cfg: ControlConfig, t: dt.datetime, dow: int, tou: dict[str, Any], oat: float, dr: bool,
+                     holiday: bool = False) -> tuple[float, float, str]:
+    """Heating / cooling set-point offsets [K] of the GEB profile and the active strategy label."""
+    dh = dc = 0.0
+    mode = ""
+    win = onpeak_window(tou, t, dow, holiday)
+    h = t.hour + t.minute / 60.0
+    if win is not None:
+        lo, hi = win
+        warm = _ok(oat) and oat >= cfg.geb_precool_min_oat
+        if lo - cfg.geb_precool_h <= h < lo and warm:
+            dc -= cfg.geb_precool_k
+            mode = "precool"
+        elif lo <= h < hi:
+            dc += cfg.geb_onpeak_offset_k
+            dh -= cfg.geb_onpeak_offset_k
+            mode = "onpeak"
+    if dr:
+        dc += cfg.geb_dr_offset_k
+        dh -= cfg.geb_dr_offset_k
+        mode = "dr"
+    return dh, dc, mode
+
+
+def geb_battery(cfg: ControlConfig, period: float, soc: float, reserve: float, dr: bool, need_kw: float,
+                surplus_kw: float, before_onpeak: bool, max_charge_kw: float, max_discharge_kw: float) -> tuple[float, float]:
+    """Battery commands (charge kW, discharge kW); NaN = leave EnergyPlus' native storage scheme in charge.
+
+    ``period``: tariff period (0 off, 1 mid, 2 on-peak); ``soc``: *observed* state of charge; ``need_kw``: observed
+    site demand the battery could cover (grid import + present discharge); ``surplus_kw``: observed PV surplus that
+    could be stored (grid export + present charge - grid import). EnergyPlus zeroes the native charge as soon as one
+    storage actuator is set, so a held battery is charged explicitly from the surplus (self-consumption).
+    """
+    nan = float("nan")
+    above = _ok(soc) and soc > reserve
+    store = min(max_charge_kw, max(0.0, surplus_kw)) if _ok(surplus_kw) else 0.0
+    if dr:
+        dis = min(max_discharge_kw, max(0.0, need_kw)) if above and _ok(need_kw) else 0.0
+        return (0.0 if dis > 0 else store), dis
+    if _ok(period) and period >= 1.5:          # on-peak: native load following, protect the reserve
+        return (nan, nan) if above else (store, 0.0)
+    if before_onpeak and cfg.ess_offpeak_hold:  # TOU arbitrage: keep the energy for the on-peak window
+        if cfg.ess_grid_charge and _ok(period) and period < 0.5 and _ok(soc) and soc < cfg.ess_target_soc:
+            return max_charge_kw, 0.0
+        return store, 0.0
+    return (nan, nan) if above else (store, 0.0)

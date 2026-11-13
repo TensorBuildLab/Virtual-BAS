@@ -35,6 +35,20 @@ DEFAULT_MENU: dict[str, dict[str, Any]] = {
     "occupancy_surge": {"targets": "zone", "params": {"multiplier": ("choice", [0.2, 1.5, 2.0])}, "hours": (1, 6)},
     "window_open": {"targets": "zone", "params": {"ach": ("uniform", 0.5, 3.0)}, "hours": (1, 10)},
 }
+# added automatically (at the first poll) for buildings with zone heat pumps, ERVs, PV or storage, so that the random
+# sequence of buildings without such equipment is unchanged
+ZONE_DER_MENU: dict[str, dict[str, Any]] = {
+    "hp_capacity_degradation": {"targets": "equip:HeatPump", "params": {"capacity_ratio": ("uniform", 0.5, 0.85),
+                                                                       "cop_ratio": ("uniform", 0.6, 0.9)},
+                                "hours": (240, 720), "profile": "ramp"},
+    "hp_trip": {"targets": "equip:HeatPump", "params": {}, "hours": (2, 48)},
+    "erv_fan_failure": {"targets": "equip:ERV", "params": {"fan": ("choice", ["supply", "exhaust", "both"])}, "hours": (12, 168)},
+    "erv_hx_degradation": {"targets": "equip:ERV", "params": {"ratio": ("uniform", 0.0, 0.6)}, "hours": (240, 720), "profile": "ramp"},
+    "pv_soiling": {"targets": "equip:PVSystem", "params": {"loss": ("uniform", 0.05, 0.35)}, "hours": (168, 720), "profile": "ramp"},
+    "inverter_trip": {"targets": "equip:PVSystem", "params": {}, "hours": (2, 72)},
+    "battery_soc_sensor_drift": {"targets": "equip:Battery", "params": {"rate_per_day": ("uniform", -0.04, 0.04)}, "hours": (72, 480)},
+}
+ZONE_DER_TYPES = ("HeatPump", "PTAC", "ERV", "PVSystem", "Battery")
 
 
 @dataclass
@@ -42,10 +56,19 @@ class RandomInjector:
     rate_per_week: float = 2.0
     menu: dict[str, dict[str, Any]] = field(default_factory=lambda: dict(DEFAULT_MENU))
     seed: int = 0
+    types: list[str] | None = None     # restrict to these injection types (None = all)
 
     def __post_init__(self):
         self.rng = np.random.default_rng(self.seed)
         self.next_time: dt.datetime | None = None
+        self._extended = False
+
+    def _extend(self, catalog) -> None:
+        self._extended = True
+        if any(e.type in ZONE_DER_TYPES for e in catalog.equipment.values()):
+            for k, v in ZONE_DER_MENU.items():
+                if k not in self.menu and (self.types is None or k in self.types):
+                    self.menu[k] = v
 
     def _sample(self, spec):
         kind = spec[0]
@@ -87,6 +110,8 @@ class RandomInjector:
         out: list[Injection] = []
         if self.rate_per_week <= 0:
             return out
+        if not self._extended:
+            self._extend(catalog)
         if self.next_time is None:
             self.next_time = t + dt.timedelta(hours=float(self.rng.exponential(168.0 / self.rate_per_week)))
         while t >= self.next_time:

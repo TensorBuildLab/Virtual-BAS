@@ -12,7 +12,8 @@
 ## Sources and build
 
 The master text is `paper/manuscript.md`. Numbers from the experiments are written `{{Name}}` and filled in from
-`paper/results_macros.tex`; references come from `paper/references.bib` (converted to `references.ris`).
+`paper/results_macros.tex`; references are `paper/references.ris`, built from Crossref records with the fact-check skill
+(`factcheck.py build-ris`), with standards, software and web pages written by hand from the publisher's page.
 
 | Step | Command | Output |
 |---|---|---|
@@ -20,7 +21,9 @@ The master text is `paper/manuscript.md`. Numbers from the experiments are writt
 | model and data figures | `python paper/make_figures_extra.py` | `paper/figures/fig_*.{pdf,png}` |
 | diagrams | `python tools/render_html.py` | renders `paper/diagrams/*.html` to vector PDF + 300-dpi PNG |
 | GUI screenshots and composites | `python tools/make_screenshots.py`, `python tools/make_gui_figures.py` | `paper/figures/gui_*.png`, `fig_gui_*` |
-| references | `python tools/bib2ris.py` | `paper/references.ris` |
+| references | fact-check skill: `factcheck.py build-ris dois.txt -o paper/references.ris --append` | new verified entries |
+| fact check | fact-check skill: `factcheck.py refs` / `numbers` on `paper/manuscript.docx` | reports in `checks/` |
+| tracked changes | `python tools/compare_docx.py OLD.docx NEW.docx OUT.docx` | tracked-changes Word file |
 | manuscript | `python tools/build_manuscript.py --pdf` | `paper/manuscript.docx`, `paper/build/manuscript.pdf`, format report |
 | graphical abstract | `python tools/make_graphical_abstract.py` | `graphical_abstract.png` |
 

@@ -521,6 +521,7 @@ def latex_outputs():
         M[f"AiSh{key}"] = f"{(n.elec - g.elec) / n.elec * 100:.1f}"
         M[f"AiShGas{key}"] = f"{g.gas - n.gas:.0f}"
         M[f"AiShSite{key}"] = f"{((g.elec + g.gas) - (n.elec + n.gas)) / (n.elec + n.gas) * 100:+.1f}"
+        M[f"AiShSiteAbs{key}"] = f"{abs((g.elec + g.gas) - (n.elec + n.gas)) / (n.elec + n.gas) * 100:.1f}"
         n, g = pick("summer", case)
         M[f"AiSu{key}"] = f"{(n.elec - g.elec) / n.elec * 100:.1f}"
     # ---- speed

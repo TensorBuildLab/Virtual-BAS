@@ -1,0 +1,5 @@
+EmuBAS couples step-wise EnergyPlus physics with a labelled real-world layer
+BAS controllers act on drifting, noisy or missing readings, as in real buildings
+People, scripts and AI agents inject 44 fault and event types at run time
+Points span equipment, indoor environment, weather and grid, tiered by rarity
+Any EnergyPlus model converts automatically and runs up to 92,000 times real time

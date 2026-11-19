@@ -3,4 +3,4 @@ Declaration of interests
 [X] The author declares that he has no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
 
 Author: Liang Zhang, University of Arizona, Tucson, AZ, USA, and National Laboratory of the Rockies, Golden, CO, USA (liangzhang1@arizona.edu)
-Manuscript: EmuBAS: an open-source emulator of real-world building automation systems for testing building operation and artificial intelligence
+Manuscript: EmuBAS: an open-source emulator of building automation systems with labelled real-world faults and sensor errors

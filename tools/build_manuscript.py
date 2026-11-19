@@ -5,8 +5,8 @@
 
 paper/manuscript.md is the master text. Numbers that come from the experiments are written {{Name}} and filled in
 from paper/results_macros.tex (written by paper/make_figures.py), so the text always matches the results.
-References come from paper/references.ris (python tools/bib2ris.py converts references.bib).
-The template skill is looked up in $MANUSCRIPT_TEMPLATE_DIR, then in the author's Box skills folder.
+References come from paper/references.ris (verified records; add entries with the fact-check skill's build-ris).
+The template skill is looked up in $MANUSCRIPT_TEMPLATE_DIR, ~/.claude/skills, then the author's Box skills folder.
 """
 import argparse
 import os
@@ -19,8 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PAPER = ROOT / "paper"
 BUILD = PAPER / "build"
 SKILL_DIRS = [os.environ.get("MANUSCRIPT_TEMPLATE_DIR", ""),
-              str(Path.home() / "Box/X2GO_SharedFolder/.Claude/skills/manuscript-template"),
-              str(Path.home() / ".claude/skills/manuscript-template")]
+              str(Path.home() / ".claude/skills/manuscript-template"),
+              str(Path.home() / "Box/X2GO_SharedFolder/.Claude/skills/manuscript-template")]
 
 
 def skill_dir():

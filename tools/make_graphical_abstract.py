@@ -1,25 +1,15 @@
-"""Build the graphical abstract from paper/diagrams/graphical_abstract.html (based on Fig. 1).
+"""The graphical abstract is Fig. 1 (architecture): copy its vector PDF and 300-dpi PNG to paper/submission/.
 
-    python tools/make_graphical_abstract.py
+    python tools/make_graphical_abstract.py      (render Fig. 1 first: python tools/render_html.py)
 
-Renders the diagram with tools/render_html.py (vector PDF + 300-dpi PNG) and copies both to paper/submission/.
-Elsevier asks for at least 1328 x 531 px, readable at 13 x 5 cm; the design keeps text at >= 6 pt at that size.
+Fig. 1 is 1625 x 1172 px, above Elsevier's minimum of 1328 x 531 px.
 """
 import shutil
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-
-
-def main():
-    from render_html import render
-    render([ROOT / "paper/diagrams/graphical_abstract.html"])
-    for ext in ("png", "pdf"):
-        shutil.copy(ROOT / f"paper/figures/graphical_abstract.{ext}", ROOT / f"paper/submission/graphical_abstract.{ext}")
-    print("written paper/submission/graphical_abstract.{png,pdf}")
-
 
 if __name__ == "__main__":
-    main()
+    for ext in ("png", "pdf"):
+        shutil.copy(ROOT / f"paper/figures/fig_architecture.{ext}", ROOT / f"paper/submission/graphical_abstract.{ext}")
+    print("written paper/submission/graphical_abstract.{png,pdf} (= Fig. 1)")

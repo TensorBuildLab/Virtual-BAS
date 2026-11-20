@@ -5,7 +5,7 @@
 | `manuscript.docx` | manuscript in the author's manuscript template (Word; EndNote-linked citations, numbered captions and equations) |
 | `manuscript.pdf` | the same manuscript exported by Microsoft Word |
 | `highlights.txt` | 5 highlights (each <= 85 characters) |
-| `graphical_abstract.png` / `.pdf` | graphical abstract based on Fig. 1 (2031 x 881 px, vector PDF; readable at 13 x 5 cm) |
+| `graphical_abstract.png` / `.pdf` | graphical abstract = Fig. 1 (1625 x 1172 px PNG and vector PDF) |
 | `cover_letter.pdf` / `.tex` | cover letter |
 | `declaration_of_competing_interests.txt` | declaration of interests (also generate the official .docx with Elsevier's declaration tool) |
 
@@ -25,7 +25,7 @@ The master text is `paper/manuscript.md`. Numbers from the experiments are writt
 | fact check | fact-check skill: `factcheck.py refs` / `numbers` on `paper/manuscript.docx` | reports in `checks/` |
 | tracked changes | `python tools/compare_docx.py OLD.docx NEW.docx OUT.docx` | tracked-changes Word file |
 | manuscript | `python tools/build_manuscript.py --pdf` | `paper/manuscript.docx`, `paper/build/manuscript.pdf`, format report |
-| graphical abstract | `python tools/make_graphical_abstract.py` (renders `paper/diagrams/graphical_abstract.html`) | `graphical_abstract.png`, `.pdf` |
+| graphical abstract | `python tools/make_graphical_abstract.py` (copies Fig. 1) | `graphical_abstract.png`, `.pdf` |
 
 `build_manuscript.py` runs the author's `manuscript-template` skill (`md2docx.py`, `check_format.py`,
 `render_docx.py`); set `MANUSCRIPT_TEMPLATE_DIR` if the skill is not in the default Box folder. In Word, run EndNote >

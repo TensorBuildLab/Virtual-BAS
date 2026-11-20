@@ -11,7 +11,7 @@ owners, vendors and IT security. EmuBAS removes these barriers:
 * **open and generic** - free, MIT-licensed, and any EnergyPlus model can be converted
 
 The table below lists the uses grouped into four areas. **Evidence** tells you how far each use is supported today:
-*Exp. n* means it is demonstrated in Experiment n of the paper; *interfaces* means all needed functions exist but
+*Exp. n* means it is demonstrated in experiment n of the accompanying article (scripts in `experiments/`); *interfaces* means all needed functions exist but
 there is no published evaluation yet; *partial* means some functions are still missing.
 
 | # | Use | Who | What you use | Evidence |

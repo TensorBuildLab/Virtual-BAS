@@ -80,4 +80,4 @@ obs, reward, terminated, truncated, info = env.step(env.action_space.sample())
 ## Recommended practice
 
 Train/evaluate an AI agent in three outer spaces - `realism: 0` (ideal), `realism: 1` (realistic) and realistic +
-injected faults - to quantify its robustness before deployment (see Experiment 6 in the paper).
+injected faults - to quantify its robustness before deployment (see `experiments/exp6_ai_agents.py`).

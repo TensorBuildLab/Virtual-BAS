@@ -71,7 +71,7 @@ EnergyPlus solves internally.
 The HVAC topology (zones, terminals, AHUs, coils, fans, plant loops, chillers, boilers, towers, pumps) is discovered
 from EnergyPlus' own connection objects, and the BAS point list is generated from it with Project-Haystack style
 tags and Brick classes. The default BAS program reproduces the native schedules and set points of the source model,
-so a run with ideal sensors reproduces the native EnergyPlus result (see the paper, Experiment 1).
+so a run with ideal sensors reproduces the native EnergyPlus result (see `experiments/exp1_validation.py`).
 
 Currently supported for explicit BAS control: multi-zone VAV systems with `AirTerminal:SingleDuct:VAV:Reheat` /
 `:NoReheat` terminals, water coils, `Fan:VariableVolume`, `Controller:OutdoorAir`, water-cooled chillers, hot-water

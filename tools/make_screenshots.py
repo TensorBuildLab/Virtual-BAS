@@ -1,4 +1,4 @@
-"""Regenerate the GUI screenshots used in the README and the paper (requires Playwright + Microsoft Edge).
+"""Regenerate the GUI screenshots used in the README and docs (requires Playwright + Microsoft Edge).
 
     python tools/make_screenshots.py            # raw screenshots -> paper/figures/gui_*.png (+ gui_boxes.json)
     python tools/make_gui_figures.py            # annotated composites -> paper/figures/fig_gui_*.pdf/png

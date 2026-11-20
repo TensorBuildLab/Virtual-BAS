@@ -7,13 +7,15 @@ agents can inject at run time.**
 **Author:** [Liang Zhang](mailto:liangzhang1@arizona.edu), University of Arizona, Tucson, AZ, USA
 ([TensorBuild Lab](https://sites.arizona.edu/tensorbuild-lab)); GitHub: [lz356](https://github.com/lz356).
 
+> The journal article describing EmuBAS is under review at *Applied Energy*.
+>
 > EmuBAS (emulated BAS) was called *Virtual BAS* until November 2026. The Python package (`virtualbas`), the command
 > line (`vbas`) and this repository's URL keep their names, so existing installs and scripts work unchanged.
 
 [![CI](https://github.com/TensorBuildLab/Virtual-BAS/actions/workflows/ci.yml/badge.svg)](https://github.com/TensorBuildLab/Virtual-BAS/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.9%2B-blue) ![EnergyPlus](https://img.shields.io/badge/EnergyPlus-23.2-orange) ![license](https://img.shields.io/badge/license-MIT-green)
 
-![EmuBAS - AHU graphic with ground truth overlay](paper/figures/gui_ahu.png)
+![EmuBAS - AHU graphic with ground truth overlay](docs/images/gui_ahu.png)
 
 Real buildings are messy: sensors drift, controllers act on wrong readings, occupants behave randomly, equipment
 degrades and data go missing. Everything meant to improve building operation - control sequences, fault detection,
@@ -97,15 +99,15 @@ injections:
   - {type: sensor_drift, target: ZN-Core_mid/ZN-T, start: 2023-07-11T00:00:00, params: {rate_per_day: 0.5}}
 ```
 
-![trends: observed vs. truth](paper/figures/gui_trends.png)
+![trends: observed vs. truth](docs/images/gui_trends.png)
 
 | Zones & indoor environment | Weather, forecast, grid & energy |
 |---|---|
-| ![zone page](paper/figures/gui_zone.png) | ![weather page](paper/figures/gui_weather.png) |
+| ![zone page](docs/images/gui_zone.png) | ![weather page](docs/images/gui_weather.png) |
 
 ## Architecture
 
-![EmuBAS architecture: inner space, outer space, humans and AI](paper/figures/fig_architecture.png)
+![EmuBAS architecture: inner space, outer space, humans and AI](docs/images/fig_architecture.png)
 
 The same loop as a flow chart:
 
@@ -137,7 +139,7 @@ flowchart LR
 | `virtualbas/core.py` | orchestrator: inner/outer coupling, local-loop emulation, priority overrides, pacing |
 | `virtualbas/server` | FastAPI server and the web GUI (vanilla JS, offline) |
 | `virtualbas/ai` | REST client, MCP server, Gymnasium environment |
-| `experiments/` | all experiments of the paper (verification, fault matrix, FDD benchmark, speed, generality, AI agents) |
+| `experiments/` | reproducible experiments (verification, fault matrix, FDD benchmark, speed, generality, AI agents) |
 
 ## Documentation
 
@@ -156,15 +158,12 @@ flowchart LR
 
 With ideal sensors and the baseline BAS program, a full year of the DOE large office driven by EmuBAS reproduces
 the native EnergyPlus simulation within 0.5 % for electricity, 5 % for gas and 0.03 K mean absolute zone-temperature
-difference (details in the paper and `experiments/exp1_validation.py`).
+difference (see `experiments/exp1_validation.py`).
 
 ## Citing
 
-If you use EmuBAS, please cite the software (see [CITATION.cff](CITATION.cff)) and the accompanying article
-(*Energy and Buildings*, under review). The manuscript text is [`paper/manuscript.md`](paper/manuscript.md), built into
-a Word manuscript (`paper/manuscript.docx`, PDF alongside) with the author's manuscript template; every figure is
-generated from code. See [paper/submission/README.md](paper/submission/README.md) for the build steps,
-[paper/revisions/](paper/revisions) for review rounds and [paper/archive/](paper/archive) for earlier versions.
+If you use EmuBAS, please cite the software (see [CITATION.cff](CITATION.cff)). The accompanying journal article is
+under review at *Applied Energy*; the citation will be added here once it is published.
 
 ## License
 

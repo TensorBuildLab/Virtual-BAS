@@ -27,7 +27,8 @@ class Analytics:
         self.cat = catalog
         self.status_points = [p for p in catalog.points.values()
                               if p.kind == "sensor" and p.sensor_class == "binary" and p.name.endswith("STS")
-                              and p.equip_type in ("AHU", "Pump", "Chiller", "Boiler", "CoolingTower")]
+                              and p.equip_type in ("AHU", "Pump", "Chiller", "Boiler", "CoolingTower", "HeatPump", "PTAC",
+                                                  "ERV")]
         self.runhrs: dict[str, float] = {p.id: 0.0 for p in self.status_points}
         self.starts: dict[str, int] = {p.id: 0 for p in self.status_points}
         self.last: dict[str, float] = {}

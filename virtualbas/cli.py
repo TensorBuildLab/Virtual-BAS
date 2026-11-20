@@ -2,7 +2,7 @@
 
     vbas doctor                                   check EnergyPlus installation
     vbas prepare  --model M.idf --weather W.epw --out buildings/my_building
-    vbas serve    --building buildings/large_office [--scenario s.yaml] [--speed 60x]
+    vbas serve    --building buildings/large_office [--scenario s.yaml] [--speed 60x] [--cors http://127.0.0.1:8765]
     vbas run      --building buildings/large_office --scenario s.yaml --out results/run1 [--speed max]
     vbas faults                                   list injectable faults/events
     vbas points   --building buildings/large_office
@@ -45,6 +45,12 @@ def cmd_prepare(a) -> int:
     print(f"Prepared {a.model} -> {a.out}")
     print(f"  zones={len(topo.zones)} terminals={len(topo.terminals)} air_loops={len(topo.air_loops)} "
           f"plant_loops={len(topo.plant_loops)}")
+    if topo.zone_equipment or topo.load_centers or topo.water_heaters:
+        kinds: dict[str, int] = {}
+        for ze in topo.zone_equipment.values():
+            kinds[ze.kind] = kinds.get(ze.kind, 0) + 1
+        print(f"  zone_equipment={kinds} load_centers={len(topo.load_centers)} water_heaters={len(topo.water_heaters)} "
+              f"fault_hooks={len(man.faults)}")
     print(f"  BAS points: {cat.summary()}  equipment: {len(cat.equipment)}")
     cfg = Path(a.out) / "building.yaml"
     if not cfg.exists():
@@ -76,7 +82,7 @@ def cmd_serve(a) -> int:
         sc["start"] = a.start
     if a.end:
         sc["end"] = a.end
-    serve(a.building, sc, a.speed, a.host, a.port, a.out)
+    serve(a.building, sc, a.speed, a.host, a.port, a.out, a.cors)
     return 0
 
 
@@ -123,6 +129,8 @@ def main(argv: list[str] | None = None) -> int:
         else:
             s.add_argument("--host", default="127.0.0.1")
             s.add_argument("--port", type=int, default=8000)
+            s.add_argument("--cors", default=None, help="allowed browser origins for the REST API, comma separated "
+                                                         "(e.g. http://127.0.0.1:8765) or '*'; default: CORS off")
         s.set_defaults(fn=fn)
     s = sub.add_parser("faults", help="list fault & event types")
     s.set_defaults(fn=cmd_faults)

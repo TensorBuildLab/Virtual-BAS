@@ -85,6 +85,20 @@ def default_rules(catalog) -> AlarmEngine:
             q = e.id
             eng.rules.append(AlarmRule(f"{q}:ALARM", q, f"{e.type} common alarm / lock-out", "critical",
                                        lambda pv, c, q=q: _g(pv, f"{q}/ALM") > 0.5, 0))
+        elif e.type in ("HeatPump", "PTAC") and f"{e.id}/ALM" in catalog.points:
+            q = e.id
+            eng.rules.append(AlarmRule(f"{q}:ALARM", q, "Heat pump lock-out / trip", "critical",
+                                       lambda pv, c, q=q: _g(pv, f"{q}/ALM") > 0.5, 0))
+        elif e.type == "ERV" and f"{e.id}/STS" in catalog.points:
+            q = e.id
+            eng.rules.append(AlarmRule(f"{q}:FAN-FAIL", q, "ERV enabled but supply or exhaust fan status off", "high",
+                                       lambda pv, c, q=q: c.get(f"{q}/ENABLE", 1.0) > 0.5 and
+                                       (_g(pv, f"{q}/STS") < 0.5 or _g(pv, f"{q}/EF-STS") < 0.5), 900))
+        elif e.type == "Battery" and f"{e.id}/SOC" in catalog.points:
+            q = e.id
+            lo = float(e.meta.get("min_soc") or 0.0)
+            eng.rules.append(AlarmRule(f"{q}:LOW-SOC", q, "Battery state of charge at the minimum limit", "low",
+                                       lambda pv, c, q=q, lo=lo: _g(pv, f"{q}/SOC") < lo + 0.01, 900))
         elif e.type == "AHU":
             a = e.id
             eng.rules.append(AlarmRule(f"{a}:SAT-DEV", a, "Supply air temperature deviates > 2 K from set point", "high",
@@ -111,6 +125,9 @@ def default_rules(catalog) -> AlarmEngine:
     if "WX/OA-PM25" in catalog.points:
         eng.rules.append(AlarmRule("WX:OA-PM25", "WX", "Outdoor PM2.5 above 35 ug/m3 (smoke / poor air quality)", "medium",
                                    lambda pv, c: _g(pv, "WX/OA-PM25") > 35, 900))
+    if "GRID/OUTAGE" in catalog.points:
+        eng.rules.append(AlarmRule("GRID:OUTAGE", "GRID", "Utility grid outage", "critical",
+                                   lambda pv, c: _g(pv, "GRID/OUTAGE") > 0.5, 0))
     if "GRID/DR-EVENT" in catalog.points:
         eng.rules.append(AlarmRule("GRID:DR", "GRID", "Demand-response event active (utility load-shed request)", "low",
                                    lambda pv, c: _g(pv, "GRID/DR-EVENT") > 0.5, 0))

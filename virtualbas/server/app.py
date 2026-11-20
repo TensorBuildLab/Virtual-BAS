@@ -2,6 +2,11 @@
 
 Run with ``vbas serve --building buildings/large_office``. Interactive API documentation is
 available at ``/docs`` (OpenAPI), which makes every function discoverable for LLM agents.
+
+Browser apps served from another origin (e.g. a dashboard on ``http://127.0.0.1:8765``) can read
+the API when the server is started with ``--cors http://127.0.0.1:8765`` (comma separated list, or
+``*``); CORS is off by default. Live values: ``GET /api/read?points=A,B`` (present values + simulation
+time), ``GET /api/snapshot``, ``GET /api/status`` and the 1 Hz WebSocket ``/ws``.
 """
 from __future__ import annotations
 
@@ -93,13 +98,26 @@ class Session:
             return self.vbas
 
 
+def _origins(cors: str | list[str] | None) -> list[str]:
+    if not cors:
+        return []
+    items = cors.split(",") if isinstance(cors, str) else list(cors)
+    return [o.strip().rstrip("/") for o in items if o and o.strip()]
+
+
 def create_app(building_dir: str, scenario: dict[str, Any] | None = None, speed: Any = "60x",
-               out_root: str | None = None) -> FastAPI:
+               out_root: str | None = None, cors_origins: str | list[str] | None = None) -> FastAPI:
     app = FastAPI(title="EmuBAS", version="0.1.0",
                   description="Real-world-like Building Automation System emulator driven by EnergyPlus. "
                               "Read points, trends and alarms; write set points; inject faults and events.")
     sess = Session(building_dir, out_root, scenario or {}, speed)
     app.state.session = sess
+    origins = _origins(cors_origins)
+    if origins:
+        from fastapi.middleware.cors import CORSMiddleware
+        app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials="*" not in origins,
+                           allow_methods=["*"], allow_headers=["*"])
+    app.state.cors_origins = origins
 
     def V() -> VirtualBAS:
         if sess.vbas is None:
@@ -272,8 +290,10 @@ def create_app(building_dir: str, scenario: dict[str, Any] | None = None, speed:
 
 
 def serve(building_dir: str, scenario: dict[str, Any] | None = None, speed: Any = "60x", host: str = "127.0.0.1",
-          port: int = 8000, out_root: str | None = None) -> None:
+          port: int = 8000, out_root: str | None = None, cors_origins: str | list[str] | None = None) -> None:
     import uvicorn
-    app = create_app(building_dir, scenario, speed, out_root)
+    app = create_app(building_dir, scenario, speed, out_root, cors_origins)
     print(f"EmuBAS GUI: http://{host}:{port}   API docs: http://{host}:{port}/docs")
+    if app.state.cors_origins:
+        print(f"CORS enabled for: {', '.join(app.state.cors_origins)}")
     uvicorn.run(app, host=host, port=port, log_level="warning")

@@ -13,10 +13,22 @@ T5  Command binding: every quantity a BAS writes is bound to a dedicated ``Sched
       - plant / condenser loop supply temperature set points
       - air-loop supply-fan enable (fan availability schedule; native night-cycle disabled)
       - terminal-unit air-flow commands (VAV minimum-flow-fraction schedule, ``Scheduled`` method)
+      - zone-equipment enable (heat pumps, PTACs, ERVs, baseboards, ideal loads: availability schedule)
+      - stand-alone water-heater set point
 T6  Physical fault hooks: EnergyPlus ``FaultModel:*`` objects are attached to primary plant
-    equipment with a severity schedule initialised to 0 (fault free). The outer space can then
-    activate *physical* degradation at run time.
+    equipment with a severity schedule initialised to 0 (fault free). Where EnergyPlus has no
+    FaultModel, an equivalent hook is built from EMS objects driven by the same ACTIVE/VALUE
+    schedule pair (all inactive by default, i.e. native behaviour):
+      - DX heat-pump / PTAC coils: per-coil copies of the capacity and EIR f(T) curves whose
+        ``Curve Result`` is overridden by ``r_Q f(T)`` and ``f_EIR(T) / r_COP`` (capacity / COP derate)
+      - ERV plate/rotary heat exchangers: supply-outlet temperature control with an EMS set point
+        (pass-through when healthy, partial bypass = effectiveness loss when faulted)
+      - PV systems: a non-thermal electric load (``ElectricEquipment`` with fraction lost = 1, driven by
+        its EMS ``Electricity Rate`` actuator) equal to the lost PV output (Generator:PVWatts ignores
+        availability schedules and EMS power requests)
 T7  Indoor air quality: zone CO2 mass balance is enabled with an actuatable outdoor CO2 schedule.
+T8  Events: zones whose infiltration is not a DesignFlowRate object get a zero-flow DesignFlowRate
+    object so that window/door events can add air exchange through the EMS infiltration actuator.
 
 The output of the step is the prepared epJSON and a JSON *manifest* containing the discovered
 topology, all command/fault schedule bindings and the design (autosized) parameters.
@@ -67,6 +79,7 @@ class Manifest:
     design: dict[str, dict[str, dict[str, float]]] = field(default_factory=dict)
     energyplus_version: str = ""
     native: dict[str, Any] = field(default_factory=dict)   # native schedules -> default BAS program
+    ems: dict[str, Any] = field(default_factory=dict)      # EMS objects added by prepare (documentation)
 
     def save(self, path: str | Path) -> None:
         Path(path).write_text(json.dumps(self.__dict__, indent=1))
@@ -111,6 +124,68 @@ def _norm(s: str) -> str:
 
 def _safe(name: str) -> str:
     return re.sub(r"\s+", " ", name).strip()
+
+
+def _erl(name: str) -> str:
+    """EnergyPlus Runtime Language variable name (alphanumeric + underscore)."""
+    return re.sub(r"[^A-Za-z0-9_]", "_", name)
+
+
+CURVE_DIMS = {"Curve:Linear": 1, "Curve:Quadratic": 1, "Curve:Cubic": 1, "Curve:Quartic": 1, "Curve:Exponent": 1,
+              "Curve:Biquadratic": 2, "Curve:Bicubic": 2, "Curve:QuadraticLinear": 2, "Curve:CubicLinear": 2}
+DX_CURVE_FIELDS = {
+    "Coil:Cooling:DX:SingleSpeed": ("total_cooling_capacity_function_of_temperature_curve_name",
+                                    "energy_input_ratio_function_of_temperature_curve_name"),
+    "Coil:Heating:DX:SingleSpeed": ("heating_capacity_function_of_temperature_curve_name",
+                                    "energy_input_ratio_function_of_temperature_curve_name"),
+}
+
+
+def _find_curve(model: EpJSON, name: str) -> tuple[str, dict[str, Any]] | tuple[None, None]:
+    for t in CURVE_DIMS:
+        o = find_object(model, t, name)
+        if o is not None:
+            return t, o
+    return None, None
+
+
+class _EMS:
+    """Small builder for the EMS objects of the physical fault hooks."""
+
+    def __init__(self, model: EpJSON):
+        self.m = model
+        self.programs: list[str] = []
+        self.sensors: set[str] = set()
+
+    def sensor(self, erl: str, var: str, key: str) -> str:
+        if erl not in self.sensors:
+            add_object(self.m, "EnergyManagementSystem:Sensor", erl,
+                       {"output_variable_or_output_meter_index_key_name": key,
+                        "output_variable_or_output_meter_name": var})
+            self.sensors.add(erl)
+        return erl
+
+    def actuator(self, erl: str, ctype: str, control: str, key: str) -> str:
+        add_object(self.m, "EnergyManagementSystem:Actuator", erl,
+                   {"actuated_component_unique_name": key, "actuated_component_type": ctype,
+                    "actuated_component_control_type": control})
+        return erl
+
+    def curve_index(self, erl: str, curve: str) -> str:
+        add_object(self.m, "EnergyManagementSystem:CurveOrTableIndexVariable", erl, {"curve_or_table_object_name": curve})
+        return erl
+
+    def program(self, name: str, lines: list[str]) -> None:
+        add_object(self.m, "EnergyManagementSystem:Program", name, {"lines": [{"program_line": ln} for ln in lines]})
+        self.programs.append(name)
+
+    def finish(self) -> None:
+        if self.programs:
+            add_object(self.m, "EnergyManagementSystem:ProgramCallingManager", "VBAS Fault Hooks",
+                       {"energyplus_model_calling_point": "InsideHVACSystemIterationLoop",
+                        "programs": [{"program_name": n} for n in self.programs]})
+            add_object(self.m, "EnergyManagementSystem:GlobalVariable", "EnergyManagementSystem:GlobalVariable VBAS Zero",
+                       {"variables": [{"erl_variable_name": "vbas_zero"}]})
 
 
 def _bind_terminals(model: EpJSON, topo: Topology, cmd, design: dict[str, dict[str, dict[str, float]]] | None) -> None:
@@ -296,6 +371,30 @@ def prepare_model(model_path: str | Path, weather_path: str | Path, out_dir: str
         extra = [n for n in extra if n.upper() in sp_nodes]
         bind_node_setpoint(pl.setpoint_node, s, extra)
 
+    # ---- T5 zone equipment: enable through the availability schedule ------------------------------
+    native["zone_equipment"] = {}
+    for ename, ze in topo.zone_equipment.items():
+        o = find_object(model, ze.type, ename)
+        if o is None:
+            continue
+        orig = o.get("availability_schedule_name")
+        default = 1.0 if _first_numeric(original, orig, 1.0) > 0 else 0.0
+        s_en = cmd(f"{ename} ENABLE", default, kind="zone_equipment_enable", equipment=ename, equipment_type=ze.type,
+                   equipment_kind=ze.kind, zone=ze.zone, unit="-")
+        native["zone_equipment"][ename] = {"avail_schedule": orig}
+        o["availability_schedule_name"] = s_en
+    # ---- T5 stand-alone water heaters: tank set point -------------------------------------------
+    native["water_heaters"] = {}
+    for wname, wh in topo.water_heaters.items():
+        o = find_object(model, wh.type, wname)
+        if o is None or not wh.standalone or wh.type != "WaterHeater:Mixed":
+            continue
+        orig = o.get("setpoint_temperature_schedule_name")
+        s_sp = cmd(f"{wname} SP", _first_numeric(original, orig, 55.0), kind="water_heater_setpoint", equipment=wname,
+                   unit="C")
+        native["water_heaters"][wname] = {"sp_schedule": orig}
+        o["setpoint_temperature_schedule_name"] = s_sp
+
     # ---- T6 physical fault hooks ----------------------------------------------------------
     def fault_hook(key: str, obj_type: str, obj_name: str, fields: dict[str, Any], value_default: float, **meta) -> None:
         """Attach a FaultModel object with two command schedules: ACTIVE (0/1) and VALUE."""
@@ -325,6 +424,146 @@ def prepare_model(model_path: str | Path, weather_path: str | Path, out_dir: str
                             "reference_ua_reduction_factor": 1.0},
                            1.0, kind="tower_fouling", equipment=tw.name)
 
+    def sched_pair(key: str, value_default: float, extra: dict[str, float] | None = None) -> dict[str, str]:
+        out = {"active_schedule": _safe(f"VBAS FAULT {key} ACTIVE"), "value_schedule": _safe(f"VBAS FAULT {key} VALUE")}
+        add_schedule_constant(model, out["active_schedule"], 0.0, "VBAS Any Number")
+        add_schedule_constant(model, out["value_schedule"], value_default, "VBAS Any Number")
+        for k, v in (extra or {}).items():
+            out[k] = _safe(f"VBAS FAULT {key} {k.split('_')[0].upper()}")
+            add_schedule_constant(model, out[k], v, "VBAS Any Number")
+        return out
+
+    ems = _EMS(model)
+    ems_doc: dict[str, Any] = {}
+    # (a) DX heat pumps / PTACs: capacity and COP derate through curve overrides
+    n_hp = 0
+    for ename, ze in topo.zone_equipment.items():
+        if ze.kind not in ("heat_pump", "ptac"):
+            continue
+        coils = [c for c in (ze.cooling_coil, ze.heating_coil) if c and c.type in DX_CURVE_FIELDS]
+        if not coils:
+            continue
+        n_hp += 1
+        tag = f"vbas_hp{n_hp}"
+        key = f"{ename} DEGRADE"
+        sch = sched_pair(key, 1.0, {"cop_schedule": 1.0})
+        act = ems.sensor(f"{tag}_act", "Schedule Value", sch["active_schedule"])
+        rq = ems.sensor(f"{tag}_rq", "Schedule Value", sch["value_schedule"])
+        rc = ems.sensor(f"{tag}_rc", "Schedule Value", sch["cop_schedule"])
+        toa = ems.sensor("vbas_toa", "Site Outdoor Air Drybulb Temperature", "Environment")
+        pb = ems.sensor("vbas_pb", "Site Outdoor Air Barometric Pressure", "Environment")
+        on, off, hooked = [], [], []
+        for j, c in enumerate(coils):
+            co = find_object(model, c.type, c.name)
+            if co is None or not c.inlet:
+                continue
+            ctag = f"{tag}_c{j}"
+            tin = ems.sensor(f"{ctag}_tin", "System Node Temperature", c.inlet)
+            win = ems.sensor(f"{ctag}_win", "System Node Humidity Ratio", c.inlet)
+            cooling = c.type.startswith("Coil:Cooling")
+            if cooling:
+                on.append(f"SET {ctag}_x = @TwbFnTdbWPb {tin} {win} {pb}")
+            for fld, ratio, op, short in [(DX_CURVE_FIELDS[c.type][0], rq, "*", "cap"),
+                                          (DX_CURVE_FIELDS[c.type][1], rc, "/", "eir")]:
+                ctype, cobj = _find_curve(model, co.get(fld, ""))
+                if ctype is None:
+                    continue
+                dims = CURVE_DIMS[ctype]
+                clone = _safe(f"VBAS {c.name} {short.upper()}FT")
+                add_object(model, ctype, clone, copy.deepcopy(cobj))
+                idx = ems.curve_index(f"{ctag}_{short}_idx", co[fld])
+                co[fld] = clone
+                av = ems.actuator(f"{ctag}_{short}", "Curve", "Curve Result", clone)
+                if cooling:            # f(entering wet bulb, outdoor dry bulb)
+                    x, y = f"{ctag}_x", toa
+                elif dims == 2:        # heating: f(entering dry bulb, outdoor dry bulb)
+                    x, y = tin, toa
+                else:                  # heating: f(outdoor dry bulb)
+                    x, y = toa, "vbas_zero"
+                if dims == 1 and cooling:
+                    x, y = toa, "vbas_zero"
+                on += [f"SET {ctag}_{short}0 = @CurveValue {idx} {x} {y} vbas_zero vbas_zero vbas_zero",
+                       f"SET {av} = {ctag}_{short}0 {op} {ratio}"]
+                off.append(f"SET {av} = Null")
+                hooked.append(f"{c.name}:{short}")
+        if not hooked:
+            continue
+        ems.program(f"{tag}_degrade", ["SET vbas_zero = 0.0", f"IF {act} > 0.5", *on, "ELSE", *off, "ENDIF"])
+        faults[key] = {**sch, "value_default": 1.0, "object_type": "EnergyManagementSystem:Program",
+                       "kind": "hp_degradation", "equipment": ename, "zone": ze.zone, "hooked": hooked,
+                       "mechanism": "EMS Curve Result override: Q = r_Q f_Q(T), EIR = f_EIR(T) / r_COP"}
+        ems_doc[key] = {"program": f"{tag}_degrade", "curves": hooked}
+    # (b) ERV heat exchangers: effectiveness loss as partial supply bypass to an EMS set point
+    n_erv = 0
+    for ename, ze in topo.zone_equipment.items():
+        x = ze.extra
+        if ze.kind != "erv" or x.get("hx_type") != "HeatExchanger:AirToAir:SensibleAndLatent":
+            continue
+        hxo = find_object(model, x["hx_type"], x["hx"])
+        if hxo is None or str(x.get("hx_temp_control", "No")).lower() != "no" or not x.get("hx_supply_outlet"):
+            continue
+        n_erv += 1
+        tag = f"vbas_erv{n_erv}"
+        key = f"{ename} HX"
+        sch = sched_pair(key, 1.0)
+        hxo["supply_air_outlet_temperature_control"] = "Yes"
+        act = ems.sensor(f"{tag}_act", "Schedule Value", sch["active_schedule"])
+        r = ems.sensor(f"{tag}_r", "Schedule Value", sch["value_schedule"])
+        t_o = ems.sensor(f"{tag}_to", "System Node Temperature", x["hx_supply_inlet"])
+        t_e = ems.sensor(f"{tag}_te", "System Node Temperature", x["hx_exhaust_inlet"])
+        sp = ems.actuator(f"{tag}_sp", "System Node Setpoint", "Temperature Setpoint", x["hx_supply_outlet"])
+        eh = x.get("eps_sens_heating") or 0.75
+        ec = x.get("eps_sens_cooling") or eh
+        ems.program(f"{tag}_hx", [
+            f"IF {act} > 0.5",
+            f"IF {t_o} < {t_e}",
+            f"SET {sp} = {t_o} + {r} * {eh} * ({t_e} - {t_o})",
+            "ELSE",
+            f"SET {sp} = {t_o} + {r} * {ec} * ({t_e} - {t_o})",
+            "ENDIF",
+            f"ELSEIF {t_o} < {t_e}",
+            f"SET {sp} = 99.0",
+            "ELSE",
+            f"SET {sp} = -99.0",
+            "ENDIF"])
+        faults[key] = {**sch, "value_default": 1.0, "object_type": "EnergyManagementSystem:Program", "kind": "erv_hx",
+                       "equipment": ename, "hx": x["hx"], "setpoint_node": x["hx_supply_outlet"],
+                       "mechanism": "HX supply-outlet temperature control: set point = T_oa + r eps (T_exh - T_oa) when "
+                                    "faulted, pass-through (+/-99 C) when healthy"}
+        ems_doc[key] = {"program": f"{tag}_hx"}
+    ems.finish()
+    # (c) PV systems: lost generation as an equivalent non-thermal electric load. A zone ElectricEquipment with
+    #     fraction lost = 1 adds no heat to the zone; its EMS "Electricity Rate" actuator is applied in the same time
+    #     step (internal gains are re-evaluated after the BeginTimestepBeforePredictor calling point, whereas exterior
+    #     equipment is evaluated before it, i.e. one step late).
+    host = next((z for z, zo in topo.zones.items() if zo.thermostat), next(iter(topo.zones), None))
+    for dname, lc in topo.load_centers.items():
+        if host is None or not any(g.type.startswith("Generator:P") for g in lc.generators):
+            continue
+        key = f"{dname} PV LOSS"
+        obj = _safe(f"VBAS PV LOSS {dname}")
+        add_object(model, "ElectricEquipment", obj, {
+            "zone_or_zonelist_or_space_or_spacelist_name": host, "schedule_name": "VBAS Always Off",
+            "design_level_calculation_method": "EquipmentLevel", "design_level": 0.0, "fraction_latent": 0.0,
+            "fraction_radiant": 0.0, "fraction_lost": 1.0, "end_use_subcategory": "VBAS PV Loss"})
+        faults[key] = {"object_type": "ElectricEquipment", "kind": "pv_loss", "load_center": dname, "loss_object": obj,
+                       "host_zone": host, "value_default": 0.0,
+                       "mechanism": "Generator:PVWatts output cannot be curtailed in EnergyPlus 23.2 (availability and "
+                                    "EMS requested power are ignored); the lost AC power is drawn by a non-thermal "
+                                    "ElectricEquipment (fraction lost = 1) through its EMS Electricity Rate actuator, so "
+                                    "that grid import/export and storage respond physically"}
+
+    # ---- T8 window / door events need an actuatable infiltration object -------------------------
+    for zname, z in topo.zones.items():
+        if z.thermostat and not z.infiltration and z.infiltration_other:
+            iname = _safe(f"VBAS INFIL {zname}")
+            add_object(model, "ZoneInfiltration:DesignFlowRate", iname, {
+                "zone_or_zonelist_or_space_or_spacelist_name": zname, "schedule_name": "VBAS Always On",
+                "design_flow_rate_calculation_method": "Flow/Zone", "design_flow_rate": 0.0,
+                "constant_term_coefficient": 1.0, "temperature_term_coefficient": 0.0,
+                "velocity_term_coefficient": 0.0, "velocity_squared_term_coefficient": 0.0})
+            z.infiltration_window = iname
+
     # ---- T7 CO2 ---------------------------------------------------------------------------
     if opts.enable_co2:
         s = cmd("OUTDOOR CO2", opts.outdoor_co2_ppm, kind="outdoor_co2", unit="ppm")
@@ -337,7 +576,7 @@ def prepare_model(model_path: str | Path, weather_path: str | Path, out_dir: str
     model_path_out = save_model(model, out_dir / "model.epJSON")
     manifest = Manifest(source_model=str(model_path), weather_file="weather.epw", options=opts.__dict__,
                         topology=topo.to_dict(), commands=commands, faults=faults,
-                        energyplus_version=eplus.version_string(), native=native)
+                        energyplus_version=eplus.version_string(), native=native, ems=ems_doc)
     if run_sizing:
         manifest.design = run_sizing_only(model, out_dir / "weather.epw", out_dir / "sizing")
         # autosized minimum flow fractions -> initial command values

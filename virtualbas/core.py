@@ -31,7 +31,8 @@ from .bas.alarms import default_rules
 from .bas.analytics import Analytics
 from .bas.catalog import RHO_AIR, RHO_WATER, Catalog, build_catalog
 from .bas.historian import LABEL_BITS, Historian
-from .control.sequences import AHUController, ControlConfig, PlantController, VAVController, occupied
+from .control.sequences import (AHUController, ControlConfig, PlantController, VAVController, geb_battery,
+                                geb_zone_offsets, occupied, onpeak_window)
 from .engine.runner import EnergyPlusEngine, EngineSpec, Sample
 from .model.epjson import load_model, save_model
 from .model.prepare import Manifest
@@ -63,6 +64,12 @@ def parse_speed(s: Any) -> float:
 
 def _ok(x) -> bool:
     return x is not None and isinstance(x, (int, float)) and math.isfinite(x)
+
+
+def _g0(d: dict[str, float], k: str) -> float:
+    """Finite value of ``d[k]`` or 0."""
+    v = d.get(k)
+    return v if _ok(v) else 0.0
 
 
 def parse_time(v: Any, ref: dt.datetime) -> dt.datetime | None:
@@ -154,6 +161,7 @@ class VirtualBAS:
             self.random = RandomInjector(rate_per_week=float(rf.get("rate_per_week", 2.0)), seed=int(rf.get("seed", self.seed + 7)))
             if rf.get("types"):
                 self.random.menu = {k: v for k, v in self.random.menu.items() if k in rf["types"]}
+                self.random.types = list(rf["types"])
         # exposed / recorded point tiers (standard = typical BAS today, advanced, next_gen); truth is always kept
         self.tiers = tuple(sc.get("point_tiers") or self.b.config.get("point_tiers") or ALL_TIERS)
         self._build_sensors(sc.get("sensors", {}))
@@ -198,6 +206,8 @@ class VirtualBAS:
         self.kpi = {"elec_kwh": 0.0, "gas_kwh": 0.0, "hvac_elec_kwh": 0.0, "unmet_occ_hours": 0.0,
                     "comfort_kh": 0.0, "co2_over_1000_h": 0.0, "steps": 0,
                     "cost_usd": 0.0, "co2_kg": 0.0, "pm25_over_15_h": 0.0, "tvoc_over_500_h": 0.0}
+        if "GRID/IMPORT-PWR" in self.cat.points:
+            self.kpi.update({"grid_import_kwh": 0.0, "grid_export_kwh": 0.0, "pv_kwh": 0.0, "unserved_kwh": 0.0})
         self._infil_base: dict[str, float] = {}
         self._last_frac: dict[str, float] = {}
         self._last_eplus_htg: dict[str, float] = {}
@@ -248,6 +258,16 @@ class VirtualBAS:
             elif e.type == "AHU":
                 self.ahu[e.id] = AHUController(e.id, e.meta["design_flow_m3s"], e.meta["min_oa_m3s"], self.ccfg)
         self.plant = PlantController(self.ccfg)
+        # zone equipment and distributed energy resources
+        self.zone_units = [e for e in self.cat.equipment.values() if e.type in ("HeatPump", "PTAC", "Baseboard", "IdealLoads", "ERV")]
+        self.pv_systems = self.cat.equipment_of_type("PVSystem")
+        self.batteries = self.cat.equipment_of_type("Battery")
+        self.der = bool(self.pv_systems or self.batteries) and "GRID/IMPORT-PWR" in self.cat.points
+        self._pv_curtail: dict[str, float] = {}
+        self._pv_last: dict[str, tuple[float, float]] = {}
+        self._dark = False
+        self._last_enable: dict[str, float] = {}
+        self.geb_mode = ""
         # occupied set points (writable software points)
         self.zone_sp: dict[str, tuple[float, float]] = {}
         for e in self.cat.equipment_of_type("Zone"):
@@ -269,14 +289,15 @@ class VirtualBAS:
             if sched:
                 spec.variables[f"SCHED|{sched}".upper()] = ("Schedule Value", sched)
         nat = self.b.manifest.native or {}
-        for d in list(nat.get("air_loops", {}).values()) + list(nat.get("zones", {}).values()):
+        for d in (list(nat.get("air_loops", {}).values()) + list(nat.get("zones", {}).values())
+                  + list(nat.get("zone_equipment", {}).values()) + list(nat.get("water_heaters", {}).values())):
             for sched in d.values():
                 if sched:
                     spec.variables[f"SCHED|{sched}".upper()] = ("Schedule Value", sched)
         for z in self.b.manifest.topo.zones.values():
             spec.internal[f"ZVOL|{z.name}".upper()] = ("Zone Air Volume", z.name)
             spec.internal[f"ZAREA|{z.name}".upper()] = ("Zone Floor Area", z.name)
-            if z.infiltration:
+            if z.infiltration or z.infiltration_window:
                 spec.variables[f"INFIL|{z.name}".upper()] = ("Zone Infiltration Current Density Volume Flow Rate", z.name)
         for a in self.cat.equipment_of_type("AHU"):
             fan = a.meta.get("fan")
@@ -629,6 +650,19 @@ class VirtualBAS:
                 lwt = lwt if _ok(lwt) else 60.0
                 truth[f"{e.id}/FLUE-T"] = (lwt + (20.0 + 60.0 * plr) * (1.0 + 1.5 * (1.0 / max(r, 0.05) - 1.0))
                                            if plr > 0.01 else 0.5 * (lwt + 25.0))
+        for e in self.zone_units:
+            if f"{e.id}/ALM" in self.cat.points:
+                truth[f"{e.id}/ALM"] = 1.0 if (e.id in ov.trips or e.id in ov.erv_fan_failed) else 0.0
+        for e in self.pv_systems:
+            if f"{e.id}/ALM" in self.cat.points:
+                truth[f"{e.id}/ALM"] = 1.0 if e.id in ov.inverter_trip else 0.0
+        for e in self.batteries:
+            if f"{e.id}/ALM" in self.cat.points:
+                truth[f"{e.id}/ALM"] = 0.0
+        if "GRID/OUTAGE" in self.cat.points:
+            truth["GRID/OUTAGE"] = 1.0 if ov.grid_outage else 0.0
+            imp = truth.get("GRID/IMPORT-PWR", 0.0)
+            truth["GRID/UNSERVED-KW"] = max(0.0, imp) if (ov.grid_outage and _ok(imp)) else 0.0
         for e in self.cat.equipment_of_type("PlantLoop"):
             pre = e.id.split("-")[0]
             f = truth.get(f"{e.id}/{pre}-F", 0.0)
@@ -662,6 +696,13 @@ class VirtualBAS:
             base = occupied(cfg, t, dow, holiday) if ahu_nat[aid] is None else (ahu_nat[aid] and not holiday)
             occ = (base or aid in ov.force_occupied) and aid not in ov.force_unoccupied
             ahu_occ[aid] = occ
+        geb = cfg.profile == "geb"
+        dr = ov.dr_shed_kw is not None or _g0(pv, "GRID/DR-EVENT") > 0.5
+        gdh = gdc = 0.0
+        if geb:
+            oat = pv.get("WX/OA-T-FC1H", math.nan)
+            oat = oat if _ok(oat) else pv.get("WX/OA-T", math.nan)
+            gdh, gdc, self.geb_mode = geb_zone_offsets(cfg, t, dow, self.env.cfg.tou, oat, dr, holiday)
         vav_out_by_ahu: dict[str, list[dict[str, float]]] = {a: [] for a in self.ahu}
         ztemps_by_ahu: dict[str, list[float]] = {a: [] for a in self.ahu}
         # zones: occupancy mode and active set points (follow the serving AHU's schedule)
@@ -687,6 +728,8 @@ class VirtualBAS:
                     c_occ = nc
             else:
                 csp = (c_occ if occ else cfg.clg_unocc) + off
+            if geb and (occ or self.geb_mode == "dr"):
+                hsp, csp = hsp + gdh, max(hsp + gdh + 1.0, csp + gdc)
             cmd[f"{zid}/HTG-SP"], cmd[f"{zid}/CLG-SP"] = hsp, csp
             cmd[f"{zid}/OCC-HTG-SP"], cmd[f"{zid}/OCC-CLG-SP"] = h_occ, c_occ
             cmd[f"{zid}/OCC-MODE"] = 1.0 if occ else 0.0
@@ -727,7 +770,47 @@ class VirtualBAS:
         for e in self.cat.equipment.values():
             if e.type in ("Chiller", "Boiler"):
                 cmd[f"{e.id}/EN-CMD"] = 1.0
+        self._control_der(cmd, t, dow, ov, raw, nat, geb, dr)
         return cmd
+
+    def _control_der(self, cmd, t, dow, ov: Overlays, raw, nat, geb: bool, dr: bool) -> None:
+        """Zone equipment enables, battery dispatch and water-heater set points (observed values only)."""
+        pv = self.pv
+        shed = {x.strip() for x in self.ccfg.geb_dr_disable.split(",") if x.strip()} if geb and dr else set()
+        for e in self.zone_units:
+            if not e.meta.get("enable_schedule"):
+                continue
+            n = self._native(raw, nat.get("zone_equipment", {}).get(e.eplus_name, {}).get("avail_schedule"))
+            en = (1.0 if n > 0 else 0.0) if n is not None else float(e.meta.get("enable_default", 1.0))
+            if e.id in shed:
+                en = 0.0
+            cmd[f"{e.id}/ENABLE"] = en
+            if e.type in ("HeatPump", "PTAC"):
+                qh, qc = _g0(pv, f"{e.id}/HTG-Q"), _g0(pv, f"{e.id}/CLG-Q")
+                run = pv.get(f"{e.id}/STS", 1.0)
+                cmd[f"{e.id}/MODE"] = (-1.0 if en < 0.5 else 0.0 if (_ok(run) and run < 0.5) or max(qh, qc) < 0.02
+                                       else 2.0 if qh > qc else 1.0)
+        for e in self.batteries:
+            lo = float(e.meta.get("min_soc") or 0.0)
+            reserve = max(lo, self._override_value(f"{e.id}/RESERVE-SP", max(lo, self.ccfg.ess_reserve)))
+            cmd[f"{e.id}/RESERVE-SP"] = reserve
+            chg = dis = math.nan
+            if geb:
+                imp, exp_ = _g0(pv, "GRID/IMPORT-PWR"), _g0(pv, "GRID/EXPORT-PWR")
+                need = imp + _g0(pv, f"{e.id}/DCHG-PWR")
+                surplus = exp_ + _g0(pv, f"{e.id}/CHG-PWR") - imp
+                win = onpeak_window(self.env.cfg.tou, t, dow, ov.holiday)
+                hod = t.hour + t.minute / 60.0
+                before = win is not None and win[0] - self.ccfg.ess_hold_h <= hod < win[0]
+                chg, dis = geb_battery(self.ccfg, pv.get("GRID/TOU-PERIOD", math.nan), pv.get(f"{e.id}/SOC", math.nan),
+                                       reserve, dr, need, surplus, before, float(e.meta.get("max_charge_kw") or 0.0),
+                                       float(e.meta.get("max_discharge_kw") or 0.0))
+            cmd[f"{e.id}/CHG-CMD"], cmd[f"{e.id}/DCHG-CMD"] = chg, dis
+            cmd[f"{e.id}/MODE"] = 1.0 if (_ok(chg) or _ok(dis)) else 0.0
+        for e in self.cat.equipment_of_type("WaterHeater"):
+            if e.meta.get("sp_schedule"):
+                n = self._native(raw, nat.get("water_heaters", {}).get(e.eplus_name, {}).get("sp_schedule"))
+                cmd[f"{e.id}/TANK-SP"] = n if n is not None else self.b.manifest.commands.get(f"{e.eplus_name} SP", {}).get("default", 55.0)
 
     def _override_value(self, pid: str, default: float) -> float:
         slots = self.overrides.get(pid)
@@ -756,6 +839,8 @@ class VirtualBAS:
             if name == "DMPR-CMD" and eq in self.cat.equipment:
                 vmax = self.cat.equipment[eq].meta["vmax_m3s"]
                 cmd[f"{eq}/DA-F-SP"] = best.value / 100.0 * vmax
+            if name in ("CHG-CMD", "DCHG-CMD") and eq in self.cat.equipment:
+                cmd[f"{eq}/MODE"] = 1.0
         return cmd
 
     # ------------------------------------------------------------------ actuation
@@ -811,6 +896,11 @@ class VirtualBAS:
         out: dict[str, float | None] = {}
         man = self.b.manifest
         topo = man.topo
+        # ---------- grid outage: islanded operation or blackout (real-world physics, not BAS logic)
+        dark = self._outage_state(truth, ov, warm)
+        if dark:
+            ov.light_mult["*"] = 0.0
+            ov.plug_mult["*"] = 0.0
         # ---------- zones: thermostat (reheat local loop), occupancy, gains, infiltration
         for zid, zname in self.cat.zone_of_equip.items():
             z = topo.zones[zname]
@@ -831,6 +921,9 @@ class VirtualBAS:
                 # zone without a BAS-controlled terminal: thermostat local loop for cooling as well
                 csp = cmd.get(f"{zid}/CLG-SP", self.ccfg.clg_occ)
                 ep_c = self._translate(f"{zid}/ZN-T", csp, truth, ov, 10.0, 40.0, reverse=True, key=f"CLG|{zname}")
+                if vid is not None and (vid in ov.comm_loss or vid in ov.frozen):
+                    ep_c = self._last_sched.get(f"CLGHOLD|{zname}", ep_c)
+                self._last_sched[f"CLGHOLD|{zname}"] = ep_c
                 out[A("Zone Temperature Control", "Cooling Setpoint", zname)] = max(ep_c, ep_h + 0.5)
             # occupancy (truth) -> people actuator
             mult = ov.occ_mult.get(zname, 1.0) * ov.occ_mult.get("*", 1.0)
@@ -868,6 +961,11 @@ class VirtualBAS:
                 else:
                     out[A("ElectricEquipment", "Electricity Rate", ename)] = None
             ach = ov.infil_add_ach.get(zname, 0.0)
+            if z.infiltration_window and not z.infiltration:
+                # leakage-area infiltration keeps its own physics; the event adds air exchange on a zero-flow object
+                vol = self.engine.internal_values.get(f"ZVOL|{zname}".upper(), 0.0)
+                out[A("Zone Infiltration", "Air Exchange Flow Rate", z.infiltration_window)] = \
+                    ach * vol / 3600.0 if ach > 0 else None
             if z.infiltration:
                 if ach > 0:
                     base = self._infil_base.setdefault(zname, raw.get(f"INFIL|{zname}".upper(), 0.0))
@@ -963,10 +1061,116 @@ class VirtualBAS:
                     out[sa(f["active_schedule"])] = 1.0 if r < 0.999 else 0.0
                     # EnergyPlus 23.2 applies factor = fouling_factor / severity  (fouling_factor = 1)
                     out[sa(f["value_schedule"])] = 1.0 / max(r, 0.05)
+        self._actuate_der(out, truth, raw, cmd, ov, dark)
         co2 = man.commands.get("OUTDOOR CO2")
         if co2:
             out[sa(co2["schedule"])] = ov.outdoor_co2 if ov.outdoor_co2 is not None else co2["default"]
         return out
+
+    def _outage_state(self, truth: dict[str, float], ov: Overlays, warm: bool) -> bool:
+        """True while the building is dark (grid outage without backup, or storage exhausted while islanded)."""
+        if warm or not ov.grid_outage:
+            self._dark = False
+            return False
+        if not ov.outage_backup or not self.batteries:
+            self._dark = True
+            return True
+        socs = [(truth.get(f"{e.id}/SOC", math.nan), float(e.meta.get("min_soc") or 0.0)) for e in self.batteries]
+        low = all(_ok(s_) and s_ <= lo + 0.01 for s_, lo in socs)
+        high = any(_ok(s_) and s_ >= lo + 0.05 for s_, lo in socs)
+        self._dark = (self._dark and not high) or low
+        return self._dark
+
+    def _actuate_der(self, out, truth, raw, cmd, ov: Overlays, dark: bool) -> None:
+        A = self.cat.actuator
+        sa = self.cat.schedule_actuator
+        man = self.b.manifest
+        topo = man.topo
+        # ---------- zone equipment: enable / trips / blackout, heat-pump degradation, ERV faults
+        for e in self.zone_units:
+            sched = e.meta.get("enable_schedule")
+            if sched:
+                en = cmd.get(f"{e.id}/ENABLE", float(e.meta.get("enable_default", 1.0)))
+                if e.id in ov.comm_loss:
+                    en = self._last_enable.get(e.id, en)
+                self._last_enable[e.id] = en
+                on = en > 0.5 and e.id not in ov.trips and not dark
+                out[sa(sched)] = 1.0 if on else 0.0
+            ff = e.meta.get("degrade_fault")
+            if ff and ff in man.faults:
+                f = man.faults[ff]
+                rq, rc = ov.hp_degrade.get(e.id, (1.0, 1.0))
+                out[sa(f["active_schedule"])] = 1.0 if (rq < 0.999 or rc < 0.999) else 0.0
+                out[sa(f["value_schedule"])] = max(0.05, rq)
+                out[sa(f["cop_schedule"])] = max(0.05, rc)
+            if e.type == "ERV":
+                failed = ov.erv_fan_failed.get(e.id, "")
+                for fan_key, which in (("supply_fan", "supply"), ("exhaust_fan", "exhaust")):
+                    fan = e.meta.get(fan_key)
+                    if fan:
+                        out[A("Fan", "Fan Air Mass Flow Rate", fan)] = 0.0 if failed in (which, "both") else None
+                hf = e.meta.get("hx_fault")
+                if hf and hf in man.faults:
+                    f = man.faults[hf]
+                    r = ov.erv_hx.get(e.id, 1.0)
+                    out[sa(f["active_schedule"])] = 1.0 if r < 0.999 else 0.0
+                    out[sa(f["value_schedule"])] = max(0.0, r)
+        # ---------- PV systems: soiling, inverter trip, anti-islanding and export curtailment
+        for e in self.pv_systems:
+            lc = topo.load_centers.get(e.eplus_name)
+            f = man.faults.get(e.meta.get("loss_fault") or "")
+            if lc is None or f is None:
+                continue
+            eta = float(e.meta.get("inverter_eff") or 1.0)
+            dc = sum(raw.get(f"GENERATOR PRODUCED DC ELECTRICITY RATE|{g.name}".upper(), 0.0) for g in lc.generators)
+            inv = lc.inverter.name if lc.inverter else None
+            ac = raw.get(f"INVERTER AC OUTPUT ELECTRICITY RATE|{inv}".upper(), dc * eta) if inv else dc * eta
+            dc, ac = (dc if _ok(dc) else 0.0), (ac if _ok(ac) else 0.0)
+            # values of the previous step: extrapolate linearly to the step being simulated (PV ramps)
+            dc_1, ac_1 = self._pv_last.get(e.id, (dc, ac))
+            self._pv_last[e.id] = (dc, ac)
+            dc, ac = max(0.0, 2.0 * dc - dc_1), max(0.0, 2.0 * ac - ac_1)
+            tripped = e.id in ov.inverter_trip or (ov.grid_outage and not ov.outage_backup)
+            if tripped:
+                loss = ac           # no AC output at all (DC-coupled storage idles, see below)
+            else:
+                pv_ac = dc * eta    # PV share of the inverter output (the DC-coupled battery also flows through it)
+                loss = ov.pv_loss.get(e.id, 0.0) * pv_ac
+                if ov.grid_outage:
+                    # islanded: the surplus cannot be exported -> curtail what neither the loads nor the battery absorb
+                    load = 1000.0 * max(0.0, _g0(truth, "MTR/BLDG-ELEC-KW"))
+                    room = sum(1000.0 * float(b.meta.get("max_charge_kw") or 0.0) for b in self.batteries
+                               if b.meta.get("load_center") == lc.name and
+                               _g0(truth, f"{b.id}/SOC") < float(b.meta.get("max_soc") or 1.0) - 0.005)
+                    self._pv_curtail[e.id] = max(0.0, pv_ac - loss - load - room)
+                    loss += self._pv_curtail[e.id]
+                else:
+                    self._pv_curtail.pop(e.id, None)
+            out[A("ElectricEquipment", "Electricity Rate", f["loss_object"])] = max(0.0, loss) if loss > 0 else None
+        # ---------- electrical storage: BAS dispatch (NaN = native EnergyPlus storage scheme)
+        for e in self.batteries:
+            lc_name = e.meta.get("load_center")
+            chg, dis = cmd.get(f"{e.id}/CHG-CMD", math.nan), cmd.get(f"{e.id}/DCHG-CMD", math.nan)
+            idle = any(p.id in ov.inverter_trip and p.eplus_name == lc_name for p in self.pv_systems) or (
+                ov.grid_outage and not ov.outage_backup)
+            if e.id in ov.comm_loss:
+                chg = dis = math.nan
+            if dark and not idle:
+                # islanded and depleted: no discharge, PV recharges the battery with what the (dark) site does not use
+                pv_ac = sum(self._pv_last.get(p.id, (0.0, 0.0))[0] * float(p.meta.get("inverter_eff") or 1.0)
+                            for p in self.pv_systems if p.eplus_name == lc_name) / 1000.0
+                surplus = pv_ac - max(0.0, _g0(truth, "MTR/BLDG-ELEC-KW"))
+                chg, dis = min(float(e.meta.get("max_charge_kw") or 0.0), max(0.0, surplus)), 0.0
+            out[A("Electrical Storage", "Power Charge Rate", lc_name)] = 0.0 if idle else (
+                max(0.0, chg) * 1000.0 if _ok(chg) else None)
+            out[A("Electrical Storage", "Power Draw Rate", lc_name)] = 0.0 if idle else (
+                max(0.0, dis) * 1000.0 if _ok(dis) else None)
+        # ---------- water heaters with a bound set point
+        for e in self.cat.equipment_of_type("WaterHeater"):
+            sched = e.meta.get("sp_schedule")
+            if sched:
+                sp = cmd.get(f"{e.id}/TANK-SP", 55.0)
+                out[sa(sched)] = 5.0 if dark else sp
 
     # ------------------------------------------------------------------ KPI
     def _kpi(self, truth, cmd, dts, t, dow) -> None:
@@ -978,6 +1182,13 @@ class VirtualBAS:
         k["steps"] += 1
         price, ci = truth.get("GRID/PRICE", 0.0), truth.get("GRID/CO2-INT", 0.0)
         e_kw = max(0.0, truth.get("MTR/BLDG-ELEC-KW", 0.0) or 0.0)
+        if "grid_import_kwh" in k:
+            # on-site generation / storage: the utility bills the grid import
+            e_kw = max(0.0, _g0(truth, "GRID/IMPORT-PWR"))
+            k["grid_import_kwh"] += e_kw * h
+            k["grid_export_kwh"] += max(0.0, _g0(truth, "GRID/EXPORT-PWR")) * h
+            k["pv_kwh"] += sum(max(0.0, _g0(truth, f"{p.id}/DC-PWR")) for p in self.pv_systems) * h
+            k["unserved_kwh"] += max(0.0, _g0(truth, "GRID/UNSERVED-KW")) * h
         g_kw = max(0.0, truth.get("MTR/BLDG-GAS-KW", 0.0) or 0.0)
         if _ok(price) and _ok(ci):
             k["cost_usd"] += (e_kw * price + g_kw * self.env.cfg.gas_price_per_kwh) * h

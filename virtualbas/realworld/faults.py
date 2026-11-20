@@ -78,6 +78,14 @@ class Overlays:
     price_mult: float = 1.0
     grid_ci_add: float = 0.0
     dr_shed_kw: float | None = None
+    # zone equipment and distributed energy resources
+    hp_degrade: dict[str, tuple[float, float]] = field(default_factory=dict)  # HP id -> (capacity ratio, COP ratio)
+    erv_fan_failed: dict[str, str] = field(default_factory=dict)        # ERV id -> supply | exhaust | both
+    erv_hx: dict[str, float] = field(default_factory=dict)              # ERV id -> remaining effectiveness fraction
+    pv_loss: dict[str, float] = field(default_factory=dict)             # PV system id -> lost fraction of PV output
+    inverter_trip: set[str] = field(default_factory=set)                # PV system ids
+    grid_outage: bool = False
+    outage_backup: bool = True                                          # PV + storage can island (backup gateway)
 
     def sensor_overlay(self, pid: str) -> FaultOverlay:
         if pid not in self.sensor:
@@ -351,6 +359,78 @@ def _trip(inj, s, ov, ctx):
         ov.trips.add(inj.target)
 
 
+# ----------------------------------------------------------------------------- zone heat pumps / ERVs / DER
+@register("hp_capacity_degradation", "fault", "equipment", "equip:HeatPump|PTAC",
+          "Heat-pump / PTAC capacity and efficiency degradation (coil fouling, refrigerant undercharge). EnergyPlus: "
+          "per-coil copies of the DX capacity and EIR f(T) curves whose result is overridden by EMS.",
+          r"Q^{f} = \big(1 - s(1-r_Q)\big)\,Q(T),\ COP^{f} = \big(1 - s(1-r_{COP})\big)\,COP(T)",
+          {"capacity_ratio": Param(0.7, "-", "capacity ratio r_Q at full severity", 0.05, 1.0),
+           "cop_ratio": Param(0.8, "-", "COP ratio r_COP at full severity", 0.05, 1.0)})
+def _hp_deg(inj, s, ov, ctx):
+    q0, c0 = ov.hp_degrade.get(inj.target, (1.0, 1.0))
+    q = 1.0 - s * (1.0 - float(inj.p("capacity_ratio")))
+    c = 1.0 - s * (1.0 - float(inj.p("cop_ratio")))
+    ov.hp_degrade[inj.target] = (min(q0, q), min(c0, c))
+
+
+@register("hp_trip", "fault", "equipment", "equip:HeatPump|PTAC|Baseboard",
+          "Zone heat pump trips (compressor high-pressure / low-pressure lock-out, breaker): the unit is unavailable "
+          "regardless of the BAS enable command. EnergyPlus: unit availability schedule = 0.", r"\text{available}=0", {})
+def _hp_trip(inj, s, ov, ctx):
+    if s > 0:
+        ov.trips.add(inj.target)
+
+
+@register("erv_fan_failure", "fault", "actuator", "equip:ERV",
+          "ERV fan failure (motor / belt / ECM drive): the failed fan moves no air while the BAS still commands it on. "
+          "EnergyPlus: EMS 'Fan Air Mass Flow Rate' = 0 on the failed fan(s).", r"\dot m_{fan} = 0",
+          {"fan": Param("supply", "-", "failed fan: supply | exhaust | both")})
+def _erv_fan(inj, s, ov, ctx):
+    if s > 0:
+        ov.erv_fan_failed[inj.target] = str(inj.p("fan") or "supply").lower()
+
+
+@register("erv_hx_degradation", "fault", "equipment", "equip:ERV",
+          "Heat-recovery core degradation (fouled plate, internal leakage, stopped wheel): sensible and latent recovery "
+          "drop. EnergyPlus: supply-air bypass around the core to an EMS temperature set point.",
+          r"\varepsilon' = \big(1 - s(1-r)\big)\,\varepsilon",
+          {"ratio": Param(0.3, "-", "remaining effectiveness fraction r at full severity (0 = no recovery)", 0.0, 1.0)})
+def _erv_hx(inj, s, ov, ctx):
+    r = 1.0 - s * (1.0 - float(inj.p("ratio")))
+    ov.erv_hx[inj.target] = min(ov.erv_hx.get(inj.target, 1.0), r)
+
+
+@register("pv_soiling", "fault", "equipment", "equip:PVSystem",
+          "PV soiling / snow / partial shading: a fraction of the array output is lost. EnergyPlus: the lost AC power "
+          "is drawn by a non-thermal electric load (Generator:PVWatts cannot be curtailed).",
+          r"P_{PV}' = \big(1 - s(t)\,\ell\big)\,P_{PV}", {"loss": Param(0.25, "-", "lost fraction l at full severity", 0.0, 1.0)})
+def _pv_soil(inj, s, ov, ctx):
+    ov.pv_loss[inj.target] = min(1.0, ov.pv_loss.get(inj.target, 0.0) + s * float(inj.p("loss")))
+
+
+@register("inverter_trip", "fault", "equipment", "equip:PVSystem",
+          "PV / battery inverter trip (ground fault, grid-voltage excursion): no AC output, the DC-coupled battery idles.",
+          r"P_{AC} = 0", {})
+def _inv_trip(inj, s, ov, ctx):
+    if s > 0:
+        ov.inverter_trip.add(inj.target)
+
+
+@register("battery_soc_sensor_drift", "fault", "sensor", "equip:Battery",
+          "Battery-management-system state-of-charge estimate drifts (coulomb-counting error); the BAS dispatches on "
+          "the wrong SOC. Equivalent to sensor_drift on <ESS>/SOC.",
+          r"\widehat{SOC} = SOC + \mathrm{sat}_{\pm d_{max}}\big(r\,(t-t_0)\big)",
+          {"rate_per_day": Param(0.03, "1/day", "drift rate r (fraction of capacity per day)"),
+           "max_abs": Param(0.25, "-", "d_max")})
+def _soc_drift(inj, s, ov, ctx):
+    if s <= 0:
+        return
+    days = (ctx.time - inj.start).total_seconds() / 86400.0
+    d = float(inj.p("rate_per_day")) * days
+    m = float(inj.p("max_abs"))
+    ov.sensor_overlay(f"{inj.target}/SOC").bias += max(-m, min(m, d))
+
+
 # ============================================================================= CONTROL faults
 @register("schedule_error_always_on", "fault", "control", "equip:AHU",
           "Occupancy schedule overridden - AHU runs 24/7 (forgotten manual override).", r"\text{mode}=\text{occupied}", {})
@@ -526,6 +606,18 @@ def _fbyp(inj, s, ov, ctx):
 def _dr(inj, s, ov, ctx):
     if s > 0:
         ov.dr_shed_kw = (ov.dr_shed_kw or 0.0) + s * float(inj.p("shed_kw"))
+
+
+@register("grid_outage", "event", "grid", "building",
+          "Utility grid outage. With backup (PV + battery behind a backup gateway) the building islands: loads are "
+          "served from PV and storage, PV export is curtailed, and the building goes dark when storage reaches its "
+          "minimum state of charge. Without backup all loads drop and PV stops (anti-islanding).",
+          r"\text{grid}=0;\ P_{load}=0 \text{ if no backup or } SOC \le SOC_{min}",
+          {"backup": Param(1, "-", "1 = PV + storage backup (islanding), 0 = no backup")})
+def _outage(inj, s, ov, ctx):
+    if s > 0:
+        ov.grid_outage = True
+        ov.outage_backup = ov.outage_backup and bool(int(float(inj.p("backup"))))
 
 
 @register("price_spike", "event", "grid", "building",

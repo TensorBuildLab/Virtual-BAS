@@ -1,0 +1,84 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>graphical_abstract</title>
+<style>html,body{margin:0;background:#fff} #fig{background:#fff}</style>
+</head><body><div id="fig"></div>
+<script src="diagram_lib.js"></script>
+<script>
+/* Graphical abstract (Elsevier: readable at 5 x 13 cm, >= 1328 x 531 px). Built on the structure of Fig. 1:
+   inner space | outer-space loop | people and AI, plus a strip with the four take-aways. Design size 650 x 282 px,
+   so 13 cm print width scales text by about 0.76: 11 px text prints at about 6 pt. */
+const {C} = D;
+const W = 650, H = 282;
+D.init(W, H);
+
+// ---------------------------------------------------------------- title band
+D.text(4, 17, '#EmuBAS#: a building automation system emulator with a labelled real world', {size: 16, fill: C.ink});
+D.text(4, 33, 'EnergyPlus physics + sensor errors, faults and occupants: controllers act on what they see, and every sample is labelled',
+       {size: 11, fill: C.ink2});
+
+// ---------------------------------------------------------------- three panels (as in Fig. 1)
+const TOP = 44, PH = 162;
+const IN = {x: 2, w: 124}, OUT = {x: 142, w: 318}, HU = {x: 476, w: 172};
+D.panel({x: IN.x, y: TOP, w: IN.w, h: PH, color: C.inner, fill: C.innerBg, title: 'INNER SPACE', sub: 'EnergyPlus (truth)', ts: 12.5, ss: 11});
+D.panel({x: OUT.x, y: TOP, w: OUT.w, h: PH, color: C.outer, fill: C.outerBg, title: 'OUTER SPACE', sub: 'the real world, labelled', ts: 12.5, ss: 11});
+D.panel({x: HU.x, y: TOP, w: HU.w, h: PH, color: C.ai, fill: '#fff', title: 'PEOPLE & AI', sub: 'interact at run time', ts: 12.5, ss: 11});
+
+// inner space content
+const ib = D.card({x: IN.x + 8, y: TOP + 50, w: IN.w - 16, h: 88, color: C.inner, title: 'Building',
+                   lines: ['zones, air side,', 'central plant,', 'true state x_{k}'], ts: 12, ls: 11, valign: 'top', icon: 'building', iconSize: 14});
+
+// outer-space loop: sensors -> BAS controllers -> actuators
+const cy = TOP + 50, ch = 56, cw = 92, gap = 11;
+const sx = OUT.x + 9;
+const sen = D.card({x: sx, y: cy, w: cw, h: ch, color: C.outer, title: 'Sensors', lines: ['drift, noise,', 'gaps, spikes'], ts: 12, ls: 11, valign: 'top', icon: 'thermo', iconSize: 14});
+const ctl = D.card({x: sx + cw + gap, y: cy, w: cw, h: ch, color: C.outer, title: 'Control', lines: ['sees only the', 'observed y_{k}'], ts: 12, ls: 11, valign: 'top', icon: 'gear', iconSize: 14});
+const act = D.card({x: sx + 2 * (cw + gap), y: cy, w: cw, h: ch, color: C.outer, title: 'Actuators', lines: ['stuck valves,', 'overrides'], ts: 12, ls: 11, valign: 'top', icon: 'valve', iconSize: 14});
+D.conn([[sen.r, sen.cy], [ctl.l, ctl.cy]], {color: C.outer, w: 1.4});
+D.conn([[ctl.r, ctl.cy], [act.l, act.cy]], {color: C.outer, w: 1.4});
+// physics -> sensors (truth) and actuators -> physics (commands)
+D.conn([[ib.r, sen.cy], [sen.l, sen.cy]], {color: C.inner, w: 1.4});
+const yret = cy + ch + 13;
+D.conn([[act.cx, act.b], [act.cx, yret], [ib.r, yret]], {color: C.outer, w: 1.4});
+D.pill((ib.r + sen.l) / 2, sen.cy - 9, 'x_{k}', {size: 11, fill: C.ink2, bg: C.outerBg});
+D.pill(ctl.cx, yret, 'commands a_{k}', {size: 11, fill: C.ink2, bg: C.outerBg});
+// fault library
+const fc = D.chip(OUT.x + 9, TOP + PH - 26, '44 fault and event types, injected while it runs', {size: 11, color: C.fault, bg: C.faultBg, h: 18, padx: 7});
+D.icon('bolt', OUT.x + 9 + fc.w + 5, TOP + PH - 25, 15, C.fault);
+
+// people and AI
+const hx = HU.x + 8, hw = HU.w - 16;
+const rows = [['person', 'operators, students'], ['api', 'scripts, REST API'], ['robot', 'AI agents (MCP, Gym)']];
+rows.forEach(([ic, t], i) => {
+  const y = TOP + 50 + i * 21;
+  D.icon(ic, hx, y, 14, C.ai);
+  D.text(hx + 20, y + 11, t, {size: 11.5, fill: C.ink});
+});
+const ck = D.card({x: hx, y: TOP + 126, w: hw, h: 26, color: C.ai, fill: C.aiBg, title: 'real time  ↔  92,000× faster', ts: 11, align: 'center', pad: 4});
+D.conn([[HU.x, TOP + 82], [OUT.x + OUT.w, TOP + 82]], {color: C.ai, w: 1.4});
+
+// ---------------------------------------------------------------- take-aways
+const BY = TOP + PH + 10, BH = H - BY - 2, n = 4, bg = 8, bw = (W - 4 - (n - 1) * bg) / n;
+const bx = i => 2 + i * (bw + bg);
+// 1: drift example with a sparkline
+const k1 = D.card({x: bx(0), y: BY, w: bw, h: BH, color: C.ink2, title: 'Faults stay hidden', lines: [], ts: 11.5, valign: 'top', pad: 6});
+(function spark() {
+  const x0 = bx(0) + 8, x1 = bx(0) + bw - 62, yo = BY + 30, yBot = BY + BH - 12, days = 6;
+  // observed: held at the cooling set point by the controller
+  D.el('path', {d: `M${x0},${yo} H${x1}`, stroke: C.outer, 'stroke-width': 1.8, fill: 'none'}, D.S.connsL);
+  // truth: the zone cools a little more every day
+  let d = '';
+  for (let i = 0; i <= days; i++) {
+    const x = x0 + (x1 - x0) * i / days, y = yo + 3 + (yBot - yo - 3) * (i / days);
+    d += (i ? 'L' : 'M') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+  }
+  D.el('path', {d, stroke: C.inner, 'stroke-width': 1.8, fill: 'none'}, D.S.connsL);
+  D.text(x1 + 5, yo + 3.5, 'BAS 24 °C', {size: 10, fill: C.ink});
+  D.text(x1 + 5, yBot + 3.5, 'true 21 °C', {size: 10, fill: C.ink});
+})();
+D.card({x: bx(1), y: BY, w: bw, h: BH, color: C.ink2, title: 'Labelled data', lines: ['observed | truth |', 'commands | labels'], ts: 11.5, ls: 10.5, valign: 'top', pad: 6, icon: 'db', iconSize: 14});
+D.card({x: bx(2), y: BY, w: bw, h: BH, color: C.ink2, title: 'Test and benchmark', lines: ['FDD, control,', 'AI operators'], ts: 11.5, ls: 10.5, valign: 'top', pad: 6, icon: 'chart', iconSize: 14});
+D.card({x: bx(3), y: BY, w: bw, h: BH, color: C.ink2, title: 'Train people', lines: ['safe to break,', 'with an answer key'], ts: 11.5, ls: 10.5, valign: 'top', pad: 6, icon: 'cap', iconSize: 14});
+
+D.finish();
+</script>
+</body></html>
